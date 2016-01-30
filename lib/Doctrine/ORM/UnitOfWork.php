@@ -2940,6 +2940,23 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Expand an identifier array that contains object references into
+     * a value-only array. Other unit of work functions that accept an
+     * identifier require flattened identifiers.
+     *
+     * @param ClassMetadata $class The class descriptor of the entity.
+     * @param array         $id    The entity identifier to look for.
+     *
+     * @return array Returns a flattened array, or the original if
+     *               identifies for this class do not contain references.
+     */
+    public function flattenIdentifier(ClassMetaData $class, array $id) {
+        return $class->containsForeignIdentifier ?
+            $this->identifierFlattener->flattenIdentifier($class, $id) :
+            $id;
+    }
+
+    /**
      * Tries to find an entity with the given identifier in the identity map of
      * this UnitOfWork.
      *

@@ -412,6 +412,7 @@ use Doctrine\Common\Util\ClassUtils;
         }
 
         $unitOfWork = $this->getUnitOfWork();
+        $sortedId = $unitOfWork->flattenIdentifier($class, $sortedId);
 
         // Check identity map first
         if (($entity = $unitOfWork->tryGetById($sortedId, $class->rootEntityName)) !== false) {
@@ -489,7 +490,9 @@ use Doctrine\Common\Util\ClassUtils;
         }
 
         // Check identity map first, if its already in there just return it.
-        if (($entity = $this->unitOfWork->tryGetById($sortedId, $class->rootEntityName)) !== false) {
+        $flattenedId = $this->unitOfWork->flattenIdentifier($class, $sortedId);
+
+        if (($entity = $this->unitOfWork->tryGetById($flattenedId, $class->rootEntityName)) !== false) {
             return ($entity instanceof $class->name) ? $entity : null;
         }
 
@@ -497,9 +500,9 @@ use Doctrine\Common\Util\ClassUtils;
             return $this->find($entityName, $sortedId);
         }
 
-        $entity = $this->proxyFactory->getProxy($class->name, $sortedId);
+        $entity = $this->proxyFactory->getProxy($class->name, $flattenedId);
 
-        $this->unitOfWork->registerManaged($entity, $sortedId, array());
+        $this->unitOfWork->registerManaged($entity, $flattenedId, array());
 
         return $entity;
     }
