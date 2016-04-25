@@ -19,6 +19,7 @@
 
 namespace Doctrine\ORM\Query;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
@@ -72,6 +73,11 @@ class ResultSetMappingBuilder extends ResultSetMapping
     private $em;
 
     /**
+     * @var AbstractPlatform
+     */
+    protected $platform;
+
+    /**
      * Default column renaming mode.
      *
      * @var int
@@ -85,6 +91,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
     public function __construct(EntityManagerInterface $em, $defaultRenameMode = self::COLUMN_RENAMING_NONE)
     {
         $this->em                = $em;
+        $this->platform          = $em->getConnection()->getDatabasePlatform();
         $this->defaultRenameMode = $defaultRenameMode;
     }
 
@@ -449,18 +456,24 @@ class ResultSetMappingBuilder extends ResultSetMapping
                 $sql .= ", ";
             }
 
-            $sql .= $tableAlias . ".";
+            $columnSql = $tableAlias . ".";
 
             if (isset($this->fieldMappings[$columnName])) {
-                $class = $this->em->getClassMetadata($this->declaringClasses[$columnName]);
-                $sql  .= $class->fieldMappings[$this->fieldMappings[$columnName]]['columnName'];
+                $field      = $this->fieldMappings[$columnName];
+                $class      = $this->em->getClassMetadata($this->declaringClasses[$columnName]);
+                $columnSql .= $class->fieldMappings[$field]['columnName'];
+
+                if (isset($class->fieldMappings[$field]['requireSQLConversion'])) {
+                    $type      = Type::getType($class->getTypeOfField($field));
+                    $columnSql = $type->convertToPHPValueSQL($columnSql, $this->platform);
+                }
             } else if (isset($this->metaMappings[$columnName])) {
-                $sql .= $this->metaMappings[$columnName];
+                $columnSql .= $this->metaMappings[$columnName];
             } else if (isset($this->discriminatorColumns[$dqlAlias])) {
-                $sql .= $this->discriminatorColumns[$dqlAlias];
+                $columnSql .= $this->discriminatorColumns[$dqlAlias];
             }
 
-            $sql .= " AS " . $columnName;
+            $sql .= $columnSql . " AS " . $columnName;
         }
 
         return $sql;
