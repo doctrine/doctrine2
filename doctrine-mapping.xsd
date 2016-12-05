@@ -450,7 +450,7 @@
       <xs:element name="inverse-join-columns" type="orm:join-columns" />
       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other"/>
     </xs:sequence>
-    <xs:attribute name="name" type="xs:NMTOKEN" use="required" />
+    <xs:attribute name="name" type="xs:NMTOKEN" use="optional" />
     <xs:attribute name="schema" type="xs:NMTOKEN" />
     <xs:anyAttribute namespace="##other"/>
   </xs:complexType>

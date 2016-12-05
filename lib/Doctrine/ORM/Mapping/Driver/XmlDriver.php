@@ -508,7 +508,7 @@ class XmlDriver extends FileDriver
 
                     $joinTableElement = $manyToManyElement->{'join-table'};
                     $joinTable = array(
-                        'name' => (string) $joinTableElement['name']
+                        'name' => empty($joinTableElement['name']) ? null : (string) $joinTableElement['name']
                     );
 
                     if (isset($joinTableElement['schema'])) {
