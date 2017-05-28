@@ -66,6 +66,31 @@ class CustomFunctionsTest extends OrmFunctionalTestCase
 
         self::assertEquals(1, $usersCount);
     }
+
+    public function testCustomFunctionWithinInExpression() : void
+    {
+        $user           = new CmsUser();
+        $user->name     = 'Lo';
+        $user->username = 'Doe';
+
+        $this->_em->persist($user);
+        $this->_em->flush();
+
+        $this->_em->getConfiguration()->addCustomStringFunction(
+            'FOO',
+            function (string $funcName) : NoOp {
+                return new NoOp($funcName);
+            }
+        );
+
+        $query = 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE u.name IN (FOO(\'Lo\'), \'Lo\', :name)';
+        $users = $this->_em->createQuery($query)
+                           ->setParameter('name', 'Lo')
+                           ->getResult();
+
+        self::assertCount(1, $users);
+        self::assertSame($user, $users[0]);
+    }
 }
 
 class NoOp extends FunctionNode
