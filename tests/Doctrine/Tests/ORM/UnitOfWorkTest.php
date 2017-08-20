@@ -466,12 +466,15 @@ class UnitOfWorkTest extends OrmTestCase
         $booleanFalse->id = false;
 
         return [
-            'empty string, single field'     => [$emptyString, ''],
-            'non-empty string, single field' => [$nonEmptyString, $nonEmptyString->id],
-            'empty strings, two fields'      => [$emptyStrings, ' '],
-            'non-empty strings, two fields'  => [$nonEmptyStrings, $nonEmptyStrings->id1 . ' ' . $nonEmptyStrings->id2],
-            'boolean true'                   => [$booleanTrue, '1'],
-            'boolean false'                  => [$booleanFalse, ''],
+            'empty string, single field'     => [$emptyString, serialize([''])],
+            'non-empty string, single field' => [$nonEmptyString, serialize([$nonEmptyString->id])],
+            'empty strings, two fields'      => [$emptyStrings, serialize(['', ''])],
+            'non-empty strings, two fields'  => [
+                $nonEmptyStrings,
+                serialize([$nonEmptyStrings->id1, $nonEmptyStrings->id2])
+            ],
+            'boolean true'                   => [$booleanTrue, serialize(['1'])],
+            'boolean false'                  => [$booleanFalse, serialize([''])],
         ];
     }
 
@@ -624,6 +627,77 @@ class UnitOfWorkTest extends OrmTestCase
 
         self::assertSame($merged, $persistedEntity);
         self::assertSame($persistedEntity->generatedField, $mergedEntity->generatedField);
+    }
+
+    /**
+     * @group 5923
+     */
+    public function testUnitOfWorkDoesNotConcatenateIdentifierWithAmbiguousPatterns()
+    {
+        $entity1 = new EntityWithCompositeStringIdentifier();
+        $entity2 = new EntityWithCompositeStringIdentifier();
+
+        $entity1->id1 = '';
+        $entity1->id2 = ' ';
+
+        $entity2->id1 = ' ';
+        $entity2->id2 = '';
+
+        $this->_unitOfWork->persist($entity1);
+        $this->_unitOfWork->persist($entity2);
+        $this->_unitOfWork->addToIdentityMap($entity1);
+        $this->_unitOfWork->addToIdentityMap($entity2);
+
+        self::assertSame(
+            $entity1,
+            $this->_unitOfWork->tryGetById(['id1' => '', 'id2' => ' '],  EntityWithCompositeStringIdentifier::class)
+        );
+        self::assertSame(
+            $entity2,
+            $this->_unitOfWork->tryGetById(['id1' => ' ', 'id2' => ''],  EntityWithCompositeStringIdentifier::class)
+        );
+    }
+
+    /**
+     * @group 5923
+     */
+    public function testUnitOfWorkStoresAlsoNonUtf8Identifiers()
+    {
+        $entity1 = new EntityWithStringIdentifier();
+        $entity2 = new EntityWithStringIdentifier();
+
+        $entity1->id = chr(65533);
+        $entity2->id = chr(65534);
+
+        $this->_unitOfWork->persist($entity1);
+        $this->_unitOfWork->persist($entity2);
+
+        self::assertSame(
+            $entity1,
+            $this->_unitOfWork->tryGetById(['id' => $entity1->id], EntityWithStringIdentifier::class)
+        );
+        self::assertSame(
+            $entity2,
+            $this->_unitOfWork->tryGetById(['id' => $entity2->id], EntityWithStringIdentifier::class)
+        );
+    }
+
+    /**
+     * @group 5923
+     *
+     * Note: this test is introduced for BC compliance only. If we expect consumers to always
+     *       pass in the keys of an identifier, then we should change this test so it fails,
+     *       but we'd have to document the BC break.
+     */
+    public function testUnitOfWorkCanFetchByIdentifierWithFlatListOfIdentifierValues()
+    {
+        $entity = new EntityWithStringIdentifier();
+
+        $entity->id = uniqid('id', true);
+
+        $this->_unitOfWork->persist($entity);
+
+        self::assertSame($entity, $this->_unitOfWork->tryGetById([$entity->id], EntityWithStringIdentifier::class));
     }
 }
 
