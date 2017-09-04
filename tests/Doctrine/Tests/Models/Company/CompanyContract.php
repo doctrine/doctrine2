@@ -140,6 +140,7 @@ abstract class CompanyContract
             'type' => 'string',
             ]
         );
+        $metadata->setDiscriminatorValue('test-discr-value', $metadata->getName());
 
         $metadata->mapField(
             [

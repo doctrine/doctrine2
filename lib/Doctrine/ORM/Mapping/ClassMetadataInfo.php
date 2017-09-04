@@ -2773,6 +2773,25 @@ class ClassMetadataInfo implements ClassMetadata
         }
     }
 
+    public function setDiscriminatorValue($value, $className)
+    {
+        $discrVal = '';
+        if (isset($value->value)) {
+            $discrVal = $value->value;
+        }
+        if (!is_string($discrVal)) {
+            throw MappingException::invalidDiscriminatorValue($this->name);
+        }
+        $this->discriminatorValue = $discrVal;
+
+        $discrMapKey = array_search($className, $this->discriminatorMap);
+        if ($discrMapKey === false) {
+            throw MappingException::invalidClassInMap($className);
+        }
+        $this->discriminatorMap[$discrVal] = $className;
+        unset($this->discriminatorMap[$discrMapKey]);
+    }
+
     /**
      * Sets the discriminator values used by this class.
      * Used for JOINED and SINGLE_TABLE inheritance mapping strategies.

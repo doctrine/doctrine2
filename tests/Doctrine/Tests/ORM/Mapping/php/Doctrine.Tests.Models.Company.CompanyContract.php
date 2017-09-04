@@ -10,6 +10,7 @@ $metadata->setDiscriminatorColumn(
     'type' => 'string',
     ]
 );
+$metadata->setDiscriminatorValue('custom-discr-colum-value', $metadata->name);
 
 $metadata->mapField(
     [

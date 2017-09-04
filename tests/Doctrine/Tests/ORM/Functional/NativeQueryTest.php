@@ -811,6 +811,7 @@ class NativeQueryTest extends OrmFunctionalTestCase
         $rsm->addJoinedEntityResult(DDC3899FixContract::class, 'c', 'u', 'contracts');
         $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('id'), 'id');
         $rsm->setDiscriminatorColumn('c', $this->platform->getSQLResultCasing('discr'));
+        $rsm->setDiscriminatorValue('test-discr-value', DDC3899User::class);
 
         $selectClause = $rsm->generateSelectClause(['u' => 'u1', 'c' => 'c1']);
 

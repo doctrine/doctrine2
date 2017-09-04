@@ -138,6 +138,7 @@ class YamlDriver extends FileDriver
                             'fields'                => [],
                             'entityClass'           => isset($entityResultElement['entityClass']) ? $entityResultElement['entityClass'] : null,
                             'discriminatorColumn'   => isset($entityResultElement['discriminatorColumn']) ? $entityResultElement['discriminatorColumn'] : null,
+                            'discriminatorValue'    => isset($entityResultElement['discriminatorValue']) ? $entityResultElement['discriminatorValue'] : null,
                         ];
 
                         if (isset($entityResultElement['fieldResult'])) {
@@ -198,6 +199,10 @@ class YamlDriver extends FileDriver
             }
         }
 
+        // Sets custom Discriminator value from within a child class
+        if (isset($element['discriminatorValue'])) {
+            $metadata->setDiscriminatorValue($element['discriminatorValue'], $className);
+        }
 
         // Evaluate changeTrackingPolicy
         if (isset($element['changeTrackingPolicy'])) {

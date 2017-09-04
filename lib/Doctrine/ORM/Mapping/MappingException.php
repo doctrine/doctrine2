@@ -482,6 +482,13 @@ class MappingException extends \Doctrine\ORM\ORMException
         );
     }
 
+    public static function invalidClassInMap($className)
+    {
+        return new self(
+            "'$className' is not present in the discriminator map"
+        );
+    }
+
     /**
      * @param string $className
      * @param array  $entries
@@ -529,6 +536,11 @@ class MappingException extends \Doctrine\ORM\ORMException
     public static function invalidDiscriminatorColumnType($className, $type)
     {
         return new self("Discriminator column type on entity class '$className' is not allowed to be '$type'. 'string' or 'integer' type variables are suggested!");
+    }
+
+    public static function invalidDiscriminatorValue($className)
+    {
+        return new self("Discriminator value on entity class '$className' should be a valud 'string'");
     }
 
     /**

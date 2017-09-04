@@ -66,6 +66,10 @@ class PhpExporter extends AbstractExporter
             $lines[] = '$metadata->setDiscriminatorColumn(' . $this->_varExport($metadata->discriminatorColumn) . ');';
         }
 
+        if ($metadata->discriminatorValue) {
+            $lines[] = '$metadata->setDiscriminatorValue(' . $metadata->discriminatorValue . ', ' . $metadata->getName() . ');';
+        }
+
         if ($metadata->discriminatorMap) {
             $lines[] = '$metadata->setDiscriminatorMap(' . $this->_varExport($metadata->discriminatorMap) . ');';
         }

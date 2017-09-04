@@ -27,6 +27,7 @@ concrete subclasses, ``ConcreteComponent`` and ``ConcreteDecorator``.
      * @Entity
      * @InheritanceType("SINGLE_TABLE")
      * @DiscriminatorColumn(name="discr", type="string")
+     * @DiscriminatorValue(value="discr-column-value")
      * @DiscriminatorMap({"cc" = "Test\Component\ConcreteComponent", 
         "cd" = "Test\Decorator\ConcreteDecorator"})
      */

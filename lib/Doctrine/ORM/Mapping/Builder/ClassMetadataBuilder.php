@@ -246,6 +246,11 @@ class ClassMetadataBuilder
         return $this;
     }
 
+    public function setDiscriminatorValue($value, $className)
+    {
+        $this->cm->setDiscriminatorValue($value, $className);
+    }
+
     /**
      * Adds a subclass to this inheritance hierarchy.
      *

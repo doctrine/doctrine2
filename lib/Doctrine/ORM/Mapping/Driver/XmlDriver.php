@@ -132,6 +132,7 @@ class XmlDriver extends FileDriver
                             'fields'                => [],
                             'entityClass'           => (string) $entityElement['entity-class'],
                             'discriminatorColumn'   => isset($entityElement['discriminator-column']) ? (string) $entityElement['discriminator-column'] : null,
+                            'discriminatorValue'    => isset($entityElement['discriminator-value']) ? (string) $entityElement['discriminator-value'] : null,
                         ];
 
                         foreach ($entityElement as $fieldElement) {
@@ -191,6 +192,11 @@ class XmlDriver extends FileDriver
                     $metadata->setDiscriminatorMap($map);
                 }
             }
+        }
+
+        // Sets custom Discriminator value from within a child class
+        if (isset($xmlRoot->{'discriminator-value'})) {
+            $metadata->setDiscriminatorValue($xmlRoot->{'discriminator-value'}, $className);
         }
 
 

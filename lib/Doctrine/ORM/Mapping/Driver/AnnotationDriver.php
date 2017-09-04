@@ -183,6 +183,7 @@ class AnnotationDriver extends AbstractAnnotationDriver
                         'fields'                => [],
                         'entityClass'           => $entityResultAnnot->entityClass,
                         'discriminatorColumn'   => $entityResultAnnot->discriminatorColumn,
+                        'discriminatorValue'    => $entityResultAnnot->discriminatorValue,
                     ];
 
                     foreach ($entityResultAnnot->fields as $fieldResultAnnot) {
@@ -263,6 +264,11 @@ class AnnotationDriver extends AbstractAnnotationDriver
                     $metadata->setDiscriminatorMap($discrMapAnnot->value);
                 }
             }
+        }
+
+        // Sets custom Discriminator value from within a child class
+        if (isset($classAnnotations[Mapping\DiscriminatorValue::class])) {
+            $metadata->setDiscriminatorValue($classAnnotations[Mapping\DiscriminatorValue::class], $className);
         }
 
 
