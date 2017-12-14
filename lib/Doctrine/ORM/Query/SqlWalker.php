@@ -1298,17 +1298,22 @@ class SqlWalker implements TreeWalker
                     : $class->getTableName();
 
                 $sqlTableAlias = $this->getSQLTableAlias($tableName, $dqlAlias);
+                $fieldType     = $class->getTypeOfField($fieldName);
                 $fieldMapping  = $class->fieldMappings[$fieldName];
                 $columnName    = $this->quoteStrategy->getColumnName($fieldName, $class, $this->platform);
                 $columnAlias   = $this->getSQLColumnAlias($fieldMapping['columnName']);
                 $col           = $sqlTableAlias . '.' . $columnName;
 
                 if (isset($fieldMapping['requireSQLConversion'])) {
-                    $type = Type::getType($fieldMapping['type']);
+                    $type = Type::getType($fieldType);
                     $col  = $type->convertToPHPValueSQL($col, $this->conn->getDatabasePlatform());
                 }
 
-                $sql .= $col . ' AS ' . $columnAlias;
+                $sql .= $this->conn->getDatabasePlatform()->selectAliasColumn(
+                    $col,
+                    $columnAlias,
+                    $fieldMapping
+                );
 
                 $this->scalarResultAliasMap[$resultAlias] = $columnAlias;
 
@@ -1406,7 +1411,11 @@ class SqlWalker implements TreeWalker
                         $col = $type->convertToPHPValueSQL($col, $this->platform);
                     }
 
-                    $sqlParts[] = $col . ' AS '. $columnAlias;
+                    $sqlParts[] = $this->conn->getDatabasePlatform()->selectAliasColumn(
+                        $col,
+                        $columnAlias,
+                        $mapping
+                    );
 
                     $this->scalarResultAliasMap[$resultAlias][] = $columnAlias;
 
@@ -1437,7 +1446,11 @@ class SqlWalker implements TreeWalker
                                 $col = $type->convertToPHPValueSQL($col, $this->platform);
                             }
 
-                            $sqlParts[] = $col . ' AS ' . $columnAlias;
+                            $sqlParts[] = $this->conn->getDatabasePlatform()->selectAliasColumn(
+                                $col,
+                                $columnAlias,
+                                $mapping
+                            );
 
                             $this->scalarResultAliasMap[$resultAlias][] = $columnAlias;
 
