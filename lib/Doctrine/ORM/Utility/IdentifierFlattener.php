@@ -85,6 +85,8 @@ final class IdentifierFlattener
                 }
 
                 $flatId[$field] = implode(' ', $associatedId);
+            } elseif (array_key_exists($field, $id)) {
+                $flatId[$field] = $id[$field];
             } elseif (isset($class->associationMappings[$field])) {
                 $associatedId = array();
 
@@ -93,8 +95,6 @@ final class IdentifierFlattener
                 }
 
                 $flatId[$field] = implode(' ', $associatedId);
-            } else {
-                $flatId[$field] = $id[$field];
             }
         }
 
