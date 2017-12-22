@@ -1927,9 +1927,7 @@ class BasicEntityPersister implements EntityPersister
 
         if (is_array($value)) {
             return array_map(function ($type) {
-                $type = Type::getType($type);
-
-                return $type->getBindingType() + Connection::ARRAY_PARAM_OFFSET;
+                return '[' . $type . ']';
             }, $types);
         }
 
