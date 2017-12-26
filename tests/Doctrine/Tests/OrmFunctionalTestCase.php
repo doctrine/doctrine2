@@ -313,6 +313,9 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             Models\Issue5989\Issue5989Employee::class,
             Models\Issue5989\Issue5989Manager::class,
         ],
+        'ddc6573' => [
+            Models\DDC6573\DDC6573Item::class,
+        ],
     ];
 
     /**
@@ -600,6 +603,10 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             $conn->executeUpdate('DELETE FROM issue5989_persons');
             $conn->executeUpdate('DELETE FROM issue5989_employees');
             $conn->executeUpdate('DELETE FROM issue5989_managers');
+        }
+
+        if (isset($this->_usedModelSets['ddc6573'])) {
+            $conn->executeUpdate('DELETE FROM ddc6573_items');
         }
 
         $this->_em->clear();
