@@ -410,7 +410,16 @@ class SqlWalker implements TreeWalker
             $persister = $this->em->getUnitOfWork()->getEntityPersister($qComp['metadata']->name);
 
             foreach ($qComp['relation']['orderBy'] as $fieldName => $orientation) {
-                $columnName = $this->quoteStrategy->getColumnName($fieldName, $qComp['metadata'], $this->platform);
+                if ($qComp['metadata']->hasField($fieldName)) {
+                    $columnName = $this->quoteStrategy->getColumnName($fieldName, $qComp['metadata'], $this->platform);
+                } else {
+                    $columnName = $this->quoteStrategy->getJoinColumnName(
+                        $qComp['metadata']->associationMappings[$fieldName]['joinColumns'][0],
+                        $qComp['metadata'],
+                        $this->platform
+                    );
+                }
+
                 $tableName  = ($qComp['metadata']->isInheritanceTypeJoined())
                     ? $persister->getOwningTable($fieldName)
                     : $qComp['metadata']->getTableName();
