@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataBuildingContext;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\ORM\Proxy\Factory\StaticProxyFactory;
 use Doctrine\ORM\Reflection\RuntimeReflectionService;
@@ -15,6 +16,7 @@ use Doctrine\Tests\Mocks\ConnectionMock;
 use Doctrine\Tests\Mocks\DriverMock;
 use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\Mocks\UnitOfWorkMock;
+use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\Company\CompanyEmployee;
 use Doctrine\Tests\Models\ECommerce\ECommerceFeature;
 use Doctrine\Tests\Models\FriendObject\ComparableObject;
@@ -351,7 +353,43 @@ class ProxyFactoryTest extends OrmTestCase
             '`func_get_args()` calls are now supported in proxy implementations'
         );
 
-        self::assertFalse($funcGetArgs->isProxyInitialized(), 'No state was accessed anyway');
+        self::assertFalse($funcGetArgs->isProxyInitialized(), 'No lazy state was accessed anyway');
+    }
+
+    /**
+     * @group #6722
+     */
+    public function testAccessingProxyToManyFieldsCausesNoAdditionalQueries() : void
+    {
+        /* @var $persister BasicEntityPersister|\PHPUnit_Framework_MockObject_MockObject */
+        $persister = $this->createMock(BasicEntityPersister::class);
+        $persister->expects(self::never())->method('loadById');
+
+        $this->uowMock->setEntityPersister(CmsUser::class, $persister);
+
+        /* @var $user CmsUser|GhostObjectInterface */
+        $user = $this->proxyFactory->getProxy($this->emMock->getClassMetadata(CmsUser::class), ['id' => 123]);
+
+        self::assertInstanceOf(GhostObjectInterface::class, $user);
+        self::assertFalse($user->isProxyInitialized());
+
+        /* @var $phoneNumbers PersistentCollection */
+        $phoneNumbers = $user->phonenumbers;
+
+        self::assertInstanceOf(PersistentCollection::class, $phoneNumbers);
+        self::assertFalse($phoneNumbers->isDirty());
+        self::assertFalse($phoneNumbers->isInitialized());
+        self::assertSame($user, $phoneNumbers->getOwner());
+
+        /* @var $groups PersistentCollection */
+        $groups = $user->groups;
+
+        self::assertInstanceOf(PersistentCollection::class, $groups);
+        self::assertFalse($groups->isDirty());
+        self::assertFalse($groups->isInitialized());
+        self::assertSame($user, $groups->getOwner());
+
+        self::assertFalse($user->isProxyInitialized(), 'No lazy state was accessed anyway');
     }
 }
 

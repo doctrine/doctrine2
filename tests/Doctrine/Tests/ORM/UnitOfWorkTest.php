@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadataBuildingContext;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\GeneratorType;
 use Doctrine\ORM\ORMInvalidArgumentException;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Reflection\RuntimeReflectionService;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Tests\Mocks\ConnectionMock;
@@ -26,7 +27,10 @@ use Doctrine\Tests\Models\Forum\ForumAvatar;
 use Doctrine\Tests\Models\Forum\ForumUser;
 use Doctrine\Tests\Models\GeoNames\City;
 use Doctrine\Tests\Models\GeoNames\Country;
+use Doctrine\Tests\Models\UniDirectionalManyToMany\Inverse;
+use Doctrine\Tests\Models\UniDirectionalManyToMany\Owning;
 use Doctrine\Tests\OrmTestCase;
+use ProxyManager\Proxy\GhostObjectInterface;
 use stdClass;
 
 /**
@@ -77,7 +81,7 @@ class UnitOfWorkTest extends OrmTestCase
         $this->eventManager   = $this->getMockBuilder(EventManager::class)->getMock();
         $this->connectionMock = new ConnectionMock([], new DriverMock(), null, $this->eventManager);
         $this->emMock         = EntityManagerMock::create($this->connectionMock, null, $this->eventManager);
-        $this->unitOfWork     = new UnitOfWorkMock($this->emMock);
+        $this->unitOfWork     = $this->emMock->getUnitOfWork();
 
         $this->emMock->setUnitOfWork($this->unitOfWork);
     }
@@ -669,6 +673,43 @@ class UnitOfWorkTest extends OrmTestCase
         $classMetadata->wakeupReflection(new RuntimeReflectionService());
 
         self::assertInstanceOf(MyArrayObjectEntity::class, $this->unitOfWork->newInstance($classMetadata));
+    }
+
+    /**
+     * @group #6722
+     * @group #6724
+     */
+    public function testCollectionChangesOnNonInitializedProxiesAreDetected()
+    {
+        $proxyFactory    = $this->emMock->getProxyFactory();
+        $owningMetadata  = $this->emMock->getClassMetadata(Owning::class);
+        $inverseMetadata = $this->emMock->getClassMetadata(Inverse::class);
+        $owning          = $this->emMock->getReference(Owning::class, ['id' => 'abc']);
+        $inverse         = $this->emMock->getReference(Inverse::class, ['id' => 'def']);
+
+        /** @var $owning Owning|GhostObjectInterface */
+        self::assertInstanceOf(GhostObjectInterface::class, $owning);
+        self::assertInstanceOf(GhostObjectInterface::class, $inverse);
+        self::assertFalse($owning->isProxyInitialized());
+        self::assertFalse($inverse->isProxyInitialized());
+
+        /** @var $collection PersistentCollection */
+        $collection = $owning->inverse;
+
+        self::assertInstanceOf(PersistentCollection::class, $collection);
+        self::assertFalse($collection->isInitialized());
+
+        $collection->add($inverse);
+
+        $this->unitOfWork->computeChangeSets();
+
+        $collectionInserts = $this->unitOfWork->getScheduledCollectionUpdates();
+
+        self::assertFalse($owning->isProxyInitialized());
+        self::assertFalse($inverse->isProxyInitialized());
+
+        self::assertCount(1, $collectionInserts);
+        self::assertSame($owning->inverse, \reset($collectionInserts));
     }
 }
 

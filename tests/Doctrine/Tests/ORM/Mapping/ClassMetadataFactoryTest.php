@@ -11,6 +11,7 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
 use Doctrine\ORM\Events;
+use Doctrine\ORM\Proxy\Factory\ProxyFactory;
 use Doctrine\ORM\Sequencing\Generator;
 use Doctrine\ORM\Mapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -239,7 +240,7 @@ class ClassMetadataFactoryTest extends OrmTestCase
         $driverMock = new DriverMock();
         $config = new Configuration();
 
-        $config->setProxyDir(__DIR__ . '/../../Proxies');
+        $config->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_EVAL);
         $config->setProxyNamespace('Doctrine\Tests\Proxies');
 
         if (!$conn) {

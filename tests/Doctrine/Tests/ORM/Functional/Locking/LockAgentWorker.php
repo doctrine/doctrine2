@@ -8,6 +8,7 @@ use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\DBAL\Logging\EchoSQLLogger;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Proxy\Factory\ProxyFactory;
 
 class LockAgentWorker
 {
@@ -99,7 +100,7 @@ class LockAgentWorker
     protected function createEntityManager($conn)
     {
         $config = new Configuration();
-        $config->setProxyDir(__DIR__ . '/../../../Proxies');
+        $config->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_EVAL);
         $config->setProxyNamespace('MyProject\Proxies');
         $config->setAutoGenerateProxyClasses(true);
 

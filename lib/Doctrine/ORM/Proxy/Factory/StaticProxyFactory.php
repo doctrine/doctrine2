@@ -8,6 +8,8 @@ namespace Doctrine\ORM\Proxy\Factory;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\Property;
+use Doctrine\ORM\Mapping\ToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\TransientMetadata;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use ProxyManager\Factory\LazyLoadingGhostFactory;
@@ -54,6 +56,11 @@ final class StaticProxyFactory implements ProxyFactory
      */
     private $cachedSkippedProperties = [];
 
+    /**
+     * @var ToManyAssociationMetadata[][] indexed by metadata class name
+     */
+    private $cachedToManyFields = [];
+
     public function __construct(
         EntityManagerInterface $entityManager,
         LazyLoadingGhostFactory $proxyFactory
@@ -92,6 +99,8 @@ final class StaticProxyFactory implements ProxyFactory
      * {@inheritdoc}
      *
      * @throws \Doctrine\ORM\EntityNotFoundException
+     *
+     * Note: do not normalize this method any further, as it is performance-sensitive
      */
     public function getProxy(ClassMetadata $metadata, array $identifier) : GhostObjectInterface
     {
@@ -101,6 +110,8 @@ final class StaticProxyFactory implements ProxyFactory
                 ->entityManager
                 ->getUnitOfWork()
                 ->getEntityPersister($metadata->getClassName());
+        $toManyFields = $this->cachedToManyFields[$className]
+            ?? $this->cachedToManyFields[$className] = $this->toManyFields($metadata);
 
         $proxyInstance = $this
             ->proxyFactory
@@ -115,6 +126,15 @@ final class StaticProxyFactory implements ProxyFactory
             );
 
         $persister->setIdentifier($proxyInstance, $identifier);
+
+        foreach ($toManyFields as $toMany) {
+            $collection = $toMany->wrap($proxyInstance, null, $this->entityManager);
+
+            $collection->setInitialized(false); // @TODO not the right approach, IMO
+            $collection->setDirty(false); // @TODO not the right approach, IMO
+
+            $toMany->setValue($proxyInstance, $collection);
+        }
 
         return $proxyInstance;
     }
@@ -151,6 +171,7 @@ final class StaticProxyFactory implements ProxyFactory
     {
         return \array_merge(
             $this->identifierFieldFqns($metadata),
+            $this->collectionFieldsFqns($metadata),
             $this->transientFieldsFqns($metadata)
         );
     }
@@ -173,6 +194,44 @@ final class StaticProxyFactory implements ProxyFactory
         }
 
         return $transientFieldsFqns;
+    }
+
+    private function collectionFieldsFqns(ClassMetadata $metadata) : array
+    {
+        $transientFieldsFqns = [];
+
+        foreach ($metadata->getDeclaredPropertiesIterator() as $name => $property) {
+            if (! $property instanceof ToManyAssociationMetadata) {
+                continue;
+            }
+
+            $transientFieldsFqns[] = $this->propertyFqcn(
+                $property
+                    ->getDeclaringClass()
+                    ->getReflectionClass()
+                    ->getProperty($name) // @TODO possible NPR. This should never be null, why is it allowed to be?
+            );
+        }
+
+        return $transientFieldsFqns;
+    }
+
+    /**
+     * @return ToManyAssociationMetadata[]
+     */
+    private function toManyFields(ClassMetadata $metadata) : array
+    {
+        $toMany = [];
+
+        foreach ($metadata->getDeclaredPropertiesIterator() as $property) {
+            if (! $property instanceof ToManyAssociationMetadata) {
+                continue;
+            }
+
+            $toMany[] = $property;
+        }
+
+        return $toMany;
     }
 
     private function identifierFieldFqns(ClassMetadata $metadata) : array

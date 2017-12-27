@@ -524,7 +524,7 @@ class SecondLevelCacheQueryCacheTest extends SecondLevelCacheAbstractTest
         self::assertNotNull($result2[1]->getCities()->get(0)->getName());
         self::assertNotNull($result2[1]->getCities()->get(1)->getName());
 
-        self::assertEquals($queryCount + 1, $this->getCurrentQueryCount());
+        self::assertEquals($queryCount + 1, $this->getCurrentQueryCount(), 'No other queries performed');
     }
 
     public function testBasicQueryFetchJoinsManyToOne()

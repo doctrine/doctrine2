@@ -528,6 +528,8 @@ class UnitOfWork implements PropertyChangedListener
             $class = $this->em->getClassMetadata(get_class($entity));
         }
 
+        $isUnInitializedProxy = $entity instanceof GhostObjectInterface && ! $entity->isProxyInitialized();
+
         $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preFlush) & ~ListenersInvoker::INVOKE_MANAGER;
 
         if ($invoke !== ListenersInvoker::INVOKE_NONE) {
@@ -537,21 +539,33 @@ class UnitOfWork implements PropertyChangedListener
         $actualData = [];
 
         foreach ($class->getDeclaredPropertiesIterator() as $name => $property) {
-            $value = $property->getValue($entity);
+            if ($property instanceof ToManyAssociationMetadata) {
+                $collectionFieldValue = $property->getValue($entity);
 
-            if ($property instanceof ToManyAssociationMetadata && $value !== null) {
-                if ($value instanceof PersistentCollection && $value->getOwner() === $entity) {
+                if (null !== $collectionFieldValue) {
+                    if ($collectionFieldValue instanceof PersistentCollection
+                        && $collectionFieldValue->getOwner() === $entity
+                    ) {
+                        continue;
+                    }
+
+                    $wrappedValue = $property->wrap($entity, $collectionFieldValue, $this->em);
+
+                    $property->setValue($entity, $wrappedValue);
+
+                    $actualData[$name] = $wrappedValue;
+
                     continue;
                 }
+            }
 
-                $value = $property->wrap($entity, $value, $this->em);
-
-                $property->setValue($entity, $value);
-
-                $actualData[$name] = $value;
-
+            if ($isUnInitializedProxy) {
+                // we only track to-many associations when a proxy is un-initialized: all other properties are lazy.
                 continue;
             }
+
+            // Only attempt reading field values for initialized objects
+            $value = $property->getValue($entity);
 
             if (
                 ( ! $class->isIdentifier($name)
@@ -673,11 +687,31 @@ class UnitOfWork implements PropertyChangedListener
 
         // Look for changes in associations of the entity
         foreach ($class->getDeclaredPropertiesIterator() as $property) {
-            if (! ($property instanceof AssociationMetadata) || ($value = $property->getValue($entity)) === null) {
-                continue;
-            }
+            if ($property instanceof ToManyAssociationMetadata) {
+                $value = $property->getValue($entity);
 
-            $this->computeAssociationChanges($property, $value);
+                if (null === $value) {
+                    continue;
+                }
+
+                $this->computeToManyAssociationChanges($property, $value);
+            } else {
+                if ($isUnInitializedProxy) {
+                    continue;
+                }
+
+                if (! $property instanceof AssociationMetadata) {
+                    continue;
+                }
+
+                $value = $property->getValue($entity);
+
+                if (null === $value) {
+                    continue;
+                }
+
+                $this->computeAssociationChanges($property, $value);
+            }
 
             if ($property instanceof ManyToManyAssociationMetadata &&
                 $value instanceof PersistentCollection &&
@@ -730,17 +764,79 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             foreach ($entitiesToProcess as $entity) {
-                // Ignore uninitialized proxy objects
-                if ($entity instanceof GhostObjectInterface && ! $entity->isProxyInitialized()) {
-                    continue;
-                }
-
                 // Only MANAGED entities that are NOT SCHEDULED FOR INSERTION OR DELETION are processed here.
                 $oid = spl_object_id($entity);
 
                 if ( ! isset($this->entityInsertions[$oid]) && ! isset($this->entityDeletions[$oid]) && isset($this->entityStates[$oid])) {
                     $this->computeChangeSet($class, $entity);
                 }
+            }
+        }
+    }
+
+    private function computeToManyAssociationChanges(ToManyAssociationMetadata $association, $value)
+    {
+        if ($value instanceof PersistentCollection && $value->isDirty()) {
+            $coid = spl_object_hash($value);
+
+            $this->collectionUpdates[$coid] = $value;
+            $this->visitedCollections[$coid] = $value;
+        }
+
+        // Look through the entities, and in any of their associations,
+        // for transient (new) entities, recursively. ("Persistence by reachability")
+        // Unwrap. Uninitialized collections will simply be empty.
+        $unwrappedValue = $value->unwrap();
+        $targetEntity   = $association->getTargetEntity();
+        $targetClass    = $this->em->getClassMetadata($targetEntity);
+
+        // @TODO massive amount of duplication here - to be fixed.
+        foreach ($unwrappedValue as $key => $entry) {
+            if (! ($entry instanceof $targetEntity)) {
+                throw ORMInvalidArgumentException::invalidAssociation($targetClass, $association, $entry);
+            }
+
+            $state = $this->getEntityState($entry, self::STATE_NEW);
+
+            if (! ($entry instanceof $targetEntity)) {
+                throw ORMException::unexpectedAssociationValue(
+                    $association->getSourceEntity(),
+                    $association->getName(),
+                    get_class($entry),
+                    $targetEntity
+                );
+            }
+
+            switch ($state) {
+                case self::STATE_NEW:
+                    if ( ! in_array('persist', $association->getCascade())) {
+                        $this->nonCascadedNewDetectedEntities[\spl_object_hash($entry)] = [$association, $entry];
+
+                        break;
+                    }
+
+                    $this->persistNew($targetClass, $entry);
+                    $this->computeChangeSet($targetClass, $entry);
+
+                    break;
+
+                case self::STATE_REMOVED:
+                    // Consume the $value as array (it's either an array or an ArrayAccess)
+                    // and remove the element from Collection.
+                    if ($association instanceof ToManyAssociationMetadata) {
+                        unset($value[$key]);
+                    }
+                    break;
+
+                case self::STATE_DETACHED:
+                    // Can actually not happen right now as we assume STATE_NEW,
+                    // so the exception will be raised from the DBAL layer (constraint violation).
+                    throw ORMInvalidArgumentException::detachedEntityFoundThroughRelationship($association, $entry);
+                    break;
+
+                default:
+                    // MANAGED associated entities are already taken into account
+                    // during changeset calculation anyway, since they are in the identity map.
             }
         }
     }
@@ -2208,9 +2304,14 @@ class UnitOfWork implements PropertyChangedListener
             $targetClass  = $this->em->getClassMetadata($targetEntity);
 
             if ($association instanceof ToManyAssociationMetadata) {
+                $associationValue = $association->getValue($entity);
+
                 // Ignore if its a cached collection
                 if (isset($hints[Query::HINT_CACHE_ENABLED]) &&
-                    $association->getValue($entity) instanceof PersistentCollection) {
+                    $associationValue instanceof PersistentCollection
+                    && $associationValue->isInitialized()
+                    && ! $associationValue->isDirty()
+                ) {
                     continue;
                 }
 
