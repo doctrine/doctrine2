@@ -150,6 +150,13 @@ class ResultSetMapping
     public $newObjectMappings = [];
 
     /**
+     * Maps last argument for new objects in order to initiate object construction
+     *
+     * @var array
+     */
+    public $nestedNewObjectArguments = [];
+
+    /**
      * Maps metadata parameter names to the metadata attribute.
      *
      * @var mixed[]
@@ -556,5 +563,24 @@ class ResultSetMapping
         }
 
         return $this;
+    }
+
+    public function addNewObjectAsArgument($alias, $objOwner, $objOwnerIdx)
+    {
+        $owner = [
+            'ownerIndex' => $objOwner,
+            'argIndex' => $objOwnerIdx,
+        ];
+
+        if (!isset($this->nestedNewObjectArguments[$owner['ownerIndex']])) {
+            $this->nestedNewObjectArguments[$alias] = $owner;
+
+            return;
+        }
+
+        $this->nestedNewObjectArguments = array_merge(
+            [$alias => $owner],
+            $this->nestedNewObjectArguments
+        );
     }
 }

@@ -299,6 +299,30 @@ abstract class AbstractHydrator
             }
         }
 
+        foreach ($this->rsm->nestedNewObjectArguments as $objIndex => ['ownerIndex' => $ownerIndex, 'argIndex' => $argIndex]) {
+            $newObject = $rowData['newObjects'][$objIndex];
+            unset($rowData['newObjects'][$objIndex]);
+
+            $class  = $newObject['class'];
+            $args   = $newObject['args'];
+            $obj    = $class->newInstanceArgs($args);
+
+            $rowData['newObjects'][$ownerIndex]['args'][$argIndex] = $obj;
+        }
+
+
+        if (isset($rowData['newObjects'])) {
+            foreach ($rowData['newObjects'] as $objIndex => $newObject) {
+                $class  = $newObject['class'];
+                $args   = $newObject['args'];
+                ksort($args);
+                $obj    = $class->newInstanceArgs($args);
+
+                $rowData['newObjects'][$objIndex]['obj'] = $obj;
+            }
+        }
+
+
         return $rowData;
     }
 

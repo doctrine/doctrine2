@@ -238,9 +238,8 @@ class ArrayHydrator extends AbstractHydrator
             $onlyOneRootAlias = $scalarCount === 0 && count($rowData['newObjects']) === 1;
 
             foreach ($rowData['newObjects'] as $objIndex => $newObject) {
-                $class = $newObject['class'];
-                $args  = $newObject['args'];
-                $obj   = $class->newInstanceArgs($args);
+                $args   = $newObject['args'];
+                $obj    = $newObject['obj'];
 
                 if ($onlyOneRootAlias || count($args) === $scalarCount) {
                     $result[$resultKey] = $obj;
