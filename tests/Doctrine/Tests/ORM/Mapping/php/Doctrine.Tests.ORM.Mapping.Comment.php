@@ -1,8 +1,8 @@
 <?php
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
-$metadata->setInheritanceType(ClassMetadataInfo::INHERITANCE_TYPE_NONE);
+$metadata->setInheritanceType(ClassMetadata::INHERITANCE_TYPE_NONE);
 $metadata->setPrimaryTable(
     [
    'indexes' => [

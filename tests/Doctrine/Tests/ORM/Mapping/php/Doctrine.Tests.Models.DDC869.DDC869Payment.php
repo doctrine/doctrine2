@@ -1,6 +1,6 @@
 <?php
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\Models\DDC869\DDC869PaymentRepository;
 
 $metadata->mapField(
@@ -19,4 +19,4 @@ $metadata->mapField(
 );
 $metadata->isMappedSuperclass = true;
 $metadata->setCustomRepositoryClass(DDC869PaymentRepository::class);
-$metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+$metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);

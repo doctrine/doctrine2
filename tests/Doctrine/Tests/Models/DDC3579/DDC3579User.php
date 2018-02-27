@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Models\DDC3579;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * @MappedSuperclass
@@ -109,6 +110,6 @@ class DDC3579User
             ]
         );
 
-        $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
     }
 }

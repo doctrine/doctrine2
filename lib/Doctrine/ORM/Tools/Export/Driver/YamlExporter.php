@@ -20,7 +20,7 @@
 namespace Doctrine\ORM\Tools\Export\Driver;
 
 use Symfony\Component\Yaml\Yaml;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * ClassMetadata exporter for Doctrine YAML mapping files.
@@ -39,7 +39,7 @@ class YamlExporter extends AbstractExporter
     /**
      * {@inheritdoc}
      */
-    public function exportClassMetadata(ClassMetadataInfo $metadata)
+    public function exportClassMetadata(ClassMetadata $metadata)
     {
         $array = [];
 
@@ -57,7 +57,7 @@ class YamlExporter extends AbstractExporter
 
         $inheritanceType = $metadata->inheritanceType;
 
-        if ($inheritanceType !== ClassMetadataInfo::INHERITANCE_TYPE_NONE) {
+        if ($inheritanceType !== ClassMetadata::INHERITANCE_TYPE_NONE) {
             $array['inheritanceType'] = $this->_getInheritanceTypeString($inheritanceType);
         }
 
@@ -69,7 +69,7 @@ class YamlExporter extends AbstractExporter
             $array['discriminatorMap'] = $map;
         }
 
-        if ($metadata->changeTrackingPolicy !== ClassMetadataInfo::CHANGETRACKING_DEFERRED_IMPLICIT) {
+        if ($metadata->changeTrackingPolicy !== ClassMetadata::CHANGETRACKING_DEFERRED_IMPLICIT) {
             $array['changeTrackingPolicy'] = $this->_getChangeTrackingPolicyString($metadata->changeTrackingPolicy);
         }
 
@@ -162,7 +162,7 @@ class YamlExporter extends AbstractExporter
                 $array['id'][$name]['associationKey'] = true;
             }
 
-            if ($associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+            if ($associationMapping['type'] & ClassMetadata::TO_ONE) {
                 $joinColumns = $associationMapping['isOwningSide'] ? $associationMapping['joinColumns'] : [];
                 $newJoinColumns = [];
 
@@ -183,12 +183,12 @@ class YamlExporter extends AbstractExporter
 
                 $associationMappingArray = array_merge($associationMappingArray, $oneToOneMappingArray);
 
-                if ($associationMapping['type'] & ClassMetadataInfo::ONE_TO_ONE) {
+                if ($associationMapping['type'] & ClassMetadata::ONE_TO_ONE) {
                     $array['oneToOne'][$name] = $associationMappingArray;
                 } else {
                     $array['manyToOne'][$name] = $associationMappingArray;
                 }
-            } elseif ($associationMapping['type'] == ClassMetadataInfo::ONE_TO_MANY) {
+            } elseif ($associationMapping['type'] == ClassMetadata::ONE_TO_MANY) {
                 $oneToManyMappingArray = [
                     'mappedBy'      => $associationMapping['mappedBy'],
                     'inversedBy'    => $associationMapping['inversedBy'],
@@ -198,7 +198,7 @@ class YamlExporter extends AbstractExporter
 
                 $associationMappingArray = array_merge($associationMappingArray, $oneToManyMappingArray);
                 $array['oneToMany'][$name] = $associationMappingArray;
-            } elseif ($associationMapping['type'] == ClassMetadataInfo::MANY_TO_MANY) {
+            } elseif ($associationMapping['type'] == ClassMetadata::MANY_TO_MANY) {
                 $manyToManyMappingArray = [
                     'mappedBy'   => $associationMapping['mappedBy'],
                     'inversedBy' => $associationMapping['inversedBy'],
@@ -235,7 +235,7 @@ class YamlExporter extends AbstractExporter
         return Yaml::dump($array, $inline);
     }
 
-    private function processEntityListeners(ClassMetadataInfo $metadata, array $array) : array
+    private function processEntityListeners(ClassMetadata $metadata, array $array) : array
     {
         if (0 === \count($metadata->entityListeners)) {
             return $array;

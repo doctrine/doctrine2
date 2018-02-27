@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\DDC889;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 class DDC889Class extends DDC889SuperClass
 {
 
@@ -13,7 +15,7 @@ class DDC889Class extends DDC889SuperClass
     protected $id;
 
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->mapField(
             [
@@ -24,7 +26,7 @@ class DDC889Class extends DDC889SuperClass
             ]
         );
 
-        $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
     }
 
 }

@@ -16,7 +16,7 @@ class PHPMappingDriverTest extends AbstractMappingDriverTest
         // Convert Annotation mapping information to PHP
         // Uncomment this code if annotations changed and you want to update the PHP code
         // for the same mapping information
-//        $meta = new \Doctrine\ORM\Mapping\ClassMetadataInfo("Doctrine\Tests\ORM\Mapping\Animal");
+//        $meta = new \Doctrine\ORM\Mapping\ClassMetadata("Doctrine\Tests\ORM\Mapping\Animal");
 //        $driver = $this->createAnnotationDriver();
 //        $driver->loadMetadataForClass("Doctrine\Tests\ORM\Mapping\Animal", $meta);
 //        $exporter = $cme->getExporter('php', $path);

@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 class DDC3103Test extends \Doctrine\Tests\OrmFunctionalTestCase
 {
     /**
-     * @covers \Doctrine\ORM\Mapping\ClassMetadataInfo::__sleep
+     * @covers \Doctrine\ORM\Mapping\ClassMetadata::__sleep
      */
     public function testIssue()
     {

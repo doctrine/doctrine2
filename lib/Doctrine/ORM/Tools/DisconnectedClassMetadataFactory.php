@@ -23,7 +23,7 @@ use Doctrine\Common\Persistence\Mapping\StaticReflectionService;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 
 /**
- * The DisconnectedClassMetadataFactory is used to create ClassMetadataInfo objects
+ * The DisconnectedClassMetadataFactory is used to create ClassMetadata objects
  * that do not require the entity class actually exist. This allows us to
  * load some mapping information and use it to do things like generate code
  * from the mapping information.

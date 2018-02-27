@@ -19,7 +19,7 @@
 
 namespace Doctrine\ORM\Tools\Export\Driver;
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Tools\Export\ExportException;
 
 /**
@@ -74,14 +74,14 @@ abstract class AbstractExporter
      * Converts a single ClassMetadata instance to the exported format
      * and returns it.
      *
-     * @param ClassMetadataInfo $metadata
+     * @param ClassMetadata $metadata
      *
      * @return string
      */
-    abstract public function exportClassMetadata(ClassMetadataInfo $metadata);
+    abstract public function exportClassMetadata(ClassMetadata $metadata);
 
     /**
-     * Sets the array of ClassMetadataInfo instances to export.
+     * Sets the array of ClassMetadata instances to export.
      *
      * @param array $metadata
      *
@@ -151,13 +151,13 @@ abstract class AbstractExporter
     }
 
     /**
-     * Generates the path to write the class for the given ClassMetadataInfo instance.
+     * Generates the path to write the class for the given ClassMetadata instance.
      *
-     * @param ClassMetadataInfo $metadata
+     * @param ClassMetadata $metadata
      *
      * @return string
      */
-    protected function _generateOutputPath(ClassMetadataInfo $metadata)
+    protected function _generateOutputPath(ClassMetadata $metadata)
     {
         return $this->_outputDir . '/' . str_replace('\\', '.', $metadata->name) . $this->_extension;
     }
@@ -187,16 +187,16 @@ abstract class AbstractExporter
     protected function _getInheritanceTypeString($type)
     {
         switch ($type) {
-            case ClassMetadataInfo::INHERITANCE_TYPE_NONE:
+            case ClassMetadata::INHERITANCE_TYPE_NONE:
                 return 'NONE';
 
-            case ClassMetadataInfo::INHERITANCE_TYPE_JOINED:
+            case ClassMetadata::INHERITANCE_TYPE_JOINED:
                 return 'JOINED';
 
-            case ClassMetadataInfo::INHERITANCE_TYPE_SINGLE_TABLE:
+            case ClassMetadata::INHERITANCE_TYPE_SINGLE_TABLE:
                 return 'SINGLE_TABLE';
 
-            case ClassMetadataInfo::INHERITANCE_TYPE_TABLE_PER_CLASS:
+            case ClassMetadata::INHERITANCE_TYPE_TABLE_PER_CLASS:
                 return 'PER_CLASS';
         }
     }
@@ -209,13 +209,13 @@ abstract class AbstractExporter
     protected function _getFetchModeString($mode)
     {
         switch ($mode) {
-            case ClassMetadataInfo::FETCH_EAGER:
+            case ClassMetadata::FETCH_EAGER:
                 return 'EAGER';
 
-            case ClassMetadataInfo::FETCH_EXTRA_LAZY:
+            case ClassMetadata::FETCH_EXTRA_LAZY:
                 return 'EXTRA_LAZY';
 
-            case ClassMetadataInfo::FETCH_LAZY:
+            case ClassMetadata::FETCH_LAZY:
                 return 'LAZY';
         }
     }
@@ -228,13 +228,13 @@ abstract class AbstractExporter
     protected function _getChangeTrackingPolicyString($policy)
     {
         switch ($policy) {
-            case ClassMetadataInfo::CHANGETRACKING_DEFERRED_IMPLICIT:
+            case ClassMetadata::CHANGETRACKING_DEFERRED_IMPLICIT:
                 return 'DEFERRED_IMPLICIT';
 
-            case ClassMetadataInfo::CHANGETRACKING_DEFERRED_EXPLICIT:
+            case ClassMetadata::CHANGETRACKING_DEFERRED_EXPLICIT:
                 return 'DEFERRED_EXPLICIT';
 
-            case ClassMetadataInfo::CHANGETRACKING_NOTIFY:
+            case ClassMetadata::CHANGETRACKING_NOTIFY:
                 return 'NOTIFY';
         }
     }
@@ -247,22 +247,22 @@ abstract class AbstractExporter
     protected function _getIdGeneratorTypeString($type)
     {
         switch ($type) {
-            case ClassMetadataInfo::GENERATOR_TYPE_AUTO:
+            case ClassMetadata::GENERATOR_TYPE_AUTO:
                 return 'AUTO';
 
-            case ClassMetadataInfo::GENERATOR_TYPE_SEQUENCE:
+            case ClassMetadata::GENERATOR_TYPE_SEQUENCE:
                 return 'SEQUENCE';
 
-            case ClassMetadataInfo::GENERATOR_TYPE_TABLE:
+            case ClassMetadata::GENERATOR_TYPE_TABLE:
                 return 'TABLE';
 
-            case ClassMetadataInfo::GENERATOR_TYPE_IDENTITY:
+            case ClassMetadata::GENERATOR_TYPE_IDENTITY:
                 return 'IDENTITY';
 
-            case ClassMetadataInfo::GENERATOR_TYPE_UUID:
+            case ClassMetadata::GENERATOR_TYPE_UUID:
                 return 'UUID';
 
-            case ClassMetadataInfo::GENERATOR_TYPE_CUSTOM:
+            case ClassMetadata::GENERATOR_TYPE_CUSTOM:
                 return 'CUSTOM';
         }
     }

@@ -20,14 +20,14 @@
 namespace Doctrine\ORM\Mapping\Driver;
 
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
-use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\Common\Persistence\Mapping\ClassMetadata as CommonClassMetadata;
 use Doctrine\Common\Util\Inflector;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\SchemaException;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 
 /**
@@ -170,7 +170,7 @@ class DatabaseDriver implements MappingDriver
     /**
      * {@inheritDoc}
      */
-    public function loadMetadataForClass($className, ClassMetadata $metadata)
+    public function loadMetadataForClass($className, CommonClassMetadata $metadata)
     {
         $this->reverseEngineerMappingFromDatabase();
 
@@ -312,9 +312,9 @@ class DatabaseDriver implements MappingDriver
     /**
      * Build indexes from a class metadata.
      *
-     * @param \Doctrine\ORM\Mapping\ClassMetadataInfo $metadata
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata
      */
-    private function buildIndexes(ClassMetadataInfo $metadata)
+    private function buildIndexes(ClassMetadata $metadata)
     {
         $tableName = $metadata->table['name'];
         $indexes   = $this->tables[$tableName]->getIndexes();
@@ -337,9 +337,9 @@ class DatabaseDriver implements MappingDriver
     /**
      * Build field mapping from class metadata.
      *
-     * @param \Doctrine\ORM\Mapping\ClassMetadataInfo $metadata
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata
      */
-    private function buildFieldMappings(ClassMetadataInfo $metadata)
+    private function buildFieldMappings(ClassMetadata $metadata)
     {
         $tableName      = $metadata->table['name'];
         $columns        = $this->tables[$tableName]->getColumns();
@@ -371,7 +371,7 @@ class DatabaseDriver implements MappingDriver
 
         // We need to check for the columns here, because we might have associations as id as well.
         if ($ids && count($primaryKeys) == 1) {
-            $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+            $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
         }
 
         foreach ($fieldMappings as $fieldMapping) {
@@ -439,9 +439,9 @@ class DatabaseDriver implements MappingDriver
     /**
      * Build to one (one to one, many to one) association mapping from class metadata.
      *
-     * @param \Doctrine\ORM\Mapping\ClassMetadataInfo $metadata
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $metadata
      */
-    private function buildToOneAssociationMappings(ClassMetadataInfo $metadata)
+    private function buildToOneAssociationMappings(ClassMetadata $metadata)
     {
         $tableName   = $metadata->table['name'];
         $primaryKeys = $this->getTablePrimaryKeys($this->tables[$tableName]);

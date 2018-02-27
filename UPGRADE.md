@@ -1,5 +1,10 @@
 # Upgrade to 2.7
 
+## Deprecated: `Doctrine\ORM\Mapping\ClassMetadataInfo`
+
+It has been deprecated in favor of `Doctrine\ORM\Mapping\ClassMetadata`.
+A deprecation error is now issued when it is used.
+
 ## Deprecated: `Doctrine\ORM\EntityManagerInterface#copy()`
 
 Method `Doctrine\ORM\EntityManagerInterface#copy()` never got its implementation and is deprecated.

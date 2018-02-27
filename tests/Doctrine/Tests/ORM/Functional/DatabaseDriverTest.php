@@ -4,7 +4,7 @@ namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Schema\Table;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\DBAL\Platforms\PostgreSqlPlatform;
 
 class DatabaseDriverTest extends DatabaseDriverTestCase
@@ -109,7 +109,7 @@ class DatabaseDriverTest extends DatabaseDriverTestCase
         $bazMetadata->associationMappings = \array_change_key_case($bazMetadata->associationMappings, \CASE_LOWER);
 
         $this->assertArrayHasKey('bar', $bazMetadata->associationMappings);
-        $this->assertEquals(ClassMetadataInfo::MANY_TO_ONE, $bazMetadata->associationMappings['bar']['type']);
+        $this->assertEquals(ClassMetadata::MANY_TO_ONE, $bazMetadata->associationMappings['bar']['type']);
     }
 
     public function testDetectManyToManyTables()

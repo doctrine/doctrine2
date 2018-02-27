@@ -2,7 +2,7 @@
 
 namespace Doctrine\Test\ORM\Functional\Ticket;
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
 final class GH6682Test extends OrmFunctionalTestCase
@@ -18,7 +18,7 @@ final class GH6682Test extends OrmFunctionalTestCase
             'initialValue'   => '',
         ];
 
-        $classMetadataInfo = new ClassMetadataInfo('test_entity');
+        $classMetadataInfo = new ClassMetadata('test_entity');
         $classMetadataInfo->setSequenceGeneratorDefinition($parsedDefinition);
 
         self::assertSame(

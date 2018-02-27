@@ -20,7 +20,6 @@
 namespace Doctrine\ORM\Mapping\Builder;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
 
 /**
  * Builder Object for ClassMetadata
@@ -34,14 +33,14 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 class ClassMetadataBuilder
 {
     /**
-     * @var \Doctrine\ORM\Mapping\ClassMetadataInfo
+     * @var \Doctrine\ORM\Mapping\ClassMetadata
      */
     private $cm;
 
     /**
-     * @param \Doctrine\ORM\Mapping\ClassMetadataInfo $cm
+     * @param \Doctrine\ORM\Mapping\ClassMetadata $cm
      */
-    public function __construct(ClassMetadataInfo $cm)
+    public function __construct(ClassMetadata $cm)
     {
         $this->cm = $cm;
     }

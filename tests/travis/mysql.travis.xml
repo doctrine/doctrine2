@@ -39,6 +39,9 @@
             <group>locking_functional</group>
         </exclude>
     </groups>
+    <listeners>
+        <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener" />
+    </listeners>
 
 </phpunit>
 

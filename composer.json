@@ -30,6 +30,7 @@
         "doctrine/coding-standard": "^1.0",
         "phpunit/phpunit": "^6.5",
         "squizlabs/php_codesniffer": "^3.2",
+        "symfony/phpunit-bridge": "^4.0",
         "symfony/yaml": "~3.4|~4.0"
     },
     "suggest": {

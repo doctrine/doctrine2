@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Models\CMS;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * @Entity
@@ -269,7 +270,7 @@ class CmsUser
         }
     }
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->setPrimaryTable(
             [

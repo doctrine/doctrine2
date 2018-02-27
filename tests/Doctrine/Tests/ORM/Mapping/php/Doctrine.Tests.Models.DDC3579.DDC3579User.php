@@ -1,6 +1,6 @@
 <?php
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 $metadata->mapField(
     [
@@ -30,4 +30,4 @@ $metadata->mapManyToMany(
     ]
 );
 
-$metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+$metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);

@@ -747,8 +747,9 @@ class ManyToManyPersister extends AbstractCollectionPersister
     }
 
     /**
-     * @param Criteria $criteria
+     * @param Criteria      $criteria
      * @param ClassMetadata $targetClass
+     *
      * @return string
      */
     private function getOrderingSql(Criteria $criteria, ClassMetadata $targetClass)

@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\Company;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /**
  * Description of CompanyPerson
  *
@@ -117,7 +119,7 @@ class CompanyPerson
         }
     }
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
 
         $metadata->setPrimaryTable(

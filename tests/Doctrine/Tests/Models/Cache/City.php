@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Models\Cache;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * @Cache
@@ -100,7 +101,7 @@ class City
         return $this->attractions;
     }
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         include __DIR__ . '/../../ORM/Mapping/php/Doctrine.Tests.Models.Cache.City.php';
     }

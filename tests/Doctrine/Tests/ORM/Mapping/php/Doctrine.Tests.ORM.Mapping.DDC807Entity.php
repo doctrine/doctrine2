@@ -1,6 +1,6 @@
 <?php
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 $metadata->mapField(
     [
@@ -16,4 +16,4 @@ $metadata->setDiscriminatorColumn(
     ]
 );
 
-$metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_NONE);
+$metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_NONE);

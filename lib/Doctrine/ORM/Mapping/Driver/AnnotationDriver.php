@@ -51,7 +51,7 @@ class AnnotationDriver extends AbstractAnnotationDriver
      */
     public function loadMetadataForClass($className, ClassMetadata $metadata)
     {
-        /* @var $metadata \Doctrine\ORM\Mapping\ClassMetadataInfo */
+        /* @var $metadata \Doctrine\ORM\Mapping\ClassMetadata */
         $class = $metadata->getReflectionClass();
 
         if ( ! $class) {

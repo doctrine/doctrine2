@@ -3,7 +3,7 @@
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Tests\ORM\Functional\DatabaseDriverTestCase;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 class DDC2387Test extends DatabaseDriverTestCase
 {
@@ -24,7 +24,7 @@ class DDC2387Test extends DatabaseDriverTestCase
 
         $metadata = $this->convertToClassMetadata([$product, $attributes], []);
 
-        $this->assertEquals(ClassMetadataInfo::GENERATOR_TYPE_NONE, $metadata['Ddc2387Attributes']->generatorType);
-        $this->assertEquals(ClassMetadataInfo::GENERATOR_TYPE_AUTO, $metadata['Ddc2387Product']->generatorType);
+        $this->assertEquals(ClassMetadata::GENERATOR_TYPE_NONE, $metadata['Ddc2387Attributes']->generatorType);
+        $this->assertEquals(ClassMetadata::GENERATOR_TYPE_AUTO, $metadata['Ddc2387Product']->generatorType);
     }
 }

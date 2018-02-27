@@ -20,7 +20,7 @@
 namespace Doctrine\ORM\Query;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Utility\PersisterHelper;
 
@@ -161,7 +161,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
         }
 
         foreach ($classMetadata->associationMappings as $associationMapping) {
-            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadata::TO_ONE) {
                 $targetClass  = $this->em->getClassMetadata($associationMapping['targetEntity']);
                 $isIdentifier = isset($associationMapping['id']) && $associationMapping['id'] === true;
 
@@ -180,7 +180,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
         }
     }
 
-    private function isInheritanceSupported(ClassMetadataInfo $classMetadata)
+    private function isInheritanceSupported(ClassMetadata $classMetadata)
     {
         if ($classMetadata->isInheritanceTypeSingleTable()
             && in_array($classMetadata->name, $classMetadata->discriminatorMap, true)) {
@@ -239,7 +239,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
         }
 
         foreach ($class->associationMappings as $associationMapping) {
-            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadata::TO_ONE) {
                 foreach ($associationMapping['joinColumns'] as $joinColumn) {
                     $columnName = $joinColumn['name'];
                     $columnAlias[$columnName] = $this->getColumnAlias($columnName, $mode, $customRenameColumns);
@@ -253,12 +253,12 @@ class ResultSetMappingBuilder extends ResultSetMapping
     /**
      * Adds the mappings of the results of native SQL queries to the result set.
      *
-     * @param ClassMetadataInfo $class
-     * @param array             $queryMapping
+     * @param ClassMetadata $class
+     * @param array         $queryMapping
      *
      * @return ResultSetMappingBuilder
      */
-    public function addNamedNativeQueryMapping(ClassMetadataInfo $class, array $queryMapping)
+    public function addNamedNativeQueryMapping(ClassMetadata $class, array $queryMapping)
     {
         if (isset($queryMapping['resultClass'])) {
             return $this->addNamedNativeQueryResultClassMapping($class, $queryMapping['resultClass']);
@@ -270,12 +270,12 @@ class ResultSetMappingBuilder extends ResultSetMapping
     /**
      * Adds the class mapping of the results of native SQL queries to the result set.
      *
-     * @param ClassMetadataInfo $class
-     * @param string            $resultClassName
+     * @param ClassMetadata $class
+     * @param string        $resultClassName
      *
      * @return  ResultSetMappingBuilder
      */
-    public function addNamedNativeQueryResultClassMapping(ClassMetadataInfo $class, $resultClassName)
+    public function addNamedNativeQueryResultClassMapping(ClassMetadata $class, $resultClassName)
     {
         $classMetadata  = $this->em->getClassMetadata($resultClassName);
         $shortName      = $classMetadata->reflClass->getShortName();
@@ -297,7 +297,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
         }
 
         foreach ($classMetadata->associationMappings as $associationMapping) {
-            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadataInfo::TO_ONE) {
+            if ($associationMapping['isOwningSide'] && $associationMapping['type'] & ClassMetadata::TO_ONE) {
                 $targetClass = $this->em->getClassMetadata($associationMapping['targetEntity']);
 
                 foreach ($associationMapping['joinColumns'] as $joinColumn) {
@@ -315,12 +315,12 @@ class ResultSetMappingBuilder extends ResultSetMapping
     /**
      * Adds the result set mapping of the results of native SQL queries to the result set.
      *
-     * @param ClassMetadataInfo $class
-     * @param string            $resultSetMappingName
+     * @param ClassMetadata $class
+     * @param string        $resultSetMappingName
      *
      * @return ResultSetMappingBuilder
      */
-    public function addNamedNativeQueryResultSetMapping(ClassMetadataInfo $class, $resultSetMappingName)
+    public function addNamedNativeQueryResultSetMapping(ClassMetadata $class, $resultSetMappingName)
     {
         $counter        = 0;
         $resultMapping  = $class->getSqlResultSetMapping($resultSetMappingName);
@@ -366,16 +366,16 @@ class ResultSetMappingBuilder extends ResultSetMapping
     /**
      * Adds the entity result mapping of the results of native SQL queries to the result set.
      *
-     * @param ClassMetadataInfo $classMetadata
-     * @param array             $entityMapping
-     * @param string            $alias
+     * @param ClassMetadata $classMetadata
+     * @param array         $entityMapping
+     * @param string        $alias
      *
      * @return ResultSetMappingBuilder
      *
      * @throws MappingException
      * @throws \InvalidArgumentException
      */
-    public function addNamedNativeQueryEntityResultMapping(ClassMetadataInfo $classMetadata, array $entityMapping, $alias)
+    public function addNamedNativeQueryEntityResultMapping(ClassMetadata $classMetadata, array $entityMapping, $alias)
     {
         if (isset($entityMapping['discriminatorColumn']) && $entityMapping['discriminatorColumn']) {
             $discriminatorColumn = $entityMapping['discriminatorColumn'];

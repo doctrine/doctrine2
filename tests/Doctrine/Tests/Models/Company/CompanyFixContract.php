@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\Company;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /**
  * @Entity
  */
@@ -28,7 +30,7 @@ class CompanyFixContract extends CompanyContract
         $this->fixPrice = $fixPrice;
     }
 
-    static public function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    static public function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->mapField(
             [

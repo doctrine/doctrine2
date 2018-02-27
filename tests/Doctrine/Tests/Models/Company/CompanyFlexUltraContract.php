@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\Company;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /**
  * @Entity
  * @EntityListeners({"CompanyContractListener","CompanyFlexUltraContractListener"})
@@ -29,7 +31,7 @@ class CompanyFlexUltraContract extends CompanyFlexContract
         $this->maxPrice = $maxPrice;
     }
 
-    static public function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    static public function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->mapField(
             [

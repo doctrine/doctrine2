@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Models\DDC964;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * @MappedSuperclass
@@ -107,7 +108,7 @@ class DDC964User
         $this->address = $address;
     }
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->mapField(
             [
@@ -162,6 +163,6 @@ class DDC964User
             ]
         );
 
-        $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
     }
 }

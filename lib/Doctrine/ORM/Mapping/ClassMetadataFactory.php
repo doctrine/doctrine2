@@ -31,6 +31,7 @@ use Doctrine\ORM\Id\BigIntegerIdentityGenerator;
 use Doctrine\ORM\Id\IdentityGenerator;
 use Doctrine\ORM\ORMException;
 use ReflectionException;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 /**
  * The ClassMetadataFactory is used to create ClassMetadata objects that contain all the
@@ -606,13 +607,13 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      * Completes the ID generator mapping. If "auto" is specified we choose the generator
      * most appropriate for the targeted database platform.
      *
-     * @param ClassMetadataInfo $class
+     * @param ClassMetadata $class
      *
      * @return void
      *
      * @throws ORMException
      */
-    private function completeIdGeneratorMapping(ClassMetadataInfo $class)
+    private function completeIdGeneratorMapping(ClassMetadata $class)
     {
         $idGenType = $class->generatorType;
         if ($idGenType == ClassMetadata::GENERATOR_TYPE_AUTO) {
@@ -718,10 +719,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * Inherits the ID generator mapping from a parent class.
      *
-     * @param ClassMetadataInfo $class
-     * @param ClassMetadataInfo $parent
+     * @param ClassMetadata $class
+     * @param ClassMetadata $parent
      */
-    private function inheritIdGeneratorMapping(ClassMetadataInfo $class, ClassMetadataInfo $parent)
+    private function inheritIdGeneratorMapping(ClassMetadata $class, ClassMetadata $parent)
     {
         if ($parent->isIdGeneratorSequence()) {
             $class->setSequenceGeneratorDefinition($parent->sequenceGeneratorDefinition);

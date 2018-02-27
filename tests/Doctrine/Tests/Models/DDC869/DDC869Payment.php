@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\DDC869;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /**
  * @MappedSuperclass(repositoryClass = "Doctrine\Tests\Models\DDC869\DDC869PaymentRepository")
  */
@@ -19,7 +21,7 @@ class DDC869Payment
     protected $value;
 
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->mapField(
             [
@@ -37,7 +39,7 @@ class DDC869Payment
         );
         $metadata->isMappedSuperclass = true;
         $metadata->setCustomRepositoryClass(DDC869PaymentRepository::class);
-        $metadata->setIdGeneratorType(\Doctrine\ORM\Mapping\ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
     }
 
 }

@@ -19,7 +19,7 @@
 
 namespace Doctrine\ORM\Tools;
 
-use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Common\Util\Inflector;
 use Doctrine\DBAL\Types\Type;
 use Symfony\Component\Yaml\Yaml;
@@ -65,10 +65,10 @@ class ConvertDoctrine1Schema
     }
 
     /**
-     * Gets an array of ClassMetadataInfo instances from the passed
+     * Gets an array of ClassMetadata instances from the passed
      * Doctrine 1 schema.
      *
-     * @return array An array of ClassMetadataInfo instances
+     * @return array An array of ClassMetadata instances
      */
     public function getMetadata()
     {
@@ -86,7 +86,7 @@ class ConvertDoctrine1Schema
 
         $metadatas = [];
         foreach ($schema as $className => $mappingInformation) {
-            $metadatas[] = $this->convertToClassMetadataInfo($className, $mappingInformation);
+            $metadatas[] = $this->convertToClassMetadata($className, $mappingInformation);
         }
 
         return $metadatas;
@@ -96,11 +96,11 @@ class ConvertDoctrine1Schema
      * @param string $className
      * @param array  $mappingInformation
      *
-     * @return \Doctrine\ORM\Mapping\ClassMetadataInfo
+     * @return \Doctrine\ORM\Mapping\ClassMetadata
      */
-    private function convertToClassMetadataInfo($className, $mappingInformation)
+    private function convertToClassMetadata($className, $mappingInformation)
     {
-        $metadata = new ClassMetadataInfo($className);
+        $metadata = new ClassMetadata($className);
 
         $this->convertTableName($className, $mappingInformation, $metadata);
         $this->convertColumns($className, $mappingInformation, $metadata);
@@ -111,13 +111,13 @@ class ConvertDoctrine1Schema
     }
 
     /**
-     * @param string            $className
-     * @param array             $model
-     * @param ClassMetadataInfo $metadata
+     * @param string        $className
+     * @param array         $model
+     * @param ClassMetadata $metadata
      *
      * @return void
      */
-    private function convertTableName($className, array $model, ClassMetadataInfo $metadata)
+    private function convertTableName($className, array $model, ClassMetadata $metadata)
     {
         if (isset($model['tableName']) && $model['tableName']) {
             $e = explode('.', $model['tableName']);
@@ -132,13 +132,13 @@ class ConvertDoctrine1Schema
     }
 
     /**
-     * @param string            $className
-     * @param array             $model
-     * @param ClassMetadataInfo $metadata
+     * @param string        $className
+     * @param array         $model
+     * @param ClassMetadata $metadata
      *
      * @return void
      */
-    private function convertColumns($className, array $model, ClassMetadataInfo $metadata)
+    private function convertColumns($className, array $model, ClassMetadata $metadata)
     {
         $id = false;
 
@@ -160,21 +160,21 @@ class ConvertDoctrine1Schema
                 'id' => true
             ];
             $metadata->mapField($fieldMapping);
-            $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+            $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
         }
     }
 
     /**
-     * @param string            $className
-     * @param string            $name
-     * @param string|array      $column
-     * @param ClassMetadataInfo $metadata
+     * @param string        $className
+     * @param string        $name
+     * @param string|array  $column
+     * @param ClassMetadata $metadata
      *
      * @return array
      *
      * @throws ToolsException
      */
-    private function convertColumn($className, $name, $column, ClassMetadataInfo $metadata)
+    private function convertColumn($className, $name, $column, ClassMetadata $metadata)
     {
         if (is_string($column)) {
             $string = $column;
@@ -233,9 +233,9 @@ class ConvertDoctrine1Schema
         $metadata->mapField($fieldMapping);
 
         if (isset($column['autoincrement'])) {
-            $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
+            $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
         } elseif (isset($column['sequence'])) {
-            $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_SEQUENCE);
+            $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_SEQUENCE);
 
             $definition = [
                 'sequenceName' => is_array($column['sequence']) ? $column['sequence']['name']:$column['sequence']
@@ -256,13 +256,13 @@ class ConvertDoctrine1Schema
     }
 
     /**
-     * @param string            $className
-     * @param array             $model
-     * @param ClassMetadataInfo $metadata
+     * @param string        $className
+     * @param array         $model
+     * @param ClassMetadata $metadata
      *
      * @return void
      */
-    private function convertIndexes($className, array $model, ClassMetadataInfo $metadata)
+    private function convertIndexes($className, array $model, ClassMetadata $metadata)
     {
         if (empty($model['indexes'])) {
             return;
@@ -279,13 +279,13 @@ class ConvertDoctrine1Schema
     }
 
     /**
-     * @param string            $className
-     * @param array             $model
-     * @param ClassMetadataInfo $metadata
+     * @param string        $className
+     * @param array         $model
+     * @param ClassMetadata $metadata
      *
      * @return void
      */
-    private function convertRelations($className, array $model, ClassMetadataInfo $metadata)
+    private function convertRelations($className, array $model, ClassMetadata $metadata)
     {
         if (empty($model['relations'])) {
             return;

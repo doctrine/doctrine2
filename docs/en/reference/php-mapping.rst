@@ -180,10 +180,10 @@ It also has several methods that create builders (which are necessary for advanc
 -   ``createManyToMany($name, $targetEntity)`` returns an ``ManyToManyAssociationBuilder`` instance
 -   ``createOneToMany($name, $targetEntity)`` returns an ``OneToManyAssociationBuilder`` instance
 
-ClassMetadataInfo API
+ClassMetadata API
 ---------------------
 
-The ``ClassMetadataInfo`` class is the base data object for storing
+The ``ClassMetadata`` class is the base data object for storing
 the mapping metadata for a single entity. It contains all the
 getters and setters you need populate and retrieve information for
 an entity.
@@ -307,10 +307,9 @@ Lifecycle Callback Getters
 ClassMetadata API
 -----------------
 
-The ``ClassMetadata`` class extends ``ClassMetadataInfo`` and adds
-the runtime functionality required by Doctrine. It adds a few extra
-methods related to runtime reflection for working with the entities
-themselves.
+The ``ClassMetadata`` class holds the runtime functionality required by
+Doctrine. It also contains a few extra methods related to runtime
+reflection for working with the entities themselves.
 
 
 -  ``getReflectionClass()``

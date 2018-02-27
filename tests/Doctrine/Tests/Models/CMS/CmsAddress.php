@@ -2,6 +2,8 @@
 
 namespace Doctrine\Tests\Models\CMS;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 /**
  * CmsAddress
  *
@@ -122,7 +124,7 @@ class CmsAddress
         }
     }
 
-    public static function loadMetadata(\Doctrine\ORM\Mapping\ClassMetadataInfo $metadata)
+    public static function loadMetadata(ClassMetadata $metadata)
     {
         $metadata->setPrimaryTable(
             [
