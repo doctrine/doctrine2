@@ -27,6 +27,7 @@ use Doctrine\ORM\Mapping\GeneratorType;
 use Doctrine\ORM\Mapping\InheritanceType;
 use Doctrine\ORM\Mapping\JoinColumnMetadata;
 use Doctrine\ORM\Mapping\ManyToManyAssociationMetadata;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\Mapping\OneToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\OneToOneAssociationMetadata;
 use Doctrine\ORM\Mapping\ToManyAssociationMetadata;
@@ -297,11 +298,15 @@ class UnitOfWork implements PropertyChangedListener
     /** @var NormalizeIdentifier */
     private $normalizeIdentifier;
 
+    /** @var MetadataCollection */
+    private $mappings;
+
     /**
      * Initializes a new UnitOfWork instance, bound to the given EntityManager.
      */
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, MetadataCollection $mappings)
     {
+        $this->mappings                 = $mappings;
         $this->em                       = $em;
         $this->eventManager             = $em->getEventManager();
         $this->listenersInvoker         = new ListenersInvoker($em);
@@ -2551,7 +2556,7 @@ class UnitOfWork implements PropertyChangedListener
 
         switch (true) {
             case ($class->inheritanceType === InheritanceType::NONE):
-                $persister = new BasicEntityPersister($this->em, $class);
+                $persister = new BasicEntityPersister($this->em, $class, $this->mappings);
                 break;
 
             case ($class->inheritanceType === InheritanceType::SINGLE_TABLE):

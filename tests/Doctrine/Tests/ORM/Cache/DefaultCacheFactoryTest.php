@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Cache;
 
+use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\CacheProvider;
 use Doctrine\ORM\Cache\CacheFactory;
@@ -22,6 +23,7 @@ use Doctrine\ORM\Cache\RegionsConfiguration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\CacheMetadata;
 use Doctrine\ORM\Mapping\CacheUsage;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\Persisters\Collection\OneToManyPersister;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\Tests\Mocks\ConcurrentRegionMock;
@@ -47,6 +49,10 @@ class DefaultCacheFactoryTest extends OrmTestCase
 
     protected function setUp() : void
     {
+        parent::setUp();
+
+        $this->em            = $this->getTestEntityManager();
+        /*
         $this->enableSecondLevelCache();
 
         parent::setUp();
@@ -64,11 +70,13 @@ class DefaultCacheFactoryTest extends OrmTestCase
             ->setConstructorArgs($arguments)
             ->getMock()
         ;
+        */
     }
 
     public function testImplementsCacheFactory() : void
     {
-        self::assertInstanceOf(CacheFactory::class, $this->factory);
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $this->getSharedSecondLevelCacheDriverImpl());
+        self::assertInstanceOf(CacheFactory::class, $factory);
     }
 
     public function testBuildCachedEntityPersisterReadOnly() : void
@@ -291,7 +299,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
 
     public function testInvalidFileLockRegionDirectoryException() : void
     {
-        $factory = new DefaultCacheFactory($this->regionsConfig, $this->getSharedSecondLevelCacheDriverImpl());
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $this->getSharedSecondLevelCacheDriverImpl());
 
         $this->expectException(\LogicException::class);
         $this->expectExceptionMessage(
@@ -306,7 +314,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
 
     public function testInvalidFileLockRegionDirectoryExceptionWithEmptyString() : void
     {
-        $factory = new DefaultCacheFactory($this->regionsConfig, $this->getSharedSecondLevelCacheDriverImpl());
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $this->getSharedSecondLevelCacheDriverImpl());
 
         $factory->setFileLockRegionDirectory('');
 
@@ -323,7 +331,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
 
     public function testBuildsNewNamespacedCacheInstancePerRegionInstance() : void
     {
-        $factory = new DefaultCacheFactory($this->regionsConfig, $this->getSharedSecondLevelCacheDriverImpl());
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $this->getSharedSecondLevelCacheDriverImpl());
 
         $fooCache  = new CacheMetadata(CacheUsage::READ_ONLY, 'foo');
         $fooRegion = $factory->getRegion($fooCache);
@@ -340,7 +348,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
         $cache = clone $this->getSharedSecondLevelCacheDriverImpl();
         $cache->setNamespace('testing');
 
-        $factory = new DefaultCacheFactory($this->regionsConfig, $cache);
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $cache);
 
         $fooCache  = new CacheMetadata(CacheUsage::READ_ONLY, 'foo');
         $fooRegion = $factory->getRegion($fooCache);
@@ -356,7 +364,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
     {
         /** @var Cache $cache */
         $cache   = $this->createMock(Cache::class);
-        $factory = new DefaultCacheFactory($this->regionsConfig, $cache);
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $cache);
 
         $barCache  = new CacheMetadata(CacheUsage::READ_ONLY, 'bar');
         $barRegion = $factory->getRegion($barCache);
@@ -368,7 +376,7 @@ class DefaultCacheFactoryTest extends OrmTestCase
     {
         /** @var CacheProvider $cache */
         $cache   = $this->getMockForAbstractClass(CacheProvider::class);
-        $factory = new DefaultCacheFactory($this->regionsConfig, $cache);
+        $factory = new DefaultCacheFactory(new RegionsConfiguration(), $cache);
 
         $barCache  = new CacheMetadata(CacheUsage::READ_ONLY, 'bar');
         $barRegion = $factory->getRegion($barCache);

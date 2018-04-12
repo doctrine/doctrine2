@@ -10,6 +10,7 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Driver\MappingDriver;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\Proxy\Factory\ProxyFactory;
@@ -49,11 +50,6 @@ class EntityManagerTest extends OrmTestCase
     public function testGetConnection() : void
     {
         self::assertInstanceOf(Connection::class, $this->em->getConnection());
-    }
-
-    public function testGetMetadataFactory() : void
-    {
-        self::assertInstanceOf(ClassMetadataFactory::class, $this->em->getMetadataFactory());
     }
 
     public function testGetConfiguration() : void

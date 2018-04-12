@@ -11,6 +11,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\Proxy\Factory\ProxyFactory;
 use Doctrine\ORM\Proxy\Factory\StaticProxyFactory;
 use Doctrine\ORM\Query\Expr;
@@ -24,7 +25,6 @@ use function get_class;
 use function gettype;
 use function is_array;
 use function is_object;
-use function ltrim;
 use function sprintf;
 
 /**
@@ -67,13 +67,6 @@ final class EntityManager implements EntityManagerInterface
      * @var Connection
      */
     private $conn;
-
-    /**
-     * The metadata factory, used to retrieve the ORM metadata of entity classes.
-     *
-     * @var ClassMetadataFactory
-     */
-    private $metadataFactory;
 
     /**
      * The UnitOfWork used to coordinate object-level transactions.
@@ -134,34 +127,25 @@ final class EntityManager implements EntityManagerInterface
     /** @var Cache The second level cache regions API. */
     private $cache;
 
+    /** @var MetadataCollection */
+    private $mappings;
+
     /**
      * Creates a new EntityManager that operates on the given database connection
      * and uses the given Configuration and EventManager implementations.
      *
      */
-    protected function __construct(Connection $conn, Configuration $config, EventManager $eventManager)
+    protected function __construct(Connection $conn, Configuration $config, EventManager $eventManager, MetadataCollection $metadataCollection)
     {
-        $this->conn         = $conn;
-        $this->config       = $config;
-        $this->eventManager = $eventManager;
-
-        $metadataFactoryClassName = $config->getClassMetadataFactoryName();
-
-        $this->metadataFactory = new $metadataFactoryClassName();
-
-        $this->metadataFactory->setEntityManager($this);
-        $this->metadataFactory->setCacheDriver($this->config->getMetadataCacheImpl());
+        $this->conn                = $conn;
+        $this->config              = $config;
+        $this->eventManager        = $eventManager;
+        $this->mappings            = $metadataCollection;
 
         $this->repositoryFactory   = $config->getRepositoryFactory();
-        $this->unitOfWork          = new UnitOfWork($this);
+        $this->unitOfWork          = new UnitOfWork($this, $metadataCollection);
         $this->proxyFactory        = new StaticProxyFactory($this, $this->config->buildGhostObjectFactory());
-        $this->identifierFlattener = new IdentifierFlattener($this->unitOfWork, $this->metadataFactory);
-
-        if ($config->isSecondLevelCacheEnabled()) {
-            $cacheConfig  = $config->getSecondLevelCacheConfiguration();
-            $cacheFactory = $cacheConfig->getCacheFactory();
-            $this->cache  = $cacheFactory->createCache($this);
-        }
+        $this->identifierFlattener = new IdentifierFlattener($this->unitOfWork, $this->mappings);
     }
 
     /**
@@ -170,16 +154,6 @@ final class EntityManager implements EntityManagerInterface
     public function getConnection()
     {
         return $this->conn;
-    }
-
-    /**
-     * Gets the metadata factory used to gather the metadata of classes.
-     *
-     * @return ClassMetadataFactory
-     */
-    public function getMetadataFactory()
-    {
-        return $this->metadataFactory;
     }
 
     /**
@@ -273,7 +247,7 @@ final class EntityManager implements EntityManagerInterface
      */
     public function getClassMetadata($className) : Mapping\ClassMetadata
     {
-        return $this->metadataFactory->getMetadataFor($className);
+        return $this->mappings->get($className);
     }
 
     /**
@@ -370,7 +344,7 @@ final class EntityManager implements EntityManagerInterface
      */
     public function find($entityName, $id, $lockMode = null, $lockVersion = null)
     {
-        $class     = $this->metadataFactory->getMetadataFor(ltrim($entityName, '\\'));
+        $class     = $this->mappings->get($entityName);
         $className = $class->getClassName();
 
         if (! is_array($id)) {
@@ -382,8 +356,13 @@ final class EntityManager implements EntityManagerInterface
         }
 
         foreach ($id as $i => $value) {
-            if (is_object($value) && $this->metadataFactory->hasMetadataFor(StaticClassNameConverter::getClass($value))) {
-                $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+            if (is_object($value)) {
+                try{
+                    $this->mappings->get($value);
+                    $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+                } catch (\Exception $e) {
+                    $id[$i] = null;
+                }
 
                 if ($id[$i] === null) {
                     throw ORMInvalidArgumentException::invalidIdentifierBindingEntity();
@@ -463,7 +442,7 @@ final class EntityManager implements EntityManagerInterface
      */
     public function getReference($entityName, $id)
     {
-        $class     = $this->metadataFactory->getMetadataFor(ltrim($entityName, '\\'));
+        $class     = $this->mappings->get($entityName);
         $className = $class->getClassName();
 
         if (! is_array($id)) {
@@ -479,8 +458,13 @@ final class EntityManager implements EntityManagerInterface
         foreach ($id as $i => $value) {
             $scalarId[$i] = $value;
 
-            if (is_object($value) && $this->metadataFactory->hasMetadataFor(StaticClassNameConverter::getClass($value))) {
-                $scalarId[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+            if (is_object($value)) {
+                try{
+                    $this->mappings->get($value);
+                    $scalarId[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+                } catch (\Exception $e) {
+                    $scalarId[$i] = null;
+                }
 
                 if ($scalarId[$i] === null) {
                     throw ORMInvalidArgumentException::invalidIdentifierBindingEntity();
@@ -529,7 +513,7 @@ final class EntityManager implements EntityManagerInterface
      */
     public function getPartialReference($entityName, $id)
     {
-        $class     = $this->metadataFactory->getMetadataFor(ltrim($entityName, '\\'));
+        $class     = $this->mappings->get($entityName);
         $className = $class->getClassName();
 
         if (! is_array($id)) {
@@ -541,8 +525,13 @@ final class EntityManager implements EntityManagerInterface
         }
 
         foreach ($id as $i => $value) {
-            if (is_object($value) && $this->metadataFactory->hasMetadataFor(StaticClassNameConverter::getClass($value))) {
-                $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+            if (is_object($value)) {
+                try{
+                    $this->mappings->get($value);
+                    $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
+                } catch (\Exception $e) {
+                    $id[$i] = null;
+                }
 
                 if ($id[$i] === null) {
                     throw ORMInvalidArgumentException::invalidIdentifierBindingEntity();
@@ -593,7 +582,7 @@ final class EntityManager implements EntityManagerInterface
     {
         $this->unitOfWork->clear();
 
-        $this->unitOfWork = new UnitOfWork($this);
+        $this->unitOfWork = new UnitOfWork($this, $this->mappings);
 
         if ($this->eventManager->hasListeners(Events::onClear)) {
             $this->eventManager->dispatchEvent(Events::onClear, new Event\OnClearEventArgs($this));
@@ -784,7 +773,7 @@ final class EntityManager implements EntityManagerInterface
                 return new Internal\Hydration\SimpleObjectHydrator($this);
 
             default:
-                $class = $this->config->getCustomHydrationMode($hydrationMode);
+                $class = $this->config->getCustomHydrationMode((string) $hydrationMode);
                 if ($class !== null) {
                     return new $class($this);
                 }
@@ -821,7 +810,7 @@ final class EntityManager implements EntityManagerInterface
      * @throws \InvalidArgumentException
      * @throws ORMException
      */
-    public static function create($connection, Configuration $config, ?EventManager $eventManager = null)
+    public static function create($connection, Configuration $config, EventManager $eventManager)
     {
         if (! $config->getMetadataDriverImpl()) {
             throw ORMException::missingMappingDriverImpl();
@@ -829,7 +818,23 @@ final class EntityManager implements EntityManagerInterface
 
         $connection = static::createConnection($connection, $config, $eventManager);
 
-        return new EntityManager($connection, $config, $connection->getEventManager());
+        $metadataFactoryClassName = $config->getClassMetadataFactoryName();
+        /** @var \Doctrine\Common\Persistence\Mapping\ClassMetadataFactory $metadataFactory */
+        $metadataFactory          = new $metadataFactoryClassName($config, $connection, $eventManager);
+
+        return self::createWithClassMetadataFactory($connection, $config, $eventManager, $metadataFactory);
+    }
+
+    public static function createWithClassMetadataFactory(Connection $connection, Configuration $config, EventManager $eventManager, ClassMetadataFactory $metadataFactory)
+    {
+        $metadatas = MetadataCollection::fromClassMetadatas(...$metadataFactory->getAllMetadata());
+
+        return new self($connection, $config, $eventManager, $metadatas);
+    }
+
+    public static function createWithClassMetadata(Connection $conn, Configuration $config, EventManager $eventManager, MetadataCollection $metadatas)
+    {
+        return new self($conn, $config, $eventManager, $metadatas);
     }
 
     /**

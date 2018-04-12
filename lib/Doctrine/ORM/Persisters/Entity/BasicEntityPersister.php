@@ -24,6 +24,7 @@ use Doctrine\ORM\Mapping\JoinColumnMetadata;
 use Doctrine\ORM\Mapping\LocalColumnMetadata;
 use Doctrine\ORM\Mapping\ManyToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\Mapping\OneToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\ToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\ToOneAssociationMetadata;
@@ -161,12 +162,16 @@ class BasicEntityPersister implements EntityPersister
     /** @var CachedPersisterContext */
     private $noLimitsContext;
 
+    /** @var MetadataCollection */
+    private $mappings;
+
     /**
      * Initializes a new <tt>BasicEntityPersister</tt> that uses the given EntityManager
      * and persists instances of the class described by the given ClassMetadata descriptor.
      */
-    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class, MetadataCollection $mappings)
     {
+        $this->mappings              = $mappings;
         $this->em                    = $em;
         $this->class                 = $class;
         $this->conn                  = $em->getConnection();
@@ -2064,11 +2069,10 @@ class BasicEntityPersister implements EntityPersister
             return [$newValue];
         }
 
-        $metadataFactory = $this->em->getMetadataFactory();
         $unitOfWork      = $this->em->getUnitOfWork();
 
-        if (is_object($value) && $metadataFactory->hasMetadataFor(StaticClassNameConverter::getClass($value))) {
-            $class     = $metadataFactory->getMetadataFor(get_class($value));
+        if (is_object($value) && $this->mappings->has($value)) {
+            $class     = $this->mappings->get($value);
             $persister = $unitOfWork->getEntityPersister($class->getClassName());
 
             if ($class->isIdentifierComposite()) {

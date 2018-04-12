@@ -6,6 +6,7 @@ namespace Doctrine\Tests;
 
 use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Cache\Cache;
+use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Driver\Connection;
 use Doctrine\DBAL\Logging\DebugStack;
 use Doctrine\DBAL\Types\Type;
@@ -743,8 +744,66 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
 
         $config->setMetadataDriverImpl(
             $mappingDriver ?? $config->newDefaultAnnotationDriver([
+                realpath(__DIR__ . '/Models/CMS'),
                 realpath(__DIR__ . '/Models/Cache'),
+
+                realpath(__DIR__ . '/Models/Company'),
+                realpath(__DIR__ . '/Models/CompositeKeyInheritance'),
+                //realpath(__DIR__ . '/Models/CustomType'),
+                realpath(__DIR__ . '/Models/DDC117'),
+                realpath(__DIR__ . '/Models/DDC1476'),
+                realpath(__DIR__ . '/Models/DDC1590'),
+                realpath(__DIR__ . '/Models/DDC1872'),
+                //realpath(__DIR__ . '/Models/DDC2372'),
+                realpath(__DIR__ . '/Models/DDC2504'),
+                realpath(__DIR__ . '/Models/DDC2825'),
+                realpath(__DIR__ . '/Models/DDC3231'),
+                realpath(__DIR__ . '/Models/DDC3293'),
+                realpath(__DIR__ . '/Models/DDC3346'),
+                realpath(__DIR__ . '/Models/DDC3579'),
+                realpath(__DIR__ . '/Models/DDC3597'),
+                realpath(__DIR__ . '/Models/DDC3699'),
+                realpath(__DIR__ . '/Models/DDC3711'),
+                realpath(__DIR__ . '/Models/DDC3899'),
+                //realpath(__DIR__ . '/Models/DDC4006'),
+                //realpath(__DIR__ . '/Models/DDC5934'),
+                realpath(__DIR__ . '/Models/DDC6412'),
+                realpath(__DIR__ . '/Models/DDC753'),
+                realpath(__DIR__ . '/Models/DDC869'),
+                //realpath(__DIR__ . '/Models/DDC889'),
+                realpath(__DIR__ . '/Models/DDC964'),
+                realpath(__DIR__ . '/Models/DirectoryTree'),
+                realpath(__DIR__ . '/Models/ECommerce'),
+                realpath(__DIR__ . '/Models/Forum'),
+                realpath(__DIR__ . '/Models/FriendObject'),
+                realpath(__DIR__ . '/Models/Generic'),
                 realpath(__DIR__ . '/Models/GeoNames'),
+                realpath(__DIR__ . '/Models/Global'),
+                realpath(__DIR__ . '/Models/Hydration'),
+                realpath(__DIR__ . '/Models/IdentityIsAssociation'),
+                realpath(__DIR__ . '/Models/Issue5989'),
+                realpath(__DIR__ . '/Models/JoinedInheritanceType'),
+                realpath(__DIR__ . '/Models/Legacy'),
+                realpath(__DIR__ . '/Models/ManyToManyPersister'),
+                realpath(__DIR__ . '/Models/MixedToOneIdentity'),
+                realpath(__DIR__ . '/Models/Navigation'),
+                realpath(__DIR__ . '/Models/NonPublicSchemaJoins'),
+                realpath(__DIR__ . '/Models/NullDefault'),
+                realpath(__DIR__ . '/Models/OneToOneInverseSideLoad'),
+                realpath(__DIR__ . '/Models/OneToOneSingleTableInheritance'),
+                realpath(__DIR__ . '/Models/Pagination'),
+                realpath(__DIR__ . '/Models/ProxySpecifics'),
+                realpath(__DIR__ . '/Models/Quote'),
+                realpath(__DIR__ . '/Models/Reflection'),
+                realpath(__DIR__ . '/Models/Routing'),
+                realpath(__DIR__ . '/Models/StockExchange'),
+                realpath(__DIR__ . '/Models/Taxi'),
+                realpath(__DIR__ . '/Models/Tweet'),
+                realpath(__DIR__ . '/Models/ValueConversionType'),
+                realpath(__DIR__ . '/Models/ValueObjects'),
+                realpath(__DIR__ . '/Models/VersionedManyToOne'),
+                realpath(__DIR__ . '/Models/VersionedOneToOne'),
+
             ])
         );
 
@@ -774,7 +833,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             $evm->addEventListener(['onFlush'], new DebugUnitOfWorkListener());
         }
 
-        return EntityManager::create($conn, $config);
+        return EntityManager::create($conn, $config, $conn->getEventManager());
     }
 
     /**

@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Utility;
 use ProxyManager\Configuration;
 use ProxyManager\Inflector\ClassNameInflectorInterface;
 use function get_class;
+use function ltrim;
 
 /**
  * This class provides utility method to retrieve class names, and to convert
@@ -25,13 +26,10 @@ abstract class StaticClassNameConverter
 
     /**
      * Gets the real class name of a class name that could be a proxy.
-     *
-     * @param string $class
-     *
-     * @return string
      */
-    public static function getRealClass($class)
+    public static function getRealClass(string $class) : string
     {
+        $class = ltrim($class, '\\');
         $inflector                       = self::$classNameInflector
             ?? self::$classNameInflector = (new Configuration())->getClassNameInflector();
 
@@ -40,12 +38,8 @@ abstract class StaticClassNameConverter
 
     /**
      * Gets the real class name of an object (even if its a proxy).
-     *
-     * @param object $object
-     *
-     * @return string
      */
-    public static function getClass($object)
+    public static function getClass(object $object) : string
     {
         $inflector                       = self::$classNameInflector
             ?? self::$classNameInflector = (new Configuration())->getClassNameInflector();

@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping;
 
 use Doctrine\Common\EventManager;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
 use Doctrine\ORM\Events;
+use Doctrine\ORM\Mapping\Driver\MappingDriver;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Sequencing;
 use Doctrine\ORM\Sequencing\Planning\AssociationValueGeneratorExecutor;
@@ -38,17 +41,35 @@ use function var_export;
  */
 class ClassMetadataFactory extends AbstractClassMetadataFactory
 {
-    /** @var EntityManagerInterface|null */
-    private $em;
 
     /** @var AbstractPlatform */
     private $targetPlatform;
 
-    /** @var Driver\MappingDriver */
+    /**
+     * @var Configuration
+     */
+    private $configuration;
+    /**
+     * @var Connection
+     */
+    private $connection;
+    /**
+     * @var EventManager
+     */
+    private $eventManager;
+
+    /**
+     * @var MappingDriver
+     */
     private $driver;
 
-    /** @var EventManager */
-    private $evm;
+    public function __construct(Configuration $configuration, Connection $connection, EventManager $eventManager)
+    {
+        $this->configuration = $configuration;
+        $this->connection = $connection;
+        $this->eventManager = $eventManager;
+        $this->driver      = $this->configuration->getMetadataDriverImpl();
+    }
 
     /**
      * {@inheritdoc}
@@ -60,41 +81,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         array_map([$this, 'resolveDiscriminatorValue'], $loaded);
 
         return $loaded;
-    }
-
-    public function setEntityManager(EntityManagerInterface $em)
-    {
-        $this->em = $em;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @throws ORMException
-     */
-    protected function initialize() : void
-    {
-        $this->driver      = $this->em->getConfiguration()->getMetadataDriverImpl();
-        $this->evm         = $this->em->getEventManager();
-        $this->initialized = true;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function onNotFoundMetadata(
-        string $className,
-        ClassMetadataBuildingContext $metadataBuildingContext
-    ) : ?ClassMetadata {
-        if (! $this->evm->hasListeners(Events::onClassMetadataNotFound)) {
-            return null;
-        }
-
-        $eventArgs = new OnClassMetadataNotFoundEventArgs($className, $metadataBuildingContext, $this->em);
-
-        $this->evm->dispatchEvent(Events::onClassMetadataNotFound, $eventArgs);
-
-        return $eventArgs->getFoundMetadata();
     }
 
     /**
@@ -157,12 +143,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
 
         $this->completeRuntimeMetadata($classMetadata, $parent);
-
-        if ($this->evm->hasListeners(Events::loadClassMetadata)) {
-            $eventArgs = new LoadClassMetadataEventArgs($classMetadata, $this->em);
-
-            $this->evm->dispatchEvent(Events::loadClassMetadata, $eventArgs);
-        }
 
         $this->buildValueGenerationPlan($classMetadata);
         $this->validateRuntimeMetadata($classMetadata, $parent);
@@ -243,7 +223,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         return new ClassMetadataBuildingContext(
             $this,
             $this->getReflectionService(),
-            $this->em->getConfiguration()->getNamingStrategy()
+            $this->configuration->getNamingStrategy()
         );
     }
 
@@ -446,7 +426,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     private function getTargetPlatform() : Platforms\AbstractPlatform
     {
         if (! $this->targetPlatform) {
-            $this->targetPlatform = $this->em->getConnection()->getDatabasePlatform();
+            $this->targetPlatform = $this->connection->getDatabasePlatform();
         }
 
         return $this->targetPlatform;

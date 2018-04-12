@@ -9,6 +9,8 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\Proxy\Factory\ProxyFactory;
 use Doctrine\ORM\UnitOfWork;
 
@@ -71,7 +73,7 @@ class EntityManagerMock extends EntityManagerDecorator
      *
      * {@inheritdoc}
      */
-    public static function create($conn, ?Configuration $config = null, ?EventManager $eventManager = null)
+    public static function create($conn, ?Configuration $config = null, ?EventManager $eventManager = null, ?MetadataCollection $metadataCollection = null)
     {
         if ($config === null) {
             $config = new Configuration();
@@ -85,7 +87,11 @@ class EntityManagerMock extends EntityManagerDecorator
             $eventManager = $conn->getEventManager();
         }
 
-        $em = EntityManager::create($conn, $config, $eventManager);
+        if ($metadataCollection !== null) {
+            $em = EntityManager::createWithClassMetadata($conn, $config, $eventManager, $metadataCollection);
+        } else {
+            $em = EntityManager::create($conn, $config, $eventManager);
+        }
 
         return new EntityManagerMock($em);
     }

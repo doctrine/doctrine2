@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Utility;
 
-use Doctrine\Common\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMetadata;
+use Doctrine\ORM\Mapping\MetadataCollection;
 use Doctrine\ORM\UnitOfWork;
 use function implode;
 use function is_object;
@@ -29,17 +29,17 @@ final class IdentifierFlattener
     /**
      * The metadata factory, used to retrieve the ORM metadata of entity classes.
      *
-     * @var ClassMetadataFactory
+     * @var MetadataCollection
      */
-    private $metadataFactory;
+    private $metadatas;
 
     /**
      * Initializes a new IdentifierFlattener instance, bound to the given EntityManager.
      */
-    public function __construct(UnitOfWork $unitOfWork, ClassMetadataFactory $metadataFactory)
+    public function __construct(UnitOfWork $unitOfWork, MetadataCollection $metadataCollection)
     {
-        $this->unitOfWork      = $unitOfWork;
-        $this->metadataFactory = $metadataFactory;
+        $this->unitOfWork = $unitOfWork;
+        $this->metadatas  = $metadataCollection;
     }
 
     /**
@@ -64,7 +64,7 @@ final class IdentifierFlattener
 
             if (isset($id[$field]) && is_object($id[$field])) {
                 /** @var ClassMetadata $targetClassMetadata */
-                $targetClassMetadata  = $this->metadataFactory->getMetadataFor($property->getTargetEntity());
+                $targetClassMetadata  = $this->metadatas->get($property->getTargetEntity());
                 $targetClassPersister = $this->unitOfWork->getEntityPersister($property->getTargetEntity());
                 // @todo guilhermeblanco Bring this back:
                 // $identifiers         = $this->unitOfWork->isInIdentityMap($id[$field])

@@ -35,9 +35,6 @@ abstract class AbstractClassMetadataFactory implements ClassMetadataFactory
     /** @var ClassMetadata[] */
     private $loadedMetadata = [];
 
-    /** @var bool */
-    protected $initialized = false;
-
     /** @var ReflectionService|null */
     protected $reflectionService;
 
@@ -124,10 +121,6 @@ abstract class AbstractClassMetadataFactory implements ClassMetadataFactory
      */
     public function getAllMetadata() : array
     {
-        if (! $this->initialized) {
-            $this->initialize();
-        }
-
         $driver   = $this->getDriver();
         $metadata = [];
 
@@ -220,10 +213,6 @@ abstract class AbstractClassMetadataFactory implements ClassMetadataFactory
      */
     protected function loadMetadata(string $name, ClassMetadataBuildingContext $metadataBuildingContext) : array
     {
-        if (! $this->initialized) {
-            $this->initialize();
-        }
-
         $loaded = [];
 
         $parentClasses   = $this->getParentClasses($name);
@@ -256,10 +245,6 @@ abstract class AbstractClassMetadataFactory implements ClassMetadataFactory
      */
     public function isTransient($className) : bool
     {
-        if (! $this->initialized) {
-            $this->initialize();
-        }
-
         return $this->getDriver()->isTransient($this->normalizeClassName($className));
     }
 
@@ -302,12 +287,6 @@ abstract class AbstractClassMetadataFactory implements ClassMetadataFactory
     {
         return StaticClassNameConverter::getRealClass($className);
     }
-
-    /**
-     * Lazy initialization of this stuff, especially the metadata driver,
-     * since these are not needed at all when a metadata cache is active.
-     */
-    abstract protected function initialize() : void;
 
     /**
      * Returns the mapping driver implementation.
