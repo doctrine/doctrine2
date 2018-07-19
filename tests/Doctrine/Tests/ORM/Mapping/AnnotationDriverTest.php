@@ -34,7 +34,7 @@ class AnnotationDriverTest extends AbstractMappingDriverTest
     }
 
     /**
-     * @expectedException \Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException \Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Entity association field "Doctrine\Tests\ORM\Mapping\AnnotationSLC#foo" not configured as part of the second-level cache.
      */
     public function testFailingSecondLevelCacheAssociation() : void

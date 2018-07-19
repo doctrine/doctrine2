@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Persisters;
 
-use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Persisters\Collection\ManyToManyPersister;
 use Doctrine\Tests\Mocks\ConnectionMock;
 use Doctrine\Tests\Models\ManyToManyPersister\ChildClass;

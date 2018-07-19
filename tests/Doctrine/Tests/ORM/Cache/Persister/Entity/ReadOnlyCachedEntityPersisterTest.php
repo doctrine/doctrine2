@@ -25,7 +25,7 @@ class ReadOnlyCachedEntityPersisterTest extends AbstractEntityPersisterTest
     }
 
     /**
-     * @expectedException Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Cannot update a readonly entity "Doctrine\Tests\Models\Cache\Country"
      */
     public function testInvokeUpdate() : void

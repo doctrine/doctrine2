@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Doctrine\ORM\Cache\Exception;
+namespace Doctrine\ORM\Cache;
 
-use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\ORMException;
 
 /**
  * Exception for cache.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Tools;
 
-use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\ORMException;
 use Throwable;
 
 /**

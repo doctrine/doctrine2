@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM;
 
-use Doctrine\ORM\Exception\ORMException;
-
 /**
  * An OptimisticLockException is thrown when a version check on an object
  * that uses optimistic locking through a version field fails.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Doctrine\ORM\Exception;
+namespace Doctrine\ORM;
 
 /**
  * Base exception class for all ORM exceptions.

@@ -189,7 +189,7 @@ class SecondLevelCacheManyToManyTest extends SecondLevelCacheAbstractTest
     }
 
     /**
-     * @expectedException \Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException \Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Cannot update a readonly collection "Doctrine\Tests\Models\Cache\Travel#visitedCities
      */
     public function testReadOnlyCollection() : void

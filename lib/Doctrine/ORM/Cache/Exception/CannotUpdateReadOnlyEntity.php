@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Cache\Exception;
 
+use Doctrine\ORM\Cache\CacheException;
 use function sprintf;
 
 class CannotUpdateReadOnlyEntity extends \LogicException implements CacheException

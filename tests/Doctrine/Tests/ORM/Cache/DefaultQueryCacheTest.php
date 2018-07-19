@@ -600,7 +600,7 @@ class DefaultQueryCacheTest extends OrmTestCase
     }
 
     /**
-     * @expectedException Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Second level cache does not support scalar results.
      */
     public function testScalarResultException() : void
@@ -615,7 +615,7 @@ class DefaultQueryCacheTest extends OrmTestCase
     }
 
     /**
-     * @expectedException Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Second level cache does not support multiple root entities.
      */
     public function testSupportMultipleRootEntitiesException() : void
@@ -631,7 +631,7 @@ class DefaultQueryCacheTest extends OrmTestCase
     }
 
     /**
-     * @expectedException Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Entity "Doctrine\Tests\Models\Generic\BooleanModel" not configured as part of the second-level cache.
      */
     public function testNotCacheableEntityException() : void

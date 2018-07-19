@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Utility;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMetadata;
 use Doctrine\ORM\Mapping\ToOneAssociationMetadata;
+use Doctrine\ORM\ORMException;
 use function array_key_exists;
 use function reset;
 

@@ -8,7 +8,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Annotations\Reader;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Annotation;
-use Doctrine\ORM\Cache\Exception\CacheException;
+use Doctrine\ORM\Cache\CacheException;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping;
 use function array_diff;

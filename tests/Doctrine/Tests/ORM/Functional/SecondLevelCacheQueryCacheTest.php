@@ -1088,7 +1088,7 @@ class SecondLevelCacheQueryCacheTest extends SecondLevelCacheAbstractTest
     }
 
     /**
-     * @expectedException \Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException \Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Second level cache does not support partial entities.
      */
     public function testCacheablePartialQueryException() : void
@@ -1103,7 +1103,7 @@ class SecondLevelCacheQueryCacheTest extends SecondLevelCacheAbstractTest
     }
 
     /**
-     * @expectedException \Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException \Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Second-level cache query supports only select statements.
      */
     public function testNonCacheableQueryDeleteStatementException() : void
@@ -1114,7 +1114,7 @@ class SecondLevelCacheQueryCacheTest extends SecondLevelCacheAbstractTest
     }
 
     /**
-     * @expectedException \Doctrine\ORM\Cache\Exception\CacheException
+     * @expectedException \Doctrine\ORM\Cache\CacheException
      * @expectedExceptionMessage Second-level cache query supports only select statements.
      */
     public function testNonCacheableQueryUpdateStatementException() : void
