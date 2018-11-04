@@ -1,5 +1,41 @@
 # Upgrade to 3.0
 
+## BC Break: ORMException is no longer a class, but an interface
+
+All methods in `Doctrine\ORM\ORMException` have been extracted to dedicated exceptions.
+
+ * `missingMappingDriverImpl()` => `Exception\MissingMappingDriverImplementation::create()`
+ * `unrecognizedField()` => `Persisters\Exception\UnrecognizedField::byName()`
+ * `unexpectedAssociationValue()` => `Exception\UnexpectedAssociationValue::create()`
+ * `invalidOrientation()` => `Persisters\Exception\InvalidOrientation::fromClassNameAndField()`
+ * `entityManagerClosed()` => `Exception\EntityManagerClosed::create()`
+ * `invalidHydrationMode()` => `Exception\InvalidHydrationMode::fromMode()`
+ * `mismatchedEventManager()` => `Exception\MismatchedEventManager::create()`
+ * `findByRequiresParameter()` => `Repository\Exception\InvalidMagicMethodCall::onMissingParameter()`
+ * `invalidMagicCall()` => `Repository\Exception\InvalidMagicMethodCall::becauseFieldNotFoundIn()`
+ * `invalidFindByInverseAssociation()` => `Repository\Exception\InvalidFindByCall::fromInverseSideUsage()`
+ * `invalidResultCacheDriver()` => `Cache\Exception\InvalidResultCacheDriver::create()`
+ * `notSupported()` => `Exception\NotSupported::create()`
+ * `queryCacheNotConfigured()` => `QueryCacheNotConfigured::create()`
+ * `metadataCacheNotConfigured()` => `Cache\Exception\MetadataCacheNotConfigured::create()`
+ * `queryCacheUsesNonPersistentCache()` => `Cache\Exception\QueryCacheUsesNonPersistentCache::fromDriver()`
+ * `metadataCacheUsesNonPersistentCache()` => `Cache\Exception\MetadataCacheUsesNonPersistentCache::fromDriver()`
+ * `proxyClassesAlwaysRegenerating()` => `Exception\ProxyClassesAlwaysRegenerating::create()`
+ * `invalidEntityRepository()` => `Exception\InvalidEntityRepository::fromClassName()`
+ * `missingIdentifierField()` => `Exception\MissingIdentifierField::fromFieldAndClass()`
+ * `unrecognizedIdentifierFields()` => `Exception\UnrecognizedIdentifierFields::fromClassAndFieldNames()`
+ * `cantUseInOperatorOnCompositeKeys()` => `Persisters\Exception\CantUseInOperatorOnCompositeKeys::create()`
+
+## BC Break: CacheException is no longer a class, but an interface
+
+All methods in `Doctrine\ORM\Cache\CacheException` have been extracted to dedicated exceptions.
+
+ * `updateReadOnlyCollection()` => `Cache\Exception\CannotUpdateReadOnlyCollection::fromEntityAndField()`
+ * `updateReadOnlyEntity()` => `Cache\Exception\CannotUpdateReadOnlyEntity::fromEntity()`
+ * `nonCacheableEntity()` => `Cache\Exception\NonCacheableEntity::fromEntity()`
+ * `nonCacheableEntityAssociation()` => `Cache\Exception\NonCacheableEntityAssociation::fromEntityAndField()`
+
+
 ## BC Break: Missing type declaration added for identifier generators
 
 The interfaces `Doctrine\ORM\Sequencing\Generator` and
