@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Doctrine\Common\Persistence\Mapping\MappingException as CommonMappingException;
 use Doctrine\ORM\Exception\ORMException;
 use function array_keys;
 use function array_map;
@@ -15,7 +16,7 @@ use function sprintf;
 /**
  * A MappingException indicates that something is wrong with the mapping setup.
  */
-class MappingException extends \LogicException implements ORMException
+class MappingException extends CommonMappingException implements ORMException
 {
     /**
      * @return MappingException
