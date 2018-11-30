@@ -130,7 +130,7 @@ not mandatory but recommended. That way you also have full control
 over when you consider a property changed.
 
 If your entity contains an embeddable, you will need to notify 
-separatly for each property in the embeddable when it changes 
+separately for each property in the embeddable when it changes 
 for example:
 
 .. code-block:: php
@@ -143,10 +143,10 @@ for example:
         public function setEmbeddable(MyValueObject $embeddable)
         {
             if (!$embeddable->equals($this->embeddable)) {
-                //notice the entityField.embeddableField notation for referencing the property
+                // notice the entityField.embeddableField notation for referencing the property
                 $this->_onPropertyChanged('embeddable.prop1', $this->embeddable->getProp1(), $embeddable->getProp1());
                 $this->_onPropertyChanged('embeddable.prop2', $this->embeddable->getProp2(), $embeddable->getProp2());
-                $this->embedable = $embeddable;
+                $this->embeddable = $embeddable;
             }
         }
     }
