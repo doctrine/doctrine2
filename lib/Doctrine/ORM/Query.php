@@ -281,12 +281,11 @@ final class Query extends AbstractQuery
         $paramCount    = count($this->parameters);
         $mappingCount  = count($paramMappings);
 
-        if ($paramCount > $mappingCount) {
-            throw QueryException::tooManyParameters($mappingCount, $paramCount);
-        }
-
         if ($paramCount < $mappingCount) {
-            throw QueryException::tooFewParameters($mappingCount, $paramCount);
+            $paramNames = array_map(function($parameter) {
+                return $parameter->getName();
+            }, $this->parameters->toArray());
+            throw QueryException::missingParameter($paramMappings, $paramNames);
         }
 
         // evict all cache for the entity region
@@ -367,7 +366,7 @@ final class Query extends AbstractQuery
             $key   = $parameter->getName();
             $value = $parameter->getValue();
             $rsm   = $this->getResultSetMapping();
-
+            
             if (! isset($paramMappings[$key])) {
                 throw QueryException::unknownParameter($key);
             }

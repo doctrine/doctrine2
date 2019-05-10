@@ -1231,4 +1231,37 @@ class QueryBuilderTest extends OrmTestCase
         self::assertSame(3, $builder->getParameter('0')->getValue());
         self::assertSame('Doctrine', $builder->getParameter('name')->getValue());
     }
+    
+    /**
+     * @group 5609
+     */
+    public function testUnknownParameterException() : void
+    {
+        self::expectException(Query\QueryException::class);
+        self::expectExceptionMessage('Invalid parameter: token title is not defined in the query.');
+        
+        $builder = $this->em->createQueryBuilder()
+                            ->select('u')
+                            ->from(CmsUser::class, 'u')
+                            ->where('u.username = :name');
+
+        $builder->setParameter('title', 'Doctrine');
+        $builder->getQuery()->execute();
+    }
+    
+    /**
+     * @group 5609
+     */
+    public function testMissingParameterException() : void
+    {
+        self::expectException(Query\QueryException::class);
+        self::expectExceptionMessage('Missing parameter: no parameter set for token name.');
+        
+        $builder = $this->em->createQueryBuilder()
+                            ->select('u')
+                            ->from(CmsUser::class, 'u')
+                            ->where('u.username = :name');
+        
+        $builder->getQuery()->execute();
+    }
 }

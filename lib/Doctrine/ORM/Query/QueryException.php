@@ -79,28 +79,6 @@ class QueryException extends LogicException implements ORMException
     }
 
     /**
-     * @param int $expected
-     * @param int $received
-     *
-     * @return QueryException
-     */
-    public static function tooManyParameters($expected, $received)
-    {
-        return new self('Too many parameters: the query defines ' . $expected . ' parameters and you bound ' . $received);
-    }
-
-    /**
-     * @param int $expected
-     * @param int $received
-     *
-     * @return QueryException
-     */
-    public static function tooFewParameters($expected, $received)
-    {
-        return new self('Too few parameters: the query defines ' . $expected . ' parameters but you only bound ' . $received);
-    }
-
-    /**
      * @param string $value
      *
      * @return QueryException
@@ -118,6 +96,24 @@ class QueryException extends LogicException implements ORMException
     public static function unknownParameter($key)
     {
         return new self('Invalid parameter: token ' . $key . ' is not defined in the query.');
+    }
+    
+    /**
+     * @param array $expected
+     * @param array $received
+     *
+     * @return QueryException
+     */
+    public static function missingParameter($expected, $received)
+    {
+        foreach (array_keys($expected) as $token) {
+            if (!in_array($token, $received)) {
+                return new self('Missing parameter: no parameter set for token ' . $token . '.');
+            }
+        }
+        
+        return new self('Too few parameters: the query defines ' . count($expected)
+                . ' parameters but you only bound ' . count($received));
     }
 
     /**
