@@ -12,3 +12,4 @@ phpunit.xml.dist export-ignore
 run-all.sh export-ignore
 phpcs.xml.dist export-ignore
 composer.lock export-ignore
+psalm-baseline.xml export-ignore

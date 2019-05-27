@@ -54,7 +54,8 @@
         "ext-pdo": "*",
         "doctrine/coding-standard": "^6.0",
         "phpstan/phpstan-shim": "^0.9.2",
-        "phpunit/phpunit": "^7.0"
+        "phpunit/phpunit": "^7.0",
+        "vimeo/psalm": "^3.2"
     },
     "autoload": {
         "psr-4": { "Doctrine\\ORM\\": "lib/Doctrine/ORM" }
@@ -72,6 +73,6 @@
         }
     },
     "archive": {
-        "exclude": ["!vendor", "tests", "*phpunit.xml", ".travis.yml", "build.xml", "build.properties", "composer.phar", "vendor/satooshi", "lib/vendor", "*.swp"]
+        "exclude": ["!vendor", "tests", "*phpunit.xml", ".travis.yml", "build.xml", "build.properties", "composer.phar", "vendor/satooshi", "lib/vendor", "*.swp", "psalm-baseline.xml"]
     }
 }

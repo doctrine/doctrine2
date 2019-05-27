@@ -77,7 +77,9 @@ jobs:
       before_script:
         - echo "extension=memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
         - echo "extension=redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
-      script: vendor/bin/phpstan analyse -l 1 -c phpstan.neon lib
+      script:
+        - vendor/bin/phpstan analyse -l 1 -c phpstan.neon lib
+        - vendor/bin/psalm --show-info=false
 
     - stage: Code Quality
       env: DB=none BENCHMARK
