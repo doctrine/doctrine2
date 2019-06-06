@@ -105,6 +105,15 @@ class UnitOfWork implements PropertyChangedListener
     private $identityMap = [];
 
     /**
+     * Associate entities with OIDs to ensure the GC won't recycle a managed entity
+     *
+     * DDC-2332 / #3037
+     *
+     * @var array
+     */
+    private $oidMap = array();
+
+    /**
      * Map of all identifiers of managed entities.
      * Keys are object ids (spl_object_hash).
      *
@@ -1498,7 +1507,8 @@ class UnitOfWork implements PropertyChangedListener
     public function addToIdentityMap($entity)
     {
         $classMetadata = $this->em->getClassMetadata(get_class($entity));
-        $identifier    = $this->entityIdentifiers[spl_object_hash($entity)];
+        $oid           = spl_object_hash($entity);
+        $identifier    = $this->entityIdentifiers[$oid];
 
         if (empty($identifier) || in_array(null, $identifier, true)) {
             throw ORMInvalidArgumentException::entityWithoutIdentity($classMetadata->name, $entity);
@@ -1507,6 +1517,7 @@ class UnitOfWork implements PropertyChangedListener
         $idHash    = implode(' ', $identifier);
         $className = $classMetadata->rootEntityName;
 
+        $this->oidMap[$oid] = $entity;
         if (isset($this->identityMap[$className][$idHash])) {
             return false;
         }
@@ -1622,6 +1633,7 @@ class UnitOfWork implements PropertyChangedListener
 
         $className = $classMetadata->rootEntityName;
 
+        unset($this->oidMap[$oid]);
         if (isset($this->identityMap[$className][$idHash])) {
             unset($this->identityMap[$className][$idHash]);
             unset($this->readOnlyObjects[$oid]);
@@ -2482,6 +2494,7 @@ class UnitOfWork implements PropertyChangedListener
     {
         if ($entityName === null) {
             $this->identityMap =
+            $this->oidMap =
             $this->entityIdentifiers =
             $this->originalEntityData =
             $this->entityChangeSets =
@@ -2656,6 +2669,7 @@ class UnitOfWork implements PropertyChangedListener
             $this->entityStates[$oid]       = self::STATE_MANAGED;
             $this->originalEntityData[$oid] = $data;
 
+            $this->oidMap[$oid] = $entity;
             $this->identityMap[$class->rootEntityName][$idHash] = $entity;
 
             if ($entity instanceof NotifyPropertyChanged) {
@@ -2806,6 +2820,7 @@ class UnitOfWork implements PropertyChangedListener
                             // PERF: Inlined & optimized code from UnitOfWork#registerManaged()
                             $newValueOid = spl_object_hash($newValue);
                             $this->entityIdentifiers[$newValueOid] = $associatedId;
+                            $this->oidMap[$newValueOid] = $newValue;
                             $this->identityMap[$targetClass->rootEntityName][$relatedIdHash] = $newValue;
 
                             if (

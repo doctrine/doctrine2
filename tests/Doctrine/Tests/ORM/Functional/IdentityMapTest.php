@@ -4,6 +4,7 @@ namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\ORM\Query;
 use Doctrine\Tests\Models\CMS\CmsAddress;
+use Doctrine\Tests\Models\CMS\CmsArticle;
 use Doctrine\Tests\Models\CMS\CmsPhonenumber;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\OrmFunctionalTestCase;
@@ -253,6 +254,51 @@ class IdentityMapTest extends OrmFunctionalTestCase
 
         // Now the collection should be refreshed with correct count
         $this->assertEquals(4, count($user2->getPhonenumbers()));
+    }
+
+    /**
+     * @group HashCollision
+     */
+    public function testHashCollision() {
+        $user = new CmsUser();
+        $user->username = "Test";
+        $user->name = "Test";
+        $this->_em->persist($user);
+        $this->_em->flush();
+
+        $articles = [];
+        for ($i = 0; $i < 100; $i++) {
+            $article = new CmsArticle();
+            $article->topic = "Test";
+            $article->text = "Test";
+            $article->setAuthor($this->_em->merge($user));
+            $this->_em->persist($article);
+            $this->_em->flush();
+            $this->_em->clear();
+            $articles [] = $article;
+        }
+
+        $user = $this->_em->merge($user);
+        foreach ($articles as $article) {
+            $article = $this->_em->merge($article);
+            $article->setAuthor($user);
+        }
+
+        unset($article);
+        gc_collect_cycles();
+
+        $keep = [];
+        for ($x = 0; $x < 1000; $x++) {
+            $keep[] = $article = new CmsArticle();
+
+            $article->topic = "Test";
+            $article->text = "Test";
+            $article->setAuthor($this->_em->merge($user));
+
+            $this->_em->persist($article);
+            $this->_em->flush();
+            $this->assertNotNull($article->id, "Article wasn't persisted on iteration $x");
+        }
     }
 }
 
