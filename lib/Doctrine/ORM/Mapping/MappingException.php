@@ -19,6 +19,8 @@
 
 namespace Doctrine\ORM\Mapping;
 
+use LibXMLError;
+
 /**
  * A MappingException indicates that something is wrong with the mapping setup.
  *
@@ -819,5 +821,22 @@ class MappingException extends \Doctrine\ORM\ORMException
                 $propertyName
             )
         );
+    }
+
+    /**
+     * @param LibXMLError[] $errors
+     */
+    public static function fromLibXmlErrors(array $errors) : self
+    {
+        $formatter = function (LibXMLError $error): string {
+            return sprintf(
+                'libxml error: %s%s:%d',
+                $error->message,
+                $error->file,
+                $error->line
+            );
+        };
+
+        return new self(implode(PHP_EOL, array_map($formatter, $errors)));
     }
 }

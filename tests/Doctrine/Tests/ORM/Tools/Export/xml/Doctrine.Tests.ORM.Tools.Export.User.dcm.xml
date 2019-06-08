@@ -32,7 +32,7 @@
 
         <one-to-one field="address" target-entity="Doctrine\Tests\ORM\Tools\Export\Address" inversed-by="user" orphan-removal="true" fetch="EAGER">
             <cascade><cascade-persist /></cascade>
-            <join-column name="address_id" referenced-column-name="id" on-delete="CASCADE" on-update="CASCADE"/>
+            <join-column name="address_id" referenced-column-name="id" on-delete="CASCADE"/>
         </one-to-one>
 
         <one-to-one field="cart" target-entity="Doctrine\Tests\ORM\Tools\Export\Cart" mapped-by="user">
@@ -55,11 +55,11 @@
 
         <one-to-many field="interests" target-entity="Doctrine\Tests\ORM\Tools\Export\Interests" mapped-by="user" orphan-removal="true">
             <cascade>
-                <cascade-refresh/>
                 <cascade-persist/>
                 <cascade-merge/>
-                <cascade-detach/>
                 <cascade-remove/>
+                <cascade-refresh/>
+                <cascade-detach/>
             </cascade>
         </one-to-many>
 

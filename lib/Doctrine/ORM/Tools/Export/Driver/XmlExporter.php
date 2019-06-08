@@ -276,20 +276,21 @@ class XmlExporter extends AbstractExporter
             }
 
             $cascade = [];
-            if ($associationMapping['isCascadeRemove']) {
-                $cascade[] = 'cascade-remove';
-            }
 
             if ($associationMapping['isCascadePersist']) {
                 $cascade[] = 'cascade-persist';
             }
 
-            if ($associationMapping['isCascadeRefresh']) {
-                $cascade[] = 'cascade-refresh';
-            }
-
             if ($associationMapping['isCascadeMerge']) {
                 $cascade[] = 'cascade-merge';
+            }
+
+            if ($associationMapping['isCascadeRemove']) {
+                $cascade[] = 'cascade-remove';
+            }
+
+            if ($associationMapping['isCascadeRefresh']) {
+                $cascade[] = 'cascade-refresh';
             }
 
             if ($associationMapping['isCascadeDetach']) {

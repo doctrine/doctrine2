@@ -17,6 +17,7 @@
     },
     "require": {
         "php": "^7.1",
+        "ext-dom": "*",
         "ext-pdo": "*",
         "doctrine/annotations": "~1.5",
         "doctrine/cache": "~1.6",

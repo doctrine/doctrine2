@@ -8,7 +8,7 @@
         <id name="id" column="id">
             <generator strategy="NONE" />
         </id>
-        <many-to-one target-entity="Doctrine\Tests\Models\OrnementalOrphanRemoval\Person" field="person" orphan-removal="true" >
+        <many-to-one target-entity="Doctrine\Tests\Models\OrnementalOrphanRemoval\Person" field="person" >
             <join-column on-delete="SET NULL" />
         </many-to-one>
     </entity>
