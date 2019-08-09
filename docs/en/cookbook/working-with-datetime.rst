@@ -122,7 +122,7 @@ To be able to transform these values back into their real timezone we have to sa
         {
             $this->localized = true;
             $this->eventDateTime = $eventDateTime;
-            $this->timezone = $$eventDateTime->getTimeZone()->getName();
+            $this->timezone = $eventDateTime->getTimeZone()->getName();
         }
 
         public function getEventDateTime()
