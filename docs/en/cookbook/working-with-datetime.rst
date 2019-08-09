@@ -243,7 +243,7 @@ requiring timezoned datetimes:
          */
         private $localized = false;
 
-        public function __construct(\DateTime $createDate)
+        public function __construct(\DateTimeImmutable $createDate)
         {
             $this->localized = true;
             $this->created = $createDate;
