@@ -87,9 +87,13 @@ But as soon as you are handling datetimes that are more than a few days in advan
 Handling DateTimes with timezone-informations
 _____________________________________________
 
-Say we have an international calendaring application where users can add events that occur at different places worldwide and therefore at different timezones. To determine the exact time an event will happen means to save both the local time of the event and the timezone the event will happen in.
+Say we have an international calendaring application where users can add events that occur at different places
+worldwide and therefore at different timezones. To determine the exact date and time an event will happen means to save
+both the local time of the event and the timezone the event will happen in.
 
-Using the defalt DateTimeType will store the DateTime in the local time but without the timezone information. Therefore we need to store the timezone information as well and also need to provide a way to get the datetime back from the database with the correct timezone-information.
+Using the default datetime-type will store the datetime in the local time but without the timezone information.
+Therefore we need to store the timezone information as well and also need to provide a way to get the datetime
+back from the database with the correct timezone-information.
 
 To be able to transform these values back into their real timezone we have to save the timezone in a separate field of the entity requiring timezoned datetimes:
 
