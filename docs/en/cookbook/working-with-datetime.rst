@@ -70,8 +70,8 @@ The problem is simple. Not a single database vendor saves the timezone, only the
 However with frequent daylight saving and political timezone changes you can have a UTC offset that moves
 in different offset directions depending on the real location.
 
-The solution for this dilemma seems simple. Don't use timezones with DateTime and Doctrine 2. However there are 2 workarounds
-that even allows correct date-time handling with timezones depending on your use case:
+The solution for this dilemma seems simple: don't use timezones with DateTime(Immutable) and Doctrine 2. However there are some
+workarounds that allow correct date-time handling with timezones depending on your use case:
 
 1a. Don't convert DateTimes to UTC
 1b. Always convert any DateTime instance to UTC
