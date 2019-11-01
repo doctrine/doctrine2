@@ -40,7 +40,9 @@ use Doctrine\ORM\Utility\PersisterHelper;
 use function array_map;
 use function array_merge;
 use function assert;
+use function count;
 use function reset;
+use function spl_object_hash;
 
 /**
  * A BasicEntityPersister maps an entity to a single table in a relational database.
@@ -643,17 +645,12 @@ class BasicEntityPersister implements EntityPersister
                 continue;
             }
 
-            if ($newVal !== null) {
-                $oid = spl_object_hash($newVal);
-
-                if (isset($this->queuedInserts[$oid]) || $uow->isScheduledForInsert($newVal)) {
-                    // The associated entity $newVal is not yet persisted, so we must
-                    // set $newVal = null, in order to insert a null value and schedule an
-                    // extra update on the UnitOfWork.
-                    $uow->scheduleExtraUpdate($entity, [$field => [null, $newVal]]);
-
-                    $newVal = null;
-                }
+            if ($this->isExtraUpdateRequired($entity, $newVal)) {
+                // The associated entity $newVal is not yet persisted, so we must
+                // set $newVal = null, in order to insert a null value and schedule an
+                // extra update on the UnitOfWork.
+                $uow->scheduleExtraUpdate($entity, [$field => [null, $newVal]]);
+                $newVal = null;
             }
 
             $newValId = null;
@@ -679,6 +676,39 @@ class BasicEntityPersister implements EntityPersister
         }
 
         return $result;
+    }
+
+    /**
+     * Decides if an extra update is required for the entity being persisted
+     * This is only required if the associated entity is different from the current one,
+     * and if the current entity relies on the database to generate its id
+     *
+     * @param object $entity
+     * @param object|null $newVal
+     *
+     * @return bool Returns true is an extra update is required
+     */
+    private function isExtraUpdateRequired($entity, $newVal) : bool
+    {
+        if ($newVal === null) {
+            return false;
+        }
+        $oid = spl_object_hash($newVal);
+        $uow = $this->em->getUnitOfWork();
+        if (! (isset($this->queuedInserts[$oid]) || $uow->isScheduledForInsert($newVal))) {
+            return false;
+        }
+        if ($newVal !== $entity) {
+            return true;
+        }
+        $identifiers = $this->class->getIdentifier();
+        // Only single-column identifiers are supported
+        $entityChangeSet = $uow->getEntityChangeSet($entity);
+        if (count($identifiers) === 1 && isset($entityChangeSet[$identifiers[0]])) {
+            // Extra update is required if the current entity does not have yet a value for its identifier
+            return $entityChangeSet[$identifiers[0]][1] === null;
+        }
+        return true;
     }
 
     /**
