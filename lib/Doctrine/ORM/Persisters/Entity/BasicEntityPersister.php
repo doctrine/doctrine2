@@ -1940,17 +1940,21 @@ class BasicEntityPersister implements EntityPersister
             return [$newValue];
         }
 
-        if (is_object($value) && $this->em->getMetadataFactory()->hasMetadataFor(ClassUtils::getClass($value))) {
-            $class = $this->em->getClassMetadata(get_class($value));
-            if ($class->isIdentifierComposite) {
-                $newValue = [];
+        if (is_object($value)) {
+            $valueClass = ClassUtils::getClass($value);
+            if ( ! $this->em->getMetadataFactory()->isTransient($valueClass)) {
+                $class = $this->em->getClassMetadata($valueClass);
+                if ($class->isIdentifierComposite) {
+                    $newValue = [];
 
-                foreach ($class->getIdentifierValues($value) as $innerValue) {
-                    $newValue = array_merge($newValue, $this->getValues($innerValue));
+                    foreach ($class->getIdentifierValues($value) as $innerValue) {
+                        $newValue = array_merge($newValue, $this->getValues($innerValue));
+                    }
+
+                    return $newValue;
                 }
-
-                return $newValue;
             }
+
         }
 
         return [$this->getIndividualValue($value)];
