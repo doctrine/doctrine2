@@ -129,6 +129,32 @@ The check whether the new value is different from the old one is
 not mandatory but recommended. That way you also have full control
 over when you consider a property changed.
 
+If your entity contains an embeddable, you will need to notify 
+separately for each property in the embeddable when it changes 
+for example:
+
+.. code-block:: php
+
+    <?php
+    // ...
+    
+    class MyEntity implements NotifyPropertyChanged
+    {
+        public function setEmbeddable(MyValueObject $embeddable)
+        {
+            if (!$embeddable->equals($this->embeddable)) {
+                // notice the entityField.embeddableField notation for referencing the property
+                $this->_onPropertyChanged('embeddable.prop1', $this->embeddable->getProp1(), $embeddable->getProp1());
+                $this->_onPropertyChanged('embeddable.prop2', $this->embeddable->getProp2(), $embeddable->getProp2());
+                $this->embeddable = $embeddable;
+            }
+        }
+    }
+
+This would update all the fields of the embeddable, you may wish to
+implement a diff method on your embedded object which returns only
+the changed fields.
+
 The negative point of this policy is obvious: You need implement an
 interface and write some plumbing code. But also note that we tried
 hard to keep this notification functionality abstract. Strictly
