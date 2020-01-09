@@ -43,6 +43,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class ConvertMappingCommand extends Command
 {
+    /** @var string */
+    protected static $defaultName = 'orm:convert-mapping';
+
     /**
      * {@inheritdoc}
      */
