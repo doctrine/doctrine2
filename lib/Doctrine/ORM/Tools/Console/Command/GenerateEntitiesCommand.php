@@ -51,7 +51,8 @@ class GenerateEntitiesCommand extends Command
      */
     protected function configure()
     {
-        $this->setName('orm:generate-entities')
+        // @TODO - setName() can be removed when symfony/console will be bumped to 3.4 minimum
+        $this->setName(self::$defaultName)
              ->setAliases(['orm:generate:entities'])
              ->setDescription('Generate entity classes and method stubs from your mapping information')
              ->addArgument('dest-path', InputArgument::REQUIRED, 'The path to generate your entity classes.')
