@@ -50,9 +50,7 @@ class GenerateRepositoriesCommand extends Command
      */
     protected function configure()
     {
-        // @TODO - setName() can be removed when symfony/console will be bumped to 3.4 minimum
-        $this->setName(self::$defaultName)
-             ->setAliases(['orm:generate:repositories'])
+        $this->setAliases(['orm:generate:repositories'])
              ->setDescription('Generate repository classes from your mapping information')
              ->addArgument('dest-path', InputArgument::REQUIRED, 'The path to generate your repository classes.')
              ->addOption('filter', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'A string pattern used to match entities that should be processed.')

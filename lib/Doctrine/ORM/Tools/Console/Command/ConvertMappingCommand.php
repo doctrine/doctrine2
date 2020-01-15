@@ -51,9 +51,7 @@ class ConvertMappingCommand extends Command
      */
     protected function configure()
     {
-        // @TODO - setName() can be removed when symfony/console will be bumped to 3.4 minimum
-        $this->setName(self::$defaultName)
-             ->setAliases(['orm:convert:mapping'])
+        $this->setAliases(['orm:convert:mapping'])
              ->setDescription('Convert mapping information between supported formats')
              ->addArgument('to-type', InputArgument::REQUIRED, 'The mapping type to be converted.')
              ->addArgument('dest-path', InputArgument::REQUIRED, 'The path to generate your entities classes.')
