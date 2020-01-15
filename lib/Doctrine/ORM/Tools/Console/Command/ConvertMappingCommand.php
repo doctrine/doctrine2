@@ -43,13 +43,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class ConvertMappingCommand extends Command
 {
+    /** @var string */
+    protected static $defaultName = 'orm:convert-mapping';
+
     /**
      * {@inheritdoc}
      */
     protected function configure()
     {
-        $this->setName('orm:convert-mapping')
-             ->setAliases(['orm:convert:mapping'])
+        $this->setAliases(['orm:convert:mapping'])
              ->setDescription('Convert mapping information between supported formats')
              ->addArgument('to-type', InputArgument::REQUIRED, 'The mapping type to be converted.')
              ->addArgument('dest-path', InputArgument::REQUIRED, 'The path to generate your entities classes.')

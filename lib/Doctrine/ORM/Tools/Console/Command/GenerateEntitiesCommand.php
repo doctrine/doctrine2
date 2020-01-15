@@ -43,13 +43,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class GenerateEntitiesCommand extends Command
 {
+    /** @var string */
+    protected static $defaultName = 'orm:generate-entities';
+
     /**
      * {@inheritdoc}
      */
     protected function configure()
     {
-        $this->setName('orm:generate-entities')
-             ->setAliases(['orm:generate:entities'])
+        $this->setAliases(['orm:generate:entities'])
              ->setDescription('Generate entity classes and method stubs from your mapping information')
              ->addArgument('dest-path', InputArgument::REQUIRED, 'The path to generate your entity classes.')
              ->addOption('filter', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'A string pattern used to match entities that should be processed.')
