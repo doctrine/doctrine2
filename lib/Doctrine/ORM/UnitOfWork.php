@@ -2815,6 +2815,9 @@ class UnitOfWork implements PropertyChangedListener
                                 default:
                                     // TODO: This is very imperformant, ignore it?
                                     $newValue = $this->em->find($assoc['targetEntity'], $associatedId);
+                                    if ($newValue === null) {
+                                        throw EntityNotFoundException::fromClassNameAndIdentifier($assoc['targetEntity'], $associatedId);
+                                    }
                                     break;
                             }
 
