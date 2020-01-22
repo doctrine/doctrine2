@@ -140,7 +140,7 @@ Things to note:
    namespace as the entity class on which the discriminator map is
    applied.
 -  If no discriminator map is provided, then the map is generated
-   automatically. The automatically generated discriminator map 
+   automatically. The automatically generated discriminator map
    contains the lowercase short name of each class as key.
 
 Design-time considerations
