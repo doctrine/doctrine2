@@ -19,6 +19,8 @@
 
 namespace Doctrine\ORM\Query;
 
+use function preg_match;
+use function trigger_error;
 use function trim;
 
 /**
@@ -67,6 +69,10 @@ class Parameter
      */
     public function __construct($name, $value, $type = null)
     {
+        if (preg_match('/^:|:$/', $name)) {
+            @trigger_error('Starting or ending a parameter name with ":" is deprecated since 2.7 and will cause an error in 3.0', E_USER_DEPRECATED);
+        }
+
         $this->name          = trim($name, ':');
         $this->typeSpecified = $type !== null;
 
