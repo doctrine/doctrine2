@@ -45,8 +45,11 @@ use Doctrine\Persistence\ObjectManagerAware;
 use Doctrine\Persistence\PropertyChangedListener;
 use InvalidArgumentException;
 use Throwable;
+use Traversable;
 use UnexpectedValueException;
 use function get_class;
+use function is_array;
+use function iterator_to_array;
 
 /**
  * The UnitOfWork is responsible for tracking changes to objects during an
@@ -642,8 +645,13 @@ class UnitOfWork implements PropertyChangedListener
                     $value = new ArrayCollection($value->getValues());
                 }
 
+                // If $value is not a Collection and is a Traversable then use an ArrayCollection.
+                if (! $value instanceof Collection && $value instanceof Traversable) {
+                    $value = new ArrayCollection(iterator_to_array($value));
+                }
+
                 // If $value is not a Collection then use an ArrayCollection.
-                if ( ! $value instanceof Collection) {
+                if (! $value instanceof Collection) {
                     $value = new ArrayCollection($value);
                 }
 
@@ -2194,19 +2202,20 @@ class UnitOfWork implements PropertyChangedListener
             $relatedEntities = $class->reflFields[$assoc['fieldName']]->getValue($entity);
 
             switch (true) {
-                case ($relatedEntities instanceof PersistentCollection):
+                case $relatedEntities instanceof PersistentCollection:
                     // Unwrap so that foreach() does not initialize
                     $relatedEntities = $relatedEntities->unwrap();
                     // break; is commented intentionally!
 
-                case ($relatedEntities instanceof Collection):
-                case (is_array($relatedEntities)):
+                case $relatedEntities instanceof Collection:
+                case $relatedEntities instanceof Traversable:
+                case is_array($relatedEntities):
                     foreach ($relatedEntities as $relatedEntity) {
                         $this->doRefresh($relatedEntity, $visited);
                     }
                     break;
 
-                case ($relatedEntities !== null):
+                case $relatedEntities !== null:
                     $this->doRefresh($relatedEntities, $visited);
                     break;
 
