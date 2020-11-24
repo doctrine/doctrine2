@@ -19,6 +19,7 @@
 
 namespace Doctrine\ORM\Query\AST\Functions;
 
+use Doctrine\DBAL\Platforms\TrimMode;
 use Doctrine\ORM\Query\Lexer;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
@@ -110,18 +111,18 @@ class TrimFunction extends FunctionNode
     private function getTrimMode()
     {
         if ($this->leading) {
-            return AbstractPlatform::TRIM_LEADING;
+            return TrimMode::LEADING;
         }
 
         if ($this->trailing) {
-            return AbstractPlatform::TRIM_TRAILING;
+            return TrimMode::TRAILING;
         }
 
         if ($this->both) {
-            return AbstractPlatform::TRIM_BOTH;
+            return TrimMode::BOTH;
         }
 
-        return AbstractPlatform::TRIM_UNSPECIFIED;
+        return TrimMode::UNSPECIFIED;
     }
 
     /**

@@ -36,7 +36,7 @@ class SingleScalarHydrator extends AbstractHydrator
      */
     protected function hydrateAllData()
     {
-        $data    = $this->_stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $data    = $this->_stmt->fetchAllAssociative();
         $numRows = count($data);
 
         if ($numRows === 0) {

@@ -52,14 +52,14 @@ class ManyToManyCompositeIdTest extends OrmFunctionalTestCase
     {
         $conn = $this->_em->getConnection();
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT id1 FROM vct_inversed_manytomany_compositeid LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT id2 FROM vct_inversed_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT id1 FROM vct_inversed_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT id2 FROM vct_inversed_manytomany_compositeid LIMIT 1'));
 
-        $this->assertEquals('tuv', $conn->fetchColumn('SELECT id3 FROM vct_owning_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('tuv', $conn->fetchOne('SELECT id3 FROM vct_owning_manytomany_compositeid LIMIT 1'));
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT inversed_id1 FROM vct_xref_manytomany_compositeid LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT inversed_id2 FROM vct_xref_manytomany_compositeid LIMIT 1'));
-        $this->assertEquals('tuv', $conn->fetchColumn('SELECT owning_id FROM vct_xref_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT inversed_id1 FROM vct_xref_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT inversed_id2 FROM vct_xref_manytomany_compositeid LIMIT 1'));
+        $this->assertEquals('tuv', $conn->fetchOne('SELECT owning_id FROM vct_xref_manytomany_compositeid LIMIT 1'));
     }
 
     /**
@@ -152,6 +152,6 @@ class ManyToManyCompositeIdTest extends OrmFunctionalTestCase
 
         // test association is removed
 
-        $this->assertEquals(0, $conn->fetchColumn('SELECT COUNT(*) FROM vct_xref_manytomany_compositeid'));
+        $this->assertEquals(0, $conn->fetchOne('SELECT COUNT(*) FROM vct_xref_manytomany_compositeid'));
     }
 }

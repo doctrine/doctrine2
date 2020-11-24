@@ -235,7 +235,7 @@ class OneToManyBidirectionalAssociationTest extends OrmFunctionalTestCase
         $foreignKey = $this->_em->getConnection()->executeQuery(
             'SELECT product_id FROM ecommerce_features WHERE id=?',
             [$feature->getId()]
-        )->fetchColumn();
+        )->fetchOne();
         $this->assertEquals($value, $foreignKey);
     }
 }

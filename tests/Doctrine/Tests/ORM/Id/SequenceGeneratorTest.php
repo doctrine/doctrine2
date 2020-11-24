@@ -2,11 +2,15 @@
 
 namespace Doctrine\Tests\ORM\Id;
 
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Id\SequenceGenerator;
 use Doctrine\Tests\Mocks\ConnectionMock;
-use Doctrine\Tests\Mocks\StatementArrayMock;
+use Doctrine\Tests\Mocks\ResultMock;
+use Doctrine\Tests\Mocks\StatementMock;
 use Doctrine\Tests\OrmTestCase;
+
+use function class_exists;
 
 class SequenceGeneratorTest extends OrmTestCase
 {
@@ -45,7 +49,10 @@ class SequenceGeneratorTest extends OrmTestCase
 
         for ($i = 0; $i < 42; ++$i) {
             if ($i % 10 == 0) {
-                $this->connection->setQueryResult(new StatementArrayMock([[(int)($i / 10) * 10]]));
+                $resultSet = [[(int)($i / 10) * 10]];
+                $this->connection->setQueryResult(
+                    class_exists(Result::class) ? new ResultMock($resultSet) : new StatementMock($resultSet)
+                );
             }
 
             $id = $this->sequenceGenerator->generate($this->entityManager, null);

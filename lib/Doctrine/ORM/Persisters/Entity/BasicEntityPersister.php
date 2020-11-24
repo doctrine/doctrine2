@@ -24,7 +24,9 @@ use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Util\ClassUtils;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
@@ -41,6 +43,8 @@ use function array_key_exists;
 use function array_map;
 use function array_merge;
 use function assert;
+use function class_exists;
+use function method_exists;
 use function reset;
 
 /**
@@ -284,7 +288,7 @@ class BasicEntityPersister implements EntityPersister
                 }
             }
 
-            $stmt->execute();
+            $result = $stmt->execute();
 
             if ($isPostInsertId) {
                 $generatedId = $idGenerator->generate($this->em, $entity);
@@ -304,7 +308,11 @@ class BasicEntityPersister implements EntityPersister
             }
         }
 
-        $stmt->closeCursor();
+        if (method_exists($stmt, 'closeCursor')) {
+            $stmt->closeCursor();
+        } else {
+            $result->free();
+        }
         $this->queuedInserts = [];
 
         return $postInsertIds;
@@ -351,10 +359,9 @@ class BasicEntityPersister implements EntityPersister
 
         $flatId = $this->identifierFlattener->flattenIdentifier($versionedClass, $id);
 
-        $value = $this->conn->fetchColumn(
+        $value = $this->conn->fetchOne(
             $sql,
             array_values($flatId),
-            0,
             $this->extractIdentifierTypes($id, $versionedClass)
         );
 
@@ -499,13 +506,13 @@ class BasicEntityPersister implements EntityPersister
             $params[]   = $this->class->reflFields[$versionField]->getValue($entity);
 
             switch ($versionFieldType) {
-                case Type::SMALLINT:
-                case Type::INTEGER:
-                case Type::BIGINT:
+                case Types::SMALLINT:
+                case Types::INTEGER:
+                case Types::BIGINT:
                     $set[] = $versionColumn . ' = ' . $versionColumn . ' + 1';
                     break;
 
-                case Type::DATETIME:
+                case Types::DATETIME_MUTABLE:
                     $set[] = $versionColumn . ' = CURRENT_TIMESTAMP';
                     break;
             }
@@ -856,7 +863,7 @@ class BasicEntityPersister implements EntityPersister
             ? $this->expandCriteriaParameters($criteria)
             : $this->expandParameters($criteria);
 
-        return (int) $this->conn->executeQuery($sql, $params, $types)->fetchColumn();
+        return (int) $this->conn->executeQuery($sql, $params, $types)->fetchOne();
     }
 
     /**
@@ -1119,7 +1126,7 @@ class BasicEntityPersister implements EntityPersister
         $from   = ' FROM ' . $tableName . ' '. $tableAlias;
         $join   = $this->currentPersisterContext->selectJoinSql . $joinSql;
         $where  = ($conditionSql ? ' WHERE ' . $conditionSql : '');
-        $lock   = $this->platform->appendLockHint($from, $lockMode);
+        $lock   = $this->platform->appendLockHint($from, class_exists(Result::class) ? (int) $lockMode : $lockMode);
         $query  = $select
             . $lock
             . $join
@@ -1588,7 +1595,7 @@ class BasicEntityPersister implements EntityPersister
             'FROM '
             . $this->quoteStrategy->getTableName($this->class, $this->platform) . ' '
             . $this->getSQLTableAlias($this->class->name),
-            $lockMode
+            class_exists(Result::class) ? (int) $lockMode : $lockMode
         );
     }
 
@@ -2048,7 +2055,7 @@ class BasicEntityPersister implements EntityPersister
             $sql .= ' AND ' . $filterSql;
         }
 
-        return (bool) $this->conn->fetchColumn($sql, $params, 0, $types);
+        return (bool) $this->conn->fetchOne($sql, $params, $types);
     }
 
     /**

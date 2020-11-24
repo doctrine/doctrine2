@@ -77,7 +77,7 @@ class SequenceGenerator extends AbstractIdGenerator implements Serializable
             $sql  = $conn->getDatabasePlatform()->getSequenceNextValSQL($this->_sequenceName);
 
             // Using `query` to force usage of the master server in MasterSlaveConnection
-            $this->_nextValue = (int) $conn->query($sql)->fetchColumn();
+            $this->_nextValue = (int) $conn->query($sql)->fetchOne();
             $this->_maxValue  = $this->_nextValue + $this->_allocationSize;
         }
 

@@ -16,14 +16,14 @@
         "sort-packages": true
     },
     "require": {
-        "php": "^7.2|^8.0",
+        "php": "^7.3 || ^8.0",
         "ext-pdo": "*",
         "composer/package-versions-deprecated": "^1.8",
         "doctrine/annotations": "^1.11.1",
         "doctrine/cache": "^1.9.1",
         "doctrine/collections": "^1.5",
         "doctrine/common": "^3.0",
-        "doctrine/dbal": "^2.10.0",
+        "doctrine/dbal": "^2.12.0 || ^3.0",
         "doctrine/event-manager": "^1.1",
         "doctrine/inflector": "^1.4|^2.0",
         "doctrine/instantiator": "^1.3",

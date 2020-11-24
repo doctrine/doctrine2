@@ -21,6 +21,7 @@ namespace Doctrine\ORM\Tools;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Inflector\Inflector;
 use Doctrine\Inflector\InflectorFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
@@ -162,21 +163,21 @@ class EntityGenerator
      * @var array
      */
     protected $typeAlias = [
-        Type::DATETIMETZ    => '\DateTime',
-        Type::DATETIME      => '\DateTime',
-        Type::DATE          => '\DateTime',
-        Type::TIME          => '\DateTime',
-        Type::OBJECT        => '\stdClass',
-        Type::INTEGER       => 'int',
-        Type::BIGINT        => 'int',
-        Type::SMALLINT      => 'int',
-        Type::TEXT          => 'string',
-        Type::BLOB          => 'string',
-        Type::DECIMAL       => 'string',
-        Type::GUID          => 'string',
-        Type::JSON_ARRAY    => 'array',
-        Type::SIMPLE_ARRAY  => 'array',
-        Type::BOOLEAN       => 'bool',
+        Types::DATETIMETZ_MUTABLE   => '\DateTime',
+        Types::DATETIME_MUTABLE     => '\DateTime',
+        Types::DATE_MUTABLE         => '\DateTime',
+        Types::TIME_MUTABLE         => '\DateTime',
+        Types::OBJECT               => '\stdClass',
+        Types::INTEGER              => 'int',
+        Types::BIGINT               => 'int',
+        Types::SMALLINT             => 'int',
+        Types::TEXT                 => 'string',
+        Types::BLOB                 => 'string',
+        Types::DECIMAL              => 'string',
+        Types::GUID                 => 'string',
+        Types::JSON                 => 'array',
+        Types::SIMPLE_ARRAY         => 'array',
+        Types::BOOLEAN              => 'bool',
     ];
 
     /**

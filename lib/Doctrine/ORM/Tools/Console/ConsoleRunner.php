@@ -91,13 +91,16 @@ final class ConsoleRunner
      */
     public static function addCommands(Application $cli) : void
     {
-        $cli->addCommands(
-            [
+        if (class_exists(DBALConsole\Command\ImportCommand::class)) {
+            $cli->addCommands([
                 // DBAL Commands
                 new DBALConsole\Command\ImportCommand(),
                 new DBALConsole\Command\ReservedWordsCommand(),
                 new DBALConsole\Command\RunSqlCommand(),
-
+            ]);
+        }
+        $cli->addCommands(
+            [
                 // ORM Commands
                 new Command\ClearCache\CollectionRegionCommand(),
                 new Command\ClearCache\EntityRegionCommand(),

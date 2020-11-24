@@ -27,6 +27,8 @@ use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Utility\HierarchyDiscriminatorResolver;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Doctrine\DBAL\Result;
+use function class_exists;
 use function trim;
 
 /**
@@ -920,10 +922,11 @@ class SqlWalker implements TreeWalker
             $this->rootAliases[] = $dqlAlias;
         }
 
+        $lockMode = $this->query->getHint(Query::HINT_LOCK_MODE);
         $sql = $this->platform->appendLockHint(
             $this->quoteStrategy->getTableName($class, $this->platform) . ' ' .
             $this->getSQLTableAlias($class->getTableName(), $dqlAlias),
-            $this->query->getHint(Query::HINT_LOCK_MODE)
+            class_exists(Result::class) ? (int) $lockMode : $lockMode
         );
 
         if ( ! $class->isInheritanceTypeJoined()) {

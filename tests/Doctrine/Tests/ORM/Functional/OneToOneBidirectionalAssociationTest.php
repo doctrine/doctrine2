@@ -146,7 +146,7 @@ class OneToOneBidirectionalAssociationTest extends OrmFunctionalTestCase
 
     public function assertCartForeignKeyIs($value) {
         $foreignKey = $this->_em->getConnection()->executeQuery('SELECT customer_id FROM ecommerce_carts WHERE id=?', [$this->cart->getId()]
-        )->fetchColumn();
+        )->fetchOne();
         $this->assertEquals($value, $foreignKey);
     }
 }

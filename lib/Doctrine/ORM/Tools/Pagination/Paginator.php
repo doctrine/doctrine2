@@ -25,6 +25,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Utility\SQLResultCaser;
 use function array_map;
 use function array_sum;
 
@@ -259,7 +260,7 @@ class Paginator implements \Countable, \IteratorAggregate
             $platform = $countQuery->getEntityManager()->getConnection()->getDatabasePlatform(); // law of demeter win
 
             $rsm = new ResultSetMapping();
-            $rsm->addScalarResult($platform->getSQLResultCasing('dctrn_count'), 'count');
+            $rsm->addScalarResult(SQLResultCaser::casing($platform, 'dctrn_count'), 'count');
 
             $countQuery->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
             $countQuery->setResultSetMapping($rsm);

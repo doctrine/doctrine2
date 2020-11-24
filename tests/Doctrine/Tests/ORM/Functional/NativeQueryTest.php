@@ -20,6 +20,7 @@ use Doctrine\Tests\Models\Company\CompanyPerson;
 use Doctrine\Tests\Models\DDC3899\DDC3899FixContract;
 use Doctrine\Tests\Models\DDC3899\DDC3899User;
 use Doctrine\Tests\OrmFunctionalTestCase;
+use Doctrine\ORM\Utility\SQLResultCaser;
 
 /**
  * NativeQueryTest
@@ -52,8 +53,8 @@ class NativeQueryTest extends OrmFunctionalTestCase
 
         $rsm = new ResultSetMapping;
         $rsm->addEntityResult(CmsUser::class, 'u');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('id'), 'id');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('name'), 'name');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'id'), 'id');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'name'), 'name');
 
         $query = $this->_em->createNativeQuery('SELECT id, name FROM cms_users WHERE username = ?', $rsm);
         $query->setParameter(1, 'romanb');
@@ -87,11 +88,11 @@ class NativeQueryTest extends OrmFunctionalTestCase
 
         $rsm = new ResultSetMapping;
         $rsm->addEntityResult(CmsAddress::class, 'a');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('id'), 'id');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('country'), 'country');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('zip'), 'zip');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('city'), 'city');
-        $rsm->addMetaResult('a', $this->platform->getSQLResultCasing('user_id'), 'user_id', false, 'integer');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'id'), 'id');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'country'), 'country');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'zip'), 'zip');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'city'), 'city');
+        $rsm->addMetaResult('a', SQLResultCaser::casing($this->platform, 'user_id'), 'user_id', false, 'integer');
 
         $query = $this->_em->createNativeQuery('SELECT a.id, a.country, a.zip, a.city, a.user_id FROM cms_addresses a WHERE a.id = ?', $rsm);
         $query->setParameter(1, $addr->id);
@@ -126,11 +127,11 @@ class NativeQueryTest extends OrmFunctionalTestCase
 
         $rsm = new ResultSetMapping;
         $rsm->addEntityResult(CmsUser::class, 'u');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('id'), 'id');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('name'), 'name');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('status'), 'status');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'id'), 'id');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'name'), 'name');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'status'), 'status');
         $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
-        $rsm->addFieldResult('p', $this->platform->getSQLResultCasing('phonenumber'), 'phonenumber');
+        $rsm->addFieldResult('p', SQLResultCaser::casing($this->platform, 'phonenumber'), 'phonenumber');
 
         $query = $this->_em->createNativeQuery('SELECT id, name, status, phonenumber FROM cms_users INNER JOIN cms_phonenumbers ON id = user_id WHERE username = ?', $rsm);
         $query->setParameter(1, 'romanb');
@@ -171,14 +172,14 @@ class NativeQueryTest extends OrmFunctionalTestCase
 
         $rsm = new ResultSetMapping;
         $rsm->addEntityResult(CmsUser::class, 'u');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('id'), 'id');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('name'), 'name');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('status'), 'status');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'id'), 'id');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'name'), 'name');
+        $rsm->addFieldResult('u', SQLResultCaser::casing($this->platform, 'status'), 'status');
         $rsm->addJoinedEntityResult(CmsAddress::class, 'a', 'u', 'address');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('a_id'), 'id');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('country'), 'country');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('zip'), 'zip');
-        $rsm->addFieldResult('a', $this->platform->getSQLResultCasing('city'), 'city');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'a_id'), 'id');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'country'), 'country');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'zip'), 'zip');
+        $rsm->addFieldResult('a', SQLResultCaser::casing($this->platform, 'city'), 'city');
 
         $query = $this->_em->createNativeQuery('SELECT u.id, u.name, u.status, a.id AS a_id, a.country, a.zip, a.city FROM cms_users u INNER JOIN cms_addresses a ON u.id = a.user_id WHERE u.username = ?', $rsm);
         $query->setParameter(1, 'romanb');
@@ -807,8 +808,8 @@ class NativeQueryTest extends OrmFunctionalTestCase
         $rsm = new ResultSetMappingBuilder($this->_em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
         $rsm->addEntityResult(DDC3899User::class, 'u');
         $rsm->addJoinedEntityResult(DDC3899FixContract::class, 'c', 'u', 'contracts');
-        $rsm->addFieldResult('u', $this->platform->getSQLResultCasing('id'), 'id');
-        $rsm->setDiscriminatorColumn('c', $this->platform->getSQLResultCasing('discr'));
+        $rsm->addFieldResult('u', 'id', 'id');
+        $rsm->setDiscriminatorColumn('c', 'discr');
 
         $selectClause = $rsm->generateSelectClause(['u' => 'u1', 'c' => 'c1']);
 

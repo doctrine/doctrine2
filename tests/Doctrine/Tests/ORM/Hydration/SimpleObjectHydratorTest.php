@@ -2,13 +2,17 @@
 
 namespace Doctrine\Tests\ORM\Hydration;
 
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\Tests\Mocks\ResultMock;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\Company\CompanyPerson;
 use Doctrine\Tests\Models\Issue5989\Issue5989Employee;
 use Doctrine\Tests\Models\Issue5989\Issue5989Manager;
 use Doctrine\Tests\Models\Issue5989\Issue5989Person;
+
+use function class_exists;
 
 class SimpleObjectHydratorTest extends HydrationTestCase
 {
@@ -32,7 +36,7 @@ class SimpleObjectHydratorTest extends HydrationTestCase
               ],
         ];
 
-        $stmt       = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator   = new \Doctrine\ORM\Internal\Hydration\SimpleObjectHydrator($this->_em);
         $hydrator->hydrateAll($stmt, $rsm);
     }
@@ -55,7 +59,7 @@ class SimpleObjectHydratorTest extends HydrationTestCase
         $expectedEntity->id = 1;
         $expectedEntity->city = 'Cracow';
 
-        $stmt       = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator   = new \Doctrine\ORM\Internal\Hydration\SimpleObjectHydrator($this->_em);
         $result = $hydrator->hydrateAll($stmt, $rsm);
         $this->assertEquals($result[0], $expectedEntity);
@@ -85,7 +89,7 @@ class SimpleObjectHydratorTest extends HydrationTestCase
               ],
         ];
 
-        $stmt       = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator   = new \Doctrine\ORM\Internal\Hydration\SimpleObjectHydrator($this->_em);
         $hydrator->hydrateAll($stmt, $rsm);
     }
@@ -114,7 +118,7 @@ class SimpleObjectHydratorTest extends HydrationTestCase
         $expectedEntity->id = 1;
         $expectedEntity->tags = ['tag1', 'tag2'];
 
-        $stmt       = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator   = new \Doctrine\ORM\Internal\Hydration\SimpleObjectHydrator($this->_em);
         $result = $hydrator->hydrateAll($stmt, $rsm);
         $this->assertEquals($result[0], $expectedEntity);

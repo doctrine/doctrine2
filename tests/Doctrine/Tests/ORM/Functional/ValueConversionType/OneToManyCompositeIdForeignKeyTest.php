@@ -58,14 +58,14 @@ class OneToManyCompositeIdForeignKeyTest extends OrmFunctionalTestCase
     {
         $conn = $this->_em->getConnection();
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT id4 FROM vct_auxiliary LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT id4 FROM vct_auxiliary LIMIT 1'));
 
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT id1 FROM vct_inversed_onetomany_compositeid_foreignkey LIMIT 1'));
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT foreign_id FROM vct_inversed_onetomany_compositeid_foreignkey LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT id1 FROM vct_inversed_onetomany_compositeid_foreignkey LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT foreign_id FROM vct_inversed_onetomany_compositeid_foreignkey LIMIT 1'));
 
-        $this->assertEquals('tuv', $conn->fetchColumn('SELECT id2 FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT associated_id FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT associated_foreign_id FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
+        $this->assertEquals('tuv', $conn->fetchOne('SELECT id2 FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT associated_id FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT associated_foreign_id FROM vct_owning_manytoone_compositeid_foreignkey LIMIT 1'));
     }
 
     /**

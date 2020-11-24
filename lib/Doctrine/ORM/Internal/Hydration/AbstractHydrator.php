@@ -19,6 +19,7 @@
 
 namespace Doctrine\ORM\Internal\Hydration;
 
+use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Driver\Statement;
 use Doctrine\DBAL\FetchMode;
 use Doctrine\DBAL\Types\Type;
@@ -90,7 +91,7 @@ abstract class AbstractHydrator
     /**
      * The statement that provides the data to hydrate.
      *
-     * @var \Doctrine\DBAL\Driver\Statement
+     * @var Statement|Result
      */
     protected $_stmt;
 
@@ -147,11 +148,12 @@ abstract class AbstractHydrator
     /**
      * Initiates a row-by-row hydration.
      *
+     * @param Statement|Result $stmt
      * @param mixed[] $hints
      *
      * @return iterable<mixed>
      */
-    public function toIterable(Statement $stmt, ResultSetMapping $resultSetMapping, array $hints = []) : iterable
+    public function toIterable($stmt, ResultSetMapping $resultSetMapping, array $hints = []): iterable
     {
         $this->_stmt  = $stmt;
         $this->_rsm   = $resultSetMapping;
@@ -166,7 +168,7 @@ abstract class AbstractHydrator
         $result = [];
 
         while (true) {
-            $row = $this->_stmt->fetch(FetchMode::ASSOCIATIVE);
+            $row = $this->_stmt->fetchAssociative();
 
             if ($row === false || $row === null) {
                 $this->cleanup();
@@ -214,7 +216,7 @@ abstract class AbstractHydrator
      */
     public function hydrateRow()
     {
-        $row = $this->_stmt->fetch(PDO::FETCH_ASSOC);
+        $row = $this->_stmt->fetchAssociative();
 
         if ($row === false || $row === null) {
             $this->cleanup();
@@ -259,7 +261,11 @@ abstract class AbstractHydrator
      */
     protected function cleanup()
     {
-        $this->_stmt->closeCursor();
+        if ($this->_stmt instanceof Statement) {
+            $this->_stmt->closeCursor();
+        } else {
+            $this->_stmt->free();
+        }
 
         $this->_stmt          = null;
         $this->_rsm           = null;

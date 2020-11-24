@@ -20,6 +20,7 @@
 namespace Doctrine\ORM\Persisters\Collection;
 
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Utility\PersisterHelper;
@@ -181,7 +182,7 @@ class OneToManyPersister extends AbstractCollectionPersister
      *
      * @return int
      *
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws Exception
      */
     private function deleteEntityCollection(PersistentCollection $collection)
     {
@@ -213,7 +214,7 @@ class OneToManyPersister extends AbstractCollectionPersister
      *
      * @return int
      *
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws Exception
      */
     private function deleteJoinedEntityCollection(PersistentCollection $collection)
     {

@@ -37,6 +37,6 @@ class UuidGenerator extends AbstractIdGenerator
         $conn = $em->getConnection();
         $sql = 'SELECT ' . $conn->getDatabasePlatform()->getGuidExpression();
 
-        return $conn->query($sql)->fetchColumn(0);
+        return $conn->query($sql)->fetchOne();
     }
 }

@@ -3,102 +3,203 @@
 namespace Doctrine\Tests\Mocks;
 
 use Doctrine\DBAL\Driver\Connection;
+use Doctrine\DBAL\Result;
+use Doctrine\DBAL\Driver\Statement;
 
 /**
  * Mock class for DriverConnection.
  */
-class DriverConnectionMock implements Connection
-{
-    /**
-     * @var \Doctrine\DBAL\Driver\Statement
-     */
-    private $statementMock;
-
-    /**
-     * @return \Doctrine\DBAL\Driver\Statement
-     */
-    public function getStatementMock()
+if (class_exists(Result::class)) {
+    class DriverConnectionMock implements Connection
     {
-        return $this->statementMock;
+        /**
+         * @var \Doctrine\DBAL\Driver\Statement
+         */
+        private $statementMock;
+
+        /**
+         * @return \Doctrine\DBAL\Driver\Statement
+         */
+        public function getStatementMock()
+        {
+            return $this->statementMock;
+        }
+
+        /**
+         * @param \Doctrine\DBAL\Driver\Statement $statementMock
+         */
+        public function setStatementMock($statementMock)
+        {
+            $this->statementMock = $statementMock;
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function prepare($prepareString): Statement
+        {
+            return $this->statementMock ?: new StatementMock();
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function query(string $sql): \Doctrine\DBAL\Driver\Result
+        {
+            return $this->statementMock ? $this->statementMock->execute() : new ResultMock();
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function quote($input, $type=\PDO::PARAM_STR)
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function exec($statement): int
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function lastInsertId($name = null)
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function beginTransaction()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function commit()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function rollBack()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function errorCode()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function errorInfo()
+        {
+        }
     }
-
-    /**
-     * @param \Doctrine\DBAL\Driver\Statement $statementMock
-     */
-    public function setStatementMock($statementMock)
+} else {
+    class DriverConnectionMock implements Connection
     {
-        $this->statementMock = $statementMock;
-    }
+        /**
+         * @var \Doctrine\DBAL\Driver\Statement
+         */
+        private $statementMock;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function prepare($prepareString)
-    {
-        return $this->statementMock ?: new StatementMock();
-    }
+        /**
+         * @return \Doctrine\DBAL\Driver\Statement
+         */
+        public function getStatementMock()
+        {
+            return $this->statementMock;
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function query()
-    {
-        return $this->statementMock ?: new StatementMock();
-    }
+        /**
+         * @param \Doctrine\DBAL\Driver\Statement $statementMock
+         */
+        public function setStatementMock($statementMock)
+        {
+            $this->statementMock = $statementMock;
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function quote($input, $type=\PDO::PARAM_STR)
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function prepare($prepareString)
+        {
+            return $this->statementMock ?: new StatementMock();
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function exec($statement)
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function query()
+        {
+            return $this->statementMock ?: new StatementMock();
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function lastInsertId($name = null)
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function quote($input, $type=\PDO::PARAM_STR)
+        {
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function beginTransaction()
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function exec($statement)
+        {
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function commit()
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function lastInsertId($name = null)
+        {
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function rollBack()
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function beginTransaction()
+        {
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function errorCode()
-    {
-    }
+        /**
+         * {@inheritdoc}
+         */
+        public function commit()
+        {
+        }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function errorInfo()
-    {
+        /**
+         * {@inheritdoc}
+         */
+        public function rollBack()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function errorCode()
+        {
+        }
+
+        /**
+         * {@inheritdoc}
+         */
+        public function errorInfo()
+        {
+        }
     }
 }
+

@@ -2,10 +2,14 @@
 
 namespace Doctrine\Tests\ORM\Hydration;
 
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\Internal\Hydration\ScalarHydrator;
 use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\Tests\Mocks\ResultMock;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\Models\CMS\CmsUser;
+
+use function class_exists;
 
 class ScalarHydratorTest extends HydrationTestCase
 {
@@ -32,7 +36,7 @@ class ScalarHydratorTest extends HydrationTestCase
         ];
 
 
-        $stmt = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new ScalarHydrator($this->_em);
 
         $result = $hydrator->hydrateAll($stmt, $rsm);
@@ -63,7 +67,7 @@ class ScalarHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new ScalarHydrator($this->_em);
 
         self::assertCount(1, $hydrator->hydrateAll($stmt, $rsm));
@@ -93,7 +97,7 @@ class ScalarHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new ScalarHydrator($this->_em);
 
         self::assertCount(1, $hydrator->hydrateAll($stmt, $rsm));

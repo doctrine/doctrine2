@@ -27,6 +27,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Id\BigIntegerIdentityGenerator;
 use Doctrine\ORM\Id\IdentityGenerator;
 use Doctrine\ORM\ORMException;
+use Doctrine\ORM\Utility\SchemaElementNameFixer;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
@@ -624,13 +625,22 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     {
         $idGenType = $class->generatorType;
         if ($idGenType == ClassMetadata::GENERATOR_TYPE_AUTO) {
+            if ($this->getTargetPlatform()->supportsIdentityColumns()) {
+                $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_IDENTITY);
+            } elseif ($this->getTargetPlatform()->supportsSequences()) {
+                $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_SEQUENCE);
+            } else {
+                $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_TABLE);
+            }
+            /*
+             * @todo WIP
             if ($this->getTargetPlatform()->prefersSequences()) {
                 $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_SEQUENCE);
             } else if ($this->getTargetPlatform()->prefersIdentityColumns()) {
                 $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_IDENTITY);
             } else {
                 $class->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_TABLE);
-            }
+            }*/
         }
 
         // Create & assign an appropriate ID generator instance
@@ -646,7 +656,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
                     $sequencePrefix = $class->getSequencePrefix($this->getTargetPlatform());
                     $sequenceName   = $this->getTargetPlatform()->getIdentitySequenceName($sequencePrefix, $columnName);
                     $definition     = [
-                        'sequenceName' => $this->getTargetPlatform()->fixSchemaElementName($sequenceName)
+                        'sequenceName' => SchemaElementNameFixer::fix($this->getTargetPlatform(), $sequenceName),
                     ];
 
                     if ($quoted) {
@@ -678,7 +688,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
                     $quoted         = isset($class->fieldMappings[$fieldName]['quoted']) || isset($class->table['quoted']);
 
                     $definition = [
-                        'sequenceName'      => $this->getTargetPlatform()->fixSchemaElementName($sequenceName),
+                        'sequenceName'      => SchemaElementNameFixer::fix($this->getTargetPlatform(), $sequenceName),
                         'allocationSize'    => 1,
                         'initialValue'      => 1,
                     ];

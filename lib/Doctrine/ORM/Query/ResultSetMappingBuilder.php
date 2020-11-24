@@ -23,6 +23,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Doctrine\ORM\Utility\SQLResultCaser;
 use function explode;
 
 /**
@@ -152,7 +153,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
 
         foreach ($classMetadata->getColumnNames() as $columnName) {
             $propertyName = $classMetadata->getFieldName($columnName);
-            $columnAlias  = $platform->getSQLResultCasing($columnAliasMap[$columnName]);
+            $columnAlias  = SQLResultCaser::casing($platform, $columnAliasMap[$columnName]);
 
             if (isset($this->fieldMappings[$columnAlias])) {
                 throw new \InvalidArgumentException("The column '$columnName' conflicts with another column in the mapper.");
@@ -168,7 +169,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
 
                 foreach ($associationMapping['joinColumns'] as $joinColumn) {
                     $columnName  = $joinColumn['name'];
-                    $columnAlias = $platform->getSQLResultCasing($columnAliasMap[$columnName]);
+                    $columnAlias = SQLResultCaser::casing($platform, $columnAliasMap[$columnName]);
                     $columnType = PersisterHelper::getTypeOfColumn($joinColumn['referencedColumnName'], $targetClass, $this->em);
 
                     if (isset($this->metaMappings[$columnAlias])) {

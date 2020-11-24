@@ -21,6 +21,7 @@ namespace Doctrine\ORM\Query;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 
 /**
  * Provides an enclosed support for parameter inferring.
@@ -36,7 +37,7 @@ class ParameterTypeInferer
 {
     /**
      * Infers type of a given value, returning a compatible constant:
-     * - Type (\Doctrine\DBAL\Types\Type::*)
+     * - Type (\Doctrine\DBAL\Types\Types::*)
      * - Connection (\Doctrine\DBAL\Connection::PARAM_*)
      *
      * @param mixed $value Parameter value.
@@ -46,19 +47,20 @@ class ParameterTypeInferer
     public static function inferType($value)
     {
         if (is_int($value)) {
-            return Type::INTEGER;
+            return Types::INTEGER;
+            return Types::INTEGER;
         }
 
         if (is_bool($value)) {
-            return Type::BOOLEAN;
+            return Types::BOOLEAN;
         }
 
         if ($value instanceof \DateTime || $value instanceof \DateTimeInterface) {
-            return Type::DATETIME;
+            return Types::DATETIME_MUTABLE;
         }
 
         if ($value instanceof \DateInterval) {
-            return Type::DATEINTERVAL;
+            return Types::DATEINTERVAL;
         }
 
         if (is_array($value)) {

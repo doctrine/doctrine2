@@ -22,6 +22,7 @@ namespace Doctrine\ORM\Persisters\Entity;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Doctrine\ORM\Utility\SQLResultCaser;
 
 /**
  * Persister for entities that participate in a hierarchy mapped with the
@@ -63,7 +64,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
 
         $columnList[]   = $tableAlias . '.' . $discrColumn;
 
-        $resultColumnName = $this->platform->getSQLResultCasing($discrColumn);
+        $resultColumnName = SQLResultCaser::casing($this->platform, $discrColumn);
 
         $this->currentPersisterContext->rsm->setDiscriminatorColumn('r', $resultColumnName);
         $this->currentPersisterContext->rsm->addMetaResult('r', $resultColumnName, $discrColumn, false, $discrColumnType);

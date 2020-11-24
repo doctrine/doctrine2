@@ -2,11 +2,15 @@
 
 namespace Doctrine\Tests\ORM\Hydration;
 
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\Internal\Hydration\SingleScalarHydrator;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\Tests\Mocks\ResultMock;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\Models\CMS\CmsUser;
+
+use function class_exists;
 
 class SingleScalarHydratorTest extends HydrationTestCase
 {
@@ -69,7 +73,7 @@ class SingleScalarHydratorTest extends HydrationTestCase
         $rsm->addFieldResult('u', 'u__id', 'id');
         $rsm->addFieldResult('u', 'u__name', 'name');
 
-        $stmt = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new SingleScalarHydrator($this->_em);
 
         if ($name === 'result1') {

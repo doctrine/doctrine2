@@ -82,7 +82,7 @@ class TableGenerator extends AbstractIdGenerator
             if ($conn->getTransactionNestingLevel() === 0) {
                 // use select for update
                 $sql          = $conn->getDatabasePlatform()->getTableHiLoCurrentValSql($this->_tableName, $this->_sequenceName);
-                $currentLevel = $conn->fetchColumn($sql);
+                $currentLevel = $conn->fetchOne($sql);
 
                 if ($currentLevel != null) {
                     $this->_nextValue = $currentLevel;

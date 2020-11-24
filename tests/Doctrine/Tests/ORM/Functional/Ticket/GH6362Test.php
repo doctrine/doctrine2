@@ -2,10 +2,14 @@
 
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
+use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\Tests\Mocks\ResultMock;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
-use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\DBAL\Result;
+
+use function class_exists;
 
 final class GH6362Test extends OrmFunctionalTestCase
 {
@@ -66,7 +70,7 @@ final class GH6362Test extends OrmFunctionalTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ObjectHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm, [Query::HINT_FORCE_PARTIAL_LOAD => true]);
 

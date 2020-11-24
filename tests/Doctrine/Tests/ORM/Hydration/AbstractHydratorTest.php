@@ -4,7 +4,7 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Driver\Statement;
+use Doctrine\DBAL\Statement;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
@@ -57,6 +57,10 @@ class AbstractHydratorTest extends OrmFunctionalTestCase
         $this->mockStatement
             ->expects(self::any())
             ->method('fetch')
+            ->willReturn(false);
+        $this->mockStatement
+            ->expects(self::any())
+            ->method('fetchAssociative')
             ->willReturn(false);
 
         $this->hydrator = $this

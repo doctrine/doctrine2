@@ -51,12 +51,12 @@ class ManyToManyTest extends OrmFunctionalTestCase
     {
         $conn = $this->_em->getConnection();
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT id1 FROM vct_inversed_manytomany LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT id1 FROM vct_inversed_manytomany LIMIT 1'));
 
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT id2 FROM vct_owning_manytomany LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT id2 FROM vct_owning_manytomany LIMIT 1'));
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT inversed_id FROM vct_xref_manytomany LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT owning_id FROM vct_xref_manytomany LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT inversed_id FROM vct_xref_manytomany LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT owning_id FROM vct_xref_manytomany LIMIT 1'));
     }
 
     /**
@@ -148,6 +148,6 @@ class ManyToManyTest extends OrmFunctionalTestCase
 
         // test association is removed
 
-        $this->assertEquals(0, $conn->fetchColumn('SELECT COUNT(*) FROM vct_xref_manytomany'));
+        $this->assertEquals(0, $conn->fetchOne('SELECT COUNT(*) FROM vct_xref_manytomany'));
     }
 }

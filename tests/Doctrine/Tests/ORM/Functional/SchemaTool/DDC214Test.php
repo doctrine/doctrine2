@@ -21,7 +21,7 @@ class DDC214Test extends OrmFunctionalTestCase
 
         $conn = $this->_em->getConnection();
 
-        if (strpos($conn->getDriver()->getName(), "sqlite") !== false) {
+        if ($conn->getDriver() instanceof \Doctrine\DBAL\Driver\PDO\SQLite\Driver) {
             $this->markTestSkipped('SQLite does not support ALTER TABLE statements.');
         }
         $this->schemaTool = new Tools\SchemaTool($this->_em);

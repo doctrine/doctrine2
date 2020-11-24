@@ -2,14 +2,18 @@
 
 namespace Doctrine\Tests\ORM\Hydration;
 
+use Doctrine\DBAL\Result;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\Mocks\HydratorMockStatement;
+use Doctrine\Tests\Mocks\ResultMock;
 use Doctrine\Tests\Models\CMS\CmsArticle;
 use Doctrine\Tests\Models\CMS\CmsComment;
 use Doctrine\Tests\Models\CMS\CmsPhonenumber;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\Forum\ForumBoard;
 use Doctrine\Tests\Models\Forum\ForumCategory;
+
+use function class_exists;
 
 class ArrayHydratorTest extends HydrationTestCase
 {
@@ -47,7 +51,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -91,7 +95,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -139,7 +143,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -186,7 +190,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -236,7 +240,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -290,7 +294,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -344,7 +348,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -399,7 +403,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -463,7 +467,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -537,7 +541,7 @@ class ArrayHydratorTest extends HydrationTestCase
         ];
 
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -651,7 +655,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -790,7 +794,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -904,7 +908,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -967,7 +971,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -1016,7 +1020,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $iterator = $hydrator->iterate($stmt, $rsm);
         $rowNum   = 0;
@@ -1061,7 +1065,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ]
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $iterator = $hydrator->iterate($stmt, $rsm);
         $rowNum   = 0;
@@ -1106,7 +1110,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -1157,7 +1161,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 
@@ -1207,7 +1211,7 @@ class ArrayHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $stmt     = new HydratorMockStatement($resultSet);
+        $stmt     = class_exists(Result::class) ? new ResultMock($resultSet) : new HydratorMockStatement($resultSet);
         $hydrator = new \Doctrine\ORM\Internal\Hydration\ArrayHydrator($this->_em);
         $result   = $hydrator->hydrateAll($stmt, $rsm);
 

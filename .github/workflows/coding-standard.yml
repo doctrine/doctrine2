@@ -1,4 +1,4 @@
-name: Static Analysis
+name: Coding Standards
 
 on:
   pull_request:

@@ -19,6 +19,7 @@
 
 namespace Doctrine\ORM\Persisters\Entity;
 
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping\ClassMetadata;
 
 use Doctrine\DBAL\LockMode;
@@ -26,8 +27,12 @@ use Doctrine\DBAL\Types\Type;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Doctrine\ORM\Utility\SQLResultCaser;
+use Doctrine\DBAL\Result;
 use function array_combine;
 use function array_reverse;
+use function class_exists;
+use function method_exists;
 
 /**
  * The joined subclass persister maps a single entity instance to several tables in the
@@ -146,6 +151,8 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
 
         // Prepare statements for sub tables.
         $subTableStmts = [];
+        // Prepare results for sub tables.
+        $subTableResults = [];
 
         if ($rootClass !== $this->class) {
             $subTableStmts[$this->class->getTableName()] = $this->conn->prepare($this->getInsertSQL());
@@ -174,7 +181,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
                 $rootTableStmt->bindValue($paramIndex++, $value, $this->columnTypes[$columnName]);
             }
 
-            $rootTableStmt->execute();
+            $rootTableResult = $rootTableStmt->execute();
 
             if ($isPostInsertId) {
                 $generatedId = $idGenerator->generate($this->em, $entity);
@@ -201,7 +208,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
                 $data       = $insertData[$tableName] ?? [];
 
                 foreach ((array) $id as $idName => $idVal) {
-                    $type = isset($this->columnTypes[$idName]) ? $this->columnTypes[$idName] : Type::STRING;
+                    $type = $this->columnTypes[$idName] ?? Types::STRING;
 
                     $stmt->bindValue($paramIndex++, $idVal, $type);
                 }
@@ -212,14 +219,22 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
                     }
                 }
 
-                $stmt->execute();
+                $subTableResults[] = $stmt->execute();
             }
         }
 
-        $rootTableStmt->closeCursor();
+        if (method_exists($rootTableStmt, 'closeCursor')) {
+            $rootTableStmt->closeCursor();
 
-        foreach ($subTableStmts as $stmt) {
-            $stmt->closeCursor();
+            foreach ($subTableStmts as $stmt) {
+                $stmt->closeCursor();
+            }
+        } else {
+            $rootTableResult->free();
+
+            foreach ($subTableResults as $subTableResult) {
+                $subTableResult->free();
+            }
         }
 
         $this->queuedInserts = [];
@@ -365,7 +380,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
         $tableName  = $this->quoteStrategy->getTableName($this->class, $this->platform);
         $from       = ' FROM ' . $tableName . ' ' . $baseTableAlias;
         $where      = $conditionSql != '' ? ' WHERE ' . $conditionSql : '';
-        $lock       = $this->platform->appendLockHint($from, $lockMode);
+        $lock       = $this->platform->appendLockHint($from, class_exists(Result::class) ? (int) $lockMode : $lockMode);
         $columnList = $this->getSelectColumnsSQL();
         $query      = 'SELECT '  . $columnList
                     . $lock
@@ -450,7 +465,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
         $discrColumn        = $this->class->discriminatorColumn['name'];
         $discrColumnType    = $this->class->discriminatorColumn['type'];
         $baseTableAlias     = $this->getSQLTableAlias($this->class->name);
-        $resultColumnName   = $this->platform->getSQLResultCasing($discrColumn);
+        $resultColumnName   = SQLResultCaser::casing($this->platform, $discrColumn);
 
         $this->currentPersisterContext->rsm->addEntityResult($this->class->name, 'r');
         $this->currentPersisterContext->rsm->setDiscriminatorColumn('r', $resultColumnName);

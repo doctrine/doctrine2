@@ -158,7 +158,7 @@ class ObjectHydrator extends AbstractHydrator
     {
         $result = [];
 
-        while ($row = $this->_stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $this->_stmt->fetchAssociative()) {
             $this->hydrateRowData($row, $result);
         }
 

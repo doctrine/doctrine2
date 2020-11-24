@@ -2,8 +2,7 @@
 
 namespace Doctrine\Tests\ORM\Functional;
 
-use Doctrine\DBAL\Types\Type as DBALType;
-use Doctrine\ORM\Mapping\AssociationMapping;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Tests\Models\Generic\BooleanModel;
 use Doctrine\Tests\Models\Generic\DateTimeModel;
 use Doctrine\Tests\Models\Generic\DecimalModel;
@@ -143,7 +142,7 @@ class TypeTest extends OrmFunctionalTestCase
         $this->_em->clear();
 
         $dateTimeDb = $this->_em->createQuery('SELECT d FROM Doctrine\Tests\Models\Generic\DateTimeModel d WHERE d.datetime = ?1')
-                                ->setParameter(1, $date, DBALType::DATETIME)
+                                ->setParameter(1, $date, Types::DATETIME_MUTABLE)
                                 ->getSingleResult();
 
         $this->assertInstanceOf(\DateTime::class, $dateTimeDb->datetime);
@@ -165,7 +164,7 @@ class TypeTest extends OrmFunctionalTestCase
                                  ->select('d')
                                  ->from(DateTimeModel::class, 'd')
                                  ->where('d.datetime = ?1')
-                                 ->setParameter(1, $date, DBALType::DATETIME)
+                                 ->setParameter(1, $date, Types::DATETIME_MUTABLE)
                                  ->getQuery()->getSingleResult();
 
         $this->assertInstanceOf(\DateTime::class, $dateTimeDb->datetime);

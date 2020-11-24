@@ -5,21 +5,19 @@ namespace Doctrine\Tests\ORM\Query;
 use DateTime;
 use Doctrine\Common\Cache\ArrayCache;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Internal\Hydration\IterableResult;
-use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Tests\Mocks\DriverConnectionMock;
 use Doctrine\Tests\Mocks\EntityManagerMock;
-use Doctrine\Tests\Mocks\StatementArrayMock;
+use Doctrine\Tests\Mocks\StatementMock;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\Generic\DateTimeModel;
 use Doctrine\Tests\OrmTestCase;
 use Generator;
-use ReflectionClass;
 
 class QueryTest extends OrmTestCase
 {
@@ -298,7 +296,7 @@ class QueryTest extends OrmTestCase
         $this->_em->getConfiguration()->setQueryCacheImpl(new ArrayCache());
         /** @var DriverConnectionMock $driverConnectionMock */
         $driverConnectionMock = $this->_em->getConnection()->getWrappedConnection();
-        $stmt = new StatementArrayMock([
+        $stmt = new StatementMock([
             [
                 'id_0' => 1,
             ]
@@ -345,12 +343,12 @@ class QueryTest extends OrmTestCase
         $driverConnectionMock = $this->_em->getConnection()
                                           ->getWrappedConnection();
 
-        $driverConnectionMock->setStatementMock(new StatementArrayMock([['id_0' => 1]]));
+        $driverConnectionMock->setStatementMock(new StatementMock([['id_0' => 1]]));
 
         // Performs the query and sets up the initial cache
         self::assertCount(1, $query->getResult());
 
-        $driverConnectionMock->setStatementMock(new StatementArrayMock([['id_0' => 1], ['id_0' => 2]]));
+        $driverConnectionMock->setStatementMock(new StatementMock([['id_0' => 1], ['id_0' => 2]]));
 
         // Retrieves cached data since expire flag is false and we have a cached result set
         self::assertCount(1, $query->getResult());
@@ -358,7 +356,7 @@ class QueryTest extends OrmTestCase
         // Performs the query and caches the result set since expire flag is true
         self::assertCount(2, $query->expireResultCache(true)->getResult());
 
-        $driverConnectionMock->setStatementMock(new StatementArrayMock([['id_0' => 1]]));
+        $driverConnectionMock->setStatementMock(new StatementMock([['id_0' => 1]]));
 
         // Retrieves cached data since expire flag is false and we have a cached result set
         self::assertCount(2, $query->expireResultCache(false)->getResult());
@@ -477,7 +475,7 @@ class QueryTest extends OrmTestCase
 
         $query = $this->_em->createQuery('SELECT d FROM ' . DateTimeModel::class . ' d WHERE d.datetime = :value');
 
-        $query->setParameter('value', new DateTime(), Type::DATETIME);
+        $query->setParameter('value', new DateTime(), Types::DATETIME_MUTABLE);
 
         self::assertEmpty($query->getResult());
     }

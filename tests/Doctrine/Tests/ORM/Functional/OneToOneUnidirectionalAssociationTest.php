@@ -102,7 +102,7 @@ class OneToOneUnidirectionalAssociationTest extends OrmFunctionalTestCase
         $foreignKey = $this->_em->getConnection()->executeQuery(
             'SELECT shipping_id FROM ecommerce_products WHERE id=?',
             [$this->product->getId()]
-        )->fetchColumn();
+        )->fetchOne();
         $this->assertEquals($value, $foreignKey);
     }
 

@@ -2,11 +2,14 @@
 
 namespace Doctrine\Tests\ORM\Tools\Console;
 
+use Doctrine\DBAL\Tools\Console\Command\ImportCommand;
 use Doctrine\ORM\Tools\Console\ConsoleRunner;
 use Doctrine\Tests\DoctrineTestCase;
 use PackageVersions\Versions;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\HelperSet;
+
+use function class_exists;
 
 /**
  * @group DDC-3186
@@ -23,9 +26,11 @@ final class ConsoleRunnerTest extends DoctrineTestCase
         self::assertSame($helperSet, $app->getHelperSet());
         self::assertSame(Versions::getVersion('doctrine/orm'), $app->getVersion());
 
-        self::assertTrue($app->has('dbal:import'));
-        self::assertTrue($app->has('dbal:reserved-words'));
-        self::assertTrue($app->has('dbal:run-sql'));
+        if (class_exists(ImportCommand::class)) {
+            self::assertTrue($app->has('dbal:import'));
+            self::assertTrue($app->has('dbal:reserved-words'));
+            self::assertTrue($app->has('dbal:run-sql'));
+        }
         self::assertTrue($app->has('orm:clear-cache:region:collection'));
         self::assertTrue($app->has('orm:clear-cache:region:entity'));
         self::assertTrue($app->has('orm:clear-cache:region:query'));

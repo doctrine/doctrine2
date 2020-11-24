@@ -19,6 +19,7 @@
 
 namespace Doctrine\ORM\Internal\Hydration;
 
+use Doctrine\ORM\Utility\SQLResultCaser;
 use PDO;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query;
@@ -66,7 +67,7 @@ class SimpleObjectHydrator extends AbstractHydrator
     {
         $result = [];
 
-        while ($row = $this->_stmt->fetch(PDO::FETCH_ASSOC)) {
+        while ($row = $this->_stmt->fetchAssociative()) {
             $this->hydrateRowData($row, $result);
         }
 
@@ -86,7 +87,7 @@ class SimpleObjectHydrator extends AbstractHydrator
 
         // We need to find the correct entity class name if we have inheritance in resultset
         if ($this->class->inheritanceType !== ClassMetadata::INHERITANCE_TYPE_NONE) {
-            $discrColumnName = $this->_platform->getSQLResultCasing($this->class->discriminatorColumn['name']);
+            $discrColumnName = SQLResultCaser::casing($this->_platform, $this->class->discriminatorColumn['name']);
 
             // Find mapped discriminator column from the result set.
             if ($metaMappingDiscrColumnName = array_search($discrColumnName, $this->_rsm->metaMappings)) {

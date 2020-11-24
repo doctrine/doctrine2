@@ -51,12 +51,12 @@ class OneToOneCompositeIdTest extends OrmFunctionalTestCase
     {
         $conn = $this->_em->getConnection();
 
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT id1 FROM vct_inversed_onetoone_compositeid LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT id2 FROM vct_inversed_onetoone_compositeid LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT id1 FROM vct_inversed_onetoone_compositeid LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT id2 FROM vct_inversed_onetoone_compositeid LIMIT 1'));
 
-        $this->assertEquals('tuv', $conn->fetchColumn('SELECT id3 FROM vct_owning_onetoone_compositeid LIMIT 1'));
-        $this->assertEquals('nop', $conn->fetchColumn('SELECT associated_id1 FROM vct_owning_onetoone_compositeid LIMIT 1'));
-        $this->assertEquals('qrs', $conn->fetchColumn('SELECT associated_id2 FROM vct_owning_onetoone_compositeid LIMIT 1'));
+        $this->assertEquals('tuv', $conn->fetchOne('SELECT id3 FROM vct_owning_onetoone_compositeid LIMIT 1'));
+        $this->assertEquals('nop', $conn->fetchOne('SELECT associated_id1 FROM vct_owning_onetoone_compositeid LIMIT 1'));
+        $this->assertEquals('qrs', $conn->fetchOne('SELECT associated_id2 FROM vct_owning_onetoone_compositeid LIMIT 1'));
     }
 
     /**
