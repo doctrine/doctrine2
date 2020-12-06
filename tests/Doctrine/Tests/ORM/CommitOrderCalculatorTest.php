@@ -5,6 +5,7 @@ namespace Doctrine\Tests\ORM;
 use Doctrine\ORM\Internal\CommitOrderCalculator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\OrmTestCase;
+use function array_search;
 
 /**
  * Tests of the commit order calculation.
@@ -99,6 +100,90 @@ class CommitOrderCalculatorTest extends OrmTestCase
 
         // We want to perform a strict comparison of the array
         $this->assertContains($sorted, $correctOrders, '', false, true);
+    }
+
+    public function testCommitOrdering4()
+    {
+        // testing Fixed commit order
+        $class1 = new ClassMetadata(NodeClass1::class);
+        $class2 = new ClassMetadata(NodeClass2::class);
+        $class3 = new ClassMetadata(NodeClass3::class);
+        $class4 = new ClassMetadata(NodeClass4::class);
+
+        $this->_calc->addNode($class1->name, $class1);
+        $this->_calc->addNode($class2->name, $class2);
+        $this->_calc->addNode($class3->name, $class3);
+        $this->_calc->addNode($class4->name, $class4);
+
+        $this->_calc->addDependency($class1->name, $class2->name, 0);
+        $this->_calc->addDependency($class2->name, $class3->name, 0);
+        $this->_calc->addDependency($class3->name, $class1->name, 0);
+        $this->_calc->addDependency($class2->name, $class4->name, 0);
+        $this->_calc->addDependency($class4->name, $class1->name, 1);
+
+        /*
+               +---------+
+               |         |
+            +--+ Class 4 <---+
+            |  |         |   |
+          1 |  +---------+   | 0
+            |                |
+            v                |
+        +---+-----+    +-----+---+
+        |         |    |         |
+        | Class 1 +--->+ Class 2 |
+        |         | 0  |         |
+        +---+-----+    +-----+---+
+            ^                |
+            |                |
+          0 |                | 0
+            |  +---------+   |
+            |  |         |   |
+            +--+ Class 3 +<--+
+               |         |
+               +---------+
+        */
+
+        $sorted = $this->_calc->sort();
+        $index1 = array_search($class1, $sorted, true);
+        $index4 = array_search($class4, $sorted, true);
+
+        $this->assertLessThan($index1, $index4);
+    }
+
+    public function testCommitOrdering5()
+    {
+        // testing Fixed commit order with multiple edges of different priority
+        // between two certain nodes
+        $class1 = new ClassMetadata(NodeClass1::class);
+        $class2 = new ClassMetadata(NodeClass2::class);
+
+        $this->_calc->addNode($class1->name, $class1);
+        $this->_calc->addNode($class2->name, $class2);
+
+        $this->_calc->addDependency($class1->name, $class2->name, 0);
+        $this->_calc->addDependency($class2->name, $class1->name, 1);
+        $this->_calc->addDependency($class2->name, $class1->name, 0);
+
+        /*
+                     1
+            +----------------+
+            v                |
+        +---+-----+    +-----+---+
+        |         |    |         |
+        | Class 1 +--->+ Class 2 |
+        |         | 0  |         |
+        +---+-----+    +-----+---+
+            ^                |
+            +----------------+
+                     0
+        */
+
+        $sorted = $this->_calc->sort();
+        $index1 = array_search($class1, $sorted, true);
+        $index2 = array_search($class2, $sorted, true);
+
+        $this->assertLessThan($index1, $index2);
     }
 }
 
