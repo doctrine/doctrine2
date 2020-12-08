@@ -174,10 +174,19 @@ collection, which means we can compute this value at runtime:
 Now we can always call ``Account::getBalance()`` to access the
 current account balance.
 
-To enforce the max credit rule we have to implement the "Aggregate
+To enforce the max credit rule we implement the "Aggregate
 Root" pattern as described in Eric Evans book on Domain Driven
 Design. Described with one sentence, an aggregate root controls the
 instance creation, access and manipulation of its children.
+
+It should be noted that, while using data integrity checks with
+Doctrine is a good idea, if you're designing an accounting or monetary 
+transactional data layer, or really any data that must remain 100% accurate
+you should consider also using validation at the db layer.  Most RDBMSes 
+support triggers and functions/procedures which can be used to ensure 
+that any inserts,  update, or deletes, always maintain full data integrity.  
+Doctrine,  should be used in addition to these checks, but it not a 
+real substitute.
 
 In our case we want to enforce that new entries can only added to
 the ``Account`` by using a designated method. The ``Account`` is
