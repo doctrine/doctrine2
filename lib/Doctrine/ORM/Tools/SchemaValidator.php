@@ -22,6 +22,8 @@ namespace Doctrine\ORM\Tools;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\DBAL\Types\Type;
+use function class_exists;
+use function interface_exists;
 
 /**
  * Performs strict validation of the mapping schema
@@ -97,7 +99,12 @@ class SchemaValidator
         }
 
         foreach ($class->associationMappings as $fieldName => $assoc) {
-            if (!class_exists($assoc['targetEntity']) || $cmf->isTransient($assoc['targetEntity'])) {
+            /**
+             * Resolving target entities from Interface or Abstract ex. resolve_target_entities
+             */
+            $targetEntity = isset($cmf->getLoadedMetadata()[$assoc['targetEntity']])
+                ? $cmf->getLoadedMetadata()[$assoc['targetEntity']]->name : $assoc['targetEntity'];
+            if ((! class_exists($assoc['targetEntity']) && ! interface_exists($assoc['targetEntity'])) || $cmf->isTransient($targetEntity)) {
                 $ce[] = "The target entity '" . $assoc['targetEntity'] . "' specified on " . $class->name . '#' . $fieldName . ' is unknown or not an entity.';
 
                 return $ce;
