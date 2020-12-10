@@ -466,6 +466,11 @@ hierarchies:
     $query = $em->createQuery('SELECT u FROM Doctrine\Tests\Models\Company\CompanyPerson u WHERE u INSTANCE OF Doctrine\Tests\Models\Company\CompanyEmployee');
     $query = $em->createQuery('SELECT u FROM Doctrine\Tests\Models\Company\CompanyPerson u WHERE u INSTANCE OF ?1');
     $query = $em->createQuery('SELECT u FROM Doctrine\Tests\Models\Company\CompanyPerson u WHERE u NOT INSTANCE OF ?1');
+    $query->setParameter(0, $em->getClassMetadata(CompanyEmployee::class));
+
+.. note::
+    To use a class as parameter, you have to bind its class metadata:
+    ``$query->setParameter(0, $em->getClassMetadata(CompanyEmployee::class);``.
 
 Get all users visible on a given website that have chosen certain gender:
 
