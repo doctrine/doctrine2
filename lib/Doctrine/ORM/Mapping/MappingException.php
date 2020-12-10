@@ -155,6 +155,17 @@ class MappingException extends \Doctrine\ORM\ORMException
     }
 
     /**
+     * @param string $entityName
+     * @param string $value
+     *
+     * @return MappingException
+     */
+    public static function invalidTableName($entityName, string $value)
+    {
+        return new self("Invalid table name for class '$entityName' expected 'string' got '$value'.");
+    }
+
+    /**
      * @param string $className
      * @param string $fieldName
      *
