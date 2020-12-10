@@ -212,7 +212,7 @@ class BasicEntityPersister implements EntityPersister
         $this->conn                  = $em->getConnection();
         $this->platform              = $this->conn->getDatabasePlatform();
         $this->quoteStrategy         = $em->getConfiguration()->getQuoteStrategy();
-        $this->identifierFlattener   = new IdentifierFlattener($em->getUnitOfWork(), $em->getMetadataFactory());
+        $this->identifierFlattener   = $em->getUnitOfWork()->getIdentifierFlattener();
         $this->noLimitsContext       = $this->currentPersisterContext = new CachedPersisterContext(
             $class,
             new Query\ResultSetMapping(),

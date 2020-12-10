@@ -312,6 +312,11 @@ class UnitOfWork implements PropertyChangedListener
         $this->reflectionPropertiesGetter = new ReflectionPropertiesGetter(new RuntimeReflectionService());
     }
 
+    public function getIdentifierFlattener() : IdentifierFlattener
+    {
+        return $this->identifierFlattener;
+    }
+
     /**
      * Commits the UnitOfWork, executing all operations that have been postponed
      * up to this point. The state of all managed entities will be synchronized with
