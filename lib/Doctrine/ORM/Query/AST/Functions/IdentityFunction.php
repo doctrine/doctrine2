@@ -19,6 +19,9 @@
 
 namespace Doctrine\ORM\Query\AST\Functions;
 
+use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Query\AST\PathExpression;
+use Doctrine\ORM\Query\AST\TypedExpression;
 use Doctrine\ORM\Query\Lexer;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
@@ -33,17 +36,16 @@ use Doctrine\ORM\Query\QueryException;
  * @author  Guilherme Blanco <guilhermeblanco@hotmail.com>
  * @author  Benjamin Eberlei <kontakt@beberlei.de>
  */
-class IdentityFunction extends FunctionNode
+class IdentityFunction extends FunctionNode implements TypedExpression
 {
-    /**
-     * @var \Doctrine\ORM\Query\AST\PathExpression
-     */
+    /** @var PathExpression */
     public $pathExpression;
 
-    /**
-     * @var string
-     */
+    /** @var string */
     public $fieldMapping;
+
+    /** @var string */
+    private $type;
 
     /**
      * {@inheritdoc}
@@ -66,6 +68,7 @@ class IdentityFunction extends FunctionNode
             }
 
             $field      = $targetEntity->fieldMappings[$this->fieldMapping];
+            $this->type = $field['type'];
             $joinColumn = null;
 
             foreach ($assoc['joinColumns'] as $mapping) {
@@ -80,6 +83,8 @@ class IdentityFunction extends FunctionNode
             if ($joinColumn === null) {
                 throw new QueryException(sprintf('Unable to resolve the reference field mapping "%s"', $this->fieldMapping));
             }
+        } else {
+            $this->type = $targetEntity->fieldMappings[$targetEntity->getSingleIdentifierFieldName()]['type'];
         }
 
         // The table with the relation may be a subclass, so get the table name from the association definition
@@ -109,5 +114,10 @@ class IdentityFunction extends FunctionNode
         }
 
         $parser->match(Lexer::T_CLOSE_PARENTHESIS);
+    }
+
+    public function getReturnType() : Type
+    {
+        return Type::getType($this->type);
     }
 }

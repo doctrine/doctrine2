@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\ORM\AbstractQuery;
+use Doctrine\Tests\Models\Company\CompanyCar;
 use Doctrine\Tests\Models\Company\CompanyManager;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use function sprintf;
@@ -408,6 +409,15 @@ class QueryDqlFunctionTest extends OrmFunctionalTestCase
         $this->assertEquals(($result[3][0]['salary']/100000) & 2, $result[3]['salary_bit_and']);
     }
 
+    public function testIdentity()
+    {
+        $query = $this->_em->createQuery("SELECT IDENTITY(m.car) as id FROM Doctrine\Tests\Models\Company\CompanyManager m WHERE m.name = 'Roman B.'");
+
+        $row = $query->getSingleResult();
+
+        $this->assertIsInt($row['id']);
+    }
+
     protected function generateFixture()
     {
         $manager1 = new CompanyManager();
@@ -415,6 +425,9 @@ class QueryDqlFunctionTest extends OrmFunctionalTestCase
         $manager1->setTitle('Foo');
         $manager1->setDepartment('IT');
         $manager1->setSalary(100000);
+
+        $car = new CompanyCar('wroom');
+        $manager1->setCar($car);
 
         $manager2 = new CompanyManager();
         $manager2->setName('Benjamin E.');
@@ -434,6 +447,7 @@ class QueryDqlFunctionTest extends OrmFunctionalTestCase
         $manager4->setDepartment('Administration');
         $manager4->setSalary(800000);
 
+        $this->_em->persist($car);
         $this->_em->persist($manager1);
         $this->_em->persist($manager2);
         $this->_em->persist($manager3);
