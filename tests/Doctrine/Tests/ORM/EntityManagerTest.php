@@ -174,7 +174,10 @@ class EntityManagerTest extends OrmTestCase
     public function dataToBeReturnedByTransactional()
     {
         return [
+            [[]],
+            [[1]],
             [null],
+            [true],
             [false],
             ['foo'],
         ];
