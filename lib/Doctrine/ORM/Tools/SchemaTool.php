@@ -31,6 +31,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMException;
 use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
+use function in_array;
 
 /**
  * The SchemaTool is a tool to create/drop/update database schemas based on
@@ -119,19 +120,18 @@ class SchemaTool
     /**
      * Detects instances of ClassMetadata that don't need to be processed in the SchemaTool context.
      *
-     * @param ClassMetadata $class
-     * @param array         $processedClasses
+     * @param ClassMetadata   $class
+     * @param ClassMetadata[] $processedClasses
      *
      * @return bool
      */
     private function processingNotRequired($class, array $processedClasses)
     {
-        return (
-            isset($processedClasses[$class->name]) ||
+        return isset($processedClasses[$class->name]) ||
             $class->isMappedSuperclass ||
             $class->isEmbeddedClass ||
-            ($class->isInheritanceTypeSingleTable() && $class->name != $class->rootEntityName)
-        );
+            ($class->isInheritanceTypeSingleTable() && $class->name !== $class->rootEntityName) ||
+            in_array($class->name, $this->em->getConfiguration()->getEntitiesIgnoredDuringSchemaGeneration());
     }
 
     /**

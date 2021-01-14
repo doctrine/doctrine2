@@ -272,6 +272,34 @@ class SchemaToolTest extends OrmTestCase
             self::assertSame($foreignColumns, $foreignKey->getForeignColumns());
         }
     }
+
+    /**
+     * @group schema-configuration
+     */
+    public function testConfigurationSchemaIgnoredEntity() : void
+    {
+        $em         = $this->_getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $classes = [
+            $em->getClassMetadata(FirstEntity::class),
+            $em->getClassMetadata(SecondEntity::class),
+        ];
+
+        $schema = $schemaTool->getSchemaFromMetadata($classes);
+
+        self::assertTrue($schema->hasTable('first_entity'), 'Table first_entity should exist.');
+        self::assertTrue($schema->hasTable('second_entity'), 'Table second_entity should exist.');
+
+        $em->getConfiguration()->setEntitiesIgnoredDuringSchemaGeneration([
+            SecondEntity::class,
+        ]);
+
+        $schema = $schemaTool->getSchemaFromMetadata($classes);
+
+        self::assertTrue($schema->hasTable('first_entity'), 'Table first_entity should exist.');
+        self::assertFalse($schema->hasTable('second_entity'), 'Table second_entity should not exist.');
+    }
 }
 
 /**
