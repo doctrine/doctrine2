@@ -165,6 +165,12 @@ class ClassMetadataInfo implements ClassMetadata
     const FETCH_EXTRA_LAZY = 4;
 
     /**
+     * Specifies that all entities of a collection valued association are fetched using a single or more
+     * additional WHERE IN queries.
+     */
+    const FETCH_SUBSELECT = 5;
+
+    /**
      * Identifies a one-to-one association.
      */
     const ONE_TO_ONE = 1;

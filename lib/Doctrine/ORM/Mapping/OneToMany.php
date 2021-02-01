@@ -45,7 +45,7 @@ final class OneToMany implements Annotation
      *
      * @var string
      *
-     * @Enum({"LAZY", "EAGER", "EXTRA_LAZY"})
+     * @Enum({"LAZY", "EAGER", "EXTRA_LAZY", "SUBSELECT"})
      */
     public $fetch = 'LAZY';
 
