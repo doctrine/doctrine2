@@ -47,6 +47,7 @@ use InvalidArgumentException;
 use Throwable;
 use UnexpectedValueException;
 use function get_class;
+use function in_array;
 use function is_object;
 use function spl_object_hash;
 
@@ -2761,9 +2762,7 @@ class UnitOfWork implements PropertyChangedListener
                             } else {
                                 $associatedId[$targetClass->fieldNames[$targetColumn]] = $joinColumnValue;
                             }
-                        } elseif ($targetClass->containsForeignIdentifier
-                            && in_array($targetClass->getFieldForColumn($targetColumn), $targetClass->identifier, true)
-                        ) {
+                        } elseif (in_array($targetClass->getFieldForColumn($targetColumn), $targetClass->identifier, true)) {
                             // the missing key is part of target's entity primary key
                             $associatedId = [];
                             break;

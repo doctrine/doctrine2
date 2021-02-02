@@ -182,6 +182,10 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             Models\CustomType\CustomTypeParent::class,
             Models\CustomType\CustomTypeUpperCase::class,
         ],
+        'compositekeyrelations' => [
+            Models\CompositeKeyRelations\InvoiceClass::class,
+            Models\CompositeKeyRelations\CustomerClass::class,
+        ],
         'compositekeyinheritance' => [
             Models\CompositeKeyInheritance\JoinedRootClass::class,
             Models\CompositeKeyInheritance\JoinedChildClass::class,
