@@ -8,7 +8,7 @@ use Doctrine\Tests\OrmFunctionalTestCase;
 
 class GH8415Test extends OrmFunctionalTestCase
 {
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
 
@@ -22,7 +22,7 @@ class GH8415Test extends OrmFunctionalTestCase
         );
     }
 
-    public function testAssociationIsBasedOnBaseClass() : void
+    public function testAssociationIsBasedOnBaseClass(): void
     {
         $target            = new GH8415AssociationTarget();
         $leaf              = new GH8415LeafClass();
@@ -55,6 +55,7 @@ class GH8415AssociationTarget
      * @Column(type="integer")
      * @Id
      * @GeneratedValue
+     * @var int
      */
     public $id;
 }
@@ -71,13 +72,20 @@ abstract class GH8415BaseClass
      * @Column(type="integer")
      * @Id
      * @GeneratedValue
+     * @var int
      */
     public $id;
 
-    /** @ManyToOne(targetEntity="GH8415AssociationTarget") */
+    /**
+     * @ManyToOne(targetEntity="GH8415AssociationTarget")
+     * @var GH8415AssociationTarget
+     */
     public $target;
 
-    /** @Column(type="string") */
+    /**
+     * @Column(type="string")
+     * @var string
+     */
     public $baseField;
 }
 
@@ -86,7 +94,10 @@ abstract class GH8415BaseClass
  */
 class GH8415MediumSuperclass extends GH8415BaseClass
 {
-    /** @Column(type="string") */
+    /**
+     * @Column(type="string")
+     * @var string
+     */
     public $mediumField;
 }
 
@@ -95,6 +106,9 @@ class GH8415MediumSuperclass extends GH8415BaseClass
  */
 class GH8415LeafClass extends GH8415MediumSuperclass
 {
-    /** @Column(type="string") */
+    /**
+     * @Column(type="string")
+     * @var string
+     */
     public $leafField;
 }

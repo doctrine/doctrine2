@@ -12,7 +12,7 @@ use Doctrine\Tests\OrmFunctionalTestCase;
  */
 class GH5998Test extends OrmFunctionalTestCase
 {
-    protected function setUp() : void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->_schemaTool->createSchema([
@@ -27,7 +27,7 @@ class GH5998Test extends OrmFunctionalTestCase
     /**
      * Verifies that MappedSuperclasses work within an inheritance hierarchy.
      */
-    public function testIssue()
+    public function testIssue(): void
     {
         // Test JTI
         $this->classTests(GH5998JTIChild::class);
@@ -37,7 +37,7 @@ class GH5998Test extends OrmFunctionalTestCase
         $this->classTests(GH5998Basic::class);
     }
 
-    private function classTests($className)
+    private function classTests($className): void
     {
         // Test insert
         $child      = new $className('Sam', 0, 1);
@@ -57,7 +57,7 @@ class GH5998Test extends OrmFunctionalTestCase
         self::assertNotNull($child);
 
         // Test lock and update
-        $this->_em->transactional(static function ($em) use ($child) {
+        $this->_em->transactional(static function ($em) use ($child): void {
             $em->lock($child, LockMode::NONE);
             $child->firstName = 'Bob';
             $child->status    = 0;
@@ -84,19 +84,25 @@ class GH5998Common
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
+     * @var int
      */
     public $id;
     /**
      * @ManyToOne(targetEntity=GH5998Related::class)
      * @JoinColumn(name="related_id", referencedColumnName="id")
+     * @var GH5998Related
      */
     public $rel;
     /**
      * @Version
      * @Column(type="integer")
+     * @var int
      */
     public $version;
 
+    /**
+     * @var mixed
+     */
     public $other;
 }
 
@@ -107,7 +113,10 @@ class GH5998Common
  */
 abstract class GH5998JTI extends GH5998Common
 {
-    /** @Column(type="string", length=255) */
+    /**
+     * @Column(type="string", length=255)
+     * @var string
+     */
     public $firstName;
 }
 
@@ -116,7 +125,10 @@ abstract class GH5998JTI extends GH5998Common
  */
 class GH5998JTICommon extends GH5998JTI
 {
-    /** @Column(type="integer") */
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $status;
 }
 
@@ -125,7 +137,10 @@ class GH5998JTICommon extends GH5998JTI
  */
 class GH5998JTIChild extends GH5998JTICommon
 {
-    /** @Column(type="integer") */
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $type;
 
     public function __construct(string $firstName, int $type, int $status)
@@ -143,7 +158,10 @@ class GH5998JTIChild extends GH5998JTICommon
  */
 abstract class GH5998STI extends GH5998Common
 {
-    /** @Column(type="string", length=255) */
+    /**
+     * @Column(type="string", length=255)
+     * @var string
+     */
     public $firstName;
 }
 
@@ -152,7 +170,10 @@ abstract class GH5998STI extends GH5998Common
  */
 class GH5998STICommon extends GH5998STI
 {
-    /** @Column(type="integer") */
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $status;
 }
 
@@ -161,7 +182,10 @@ class GH5998STICommon extends GH5998STI
  */
 class GH5998STIChild extends GH5998STICommon
 {
-    /** @Column(type="integer") */
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $type;
 
     public function __construct(string $firstName, int $type, int $status)
@@ -177,11 +201,22 @@ class GH5998STIChild extends GH5998STICommon
  */
 class GH5998Basic extends GH5998Common
 {
-    /** @Column(type="string", length=255) */
+    /**
+     * @Column(type="string", length=255)
+     * @var string
+     */
     public $firstName;
-    /** @Column(type="integer") */
+
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $status;
-    /** @Column(type="integer") */
+
+    /**
+     * @Column(type="integer")
+     * @var int
+     */
     public $type;
 
     public function __construct(string $firstName, int $type, int $status)
@@ -201,6 +236,7 @@ class GH5998Related
      * @Id
      * @Column(type="integer")
      * @GeneratedValue
+     * @var int
      */
     public $id;
 }
