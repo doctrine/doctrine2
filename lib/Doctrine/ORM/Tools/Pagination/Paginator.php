@@ -146,6 +146,7 @@ class Paginator implements Countable, IteratorAggregate
                 $subQuery->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, LimitSubqueryOutputWalker::class);
             } else {
                 $this->appendTreeWalker($subQuery, LimitSubqueryWalker::class);
+                $this->appendTreeWalker($subQuery, RemoveUselessLeftJoinsWalker::class);
                 $this->unbindUnusedQueryParams($subQuery);
             }
 
