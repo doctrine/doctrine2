@@ -131,7 +131,7 @@ class QueryTest extends OrmTestCase
     {
         $this->em->getConfiguration()->setResultCacheImpl(new ArrayCache());
         $q = $this->em->createQuery('select a from Doctrine\Tests\Models\CMS\CmsArticle a');
-        $q->useResultCache(true);
+        $q->enableResultCache();
         self::assertSame($this->em->getConfiguration()->getResultCacheImpl(), $q->getQueryCacheProfile()->getResultCacheDriver());
     }
 
@@ -246,7 +246,7 @@ class QueryTest extends OrmTestCase
         $driverConnectionMock->setStatementMock($stmt);
         $res = $this->em->createQuery('select u from Doctrine\Tests\Models\CMS\CmsUser u')
             ->useQueryCache(true)
-            ->useResultCache(true, 60)
+            ->enableResultCache(60)
             //let it cache
             ->getResult();
 
@@ -256,7 +256,7 @@ class QueryTest extends OrmTestCase
 
         $res = $this->em->createQuery('select u from Doctrine\Tests\Models\CMS\CmsUser u')
             ->useQueryCache(true)
-            ->useResultCache(false)
+            ->disableResultCache()
             ->getResult();
         self::assertCount(0, $res);
     }
@@ -280,7 +280,7 @@ class QueryTest extends OrmTestCase
         $this->em->getConfiguration()->setResultCacheImpl(new ArrayCache());
 
         $query = $this->em->createQuery('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u')
-                          ->useResultCache(true);
+                          ->enableResultCache();
 
         /** @var DriverConnectionMock $driverConnectionMock */
         $driverConnectionMock = $this->em->getConnection()
@@ -402,7 +402,7 @@ class QueryTest extends OrmTestCase
         $this->em->getConfiguration()->setResultCacheImpl(new ArrayCache());
 
         $query = $this->em->createQuery('SELECT u FROM ' . CmsUser::class . ' u');
-        $query->useResultCache(true);
+        $query->enableResultCache();
         $query->setResultCacheProfile();
 
         self::assertAttributeSame(null, 'queryCacheProfile', $query);

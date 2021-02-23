@@ -52,7 +52,7 @@ class GH2947Test extends OrmFunctionalTestCase
                          ->select('car')
                          ->from(GH2947Car::class, 'car')
                          ->getQuery()
-                         ->useResultCache(true, 3600, 'foo-cache-id');
+                         ->enableResultCache(3600, 'foo-cache-id');
     }
 
     private function createData()

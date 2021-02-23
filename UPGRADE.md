@@ -320,6 +320,16 @@ Example:
 
     $rsm->addMetaResult('e ', 'e_discr', 'discr', false, Type::getType('string'));
 
+## BC Break: Removed ``Doctrine\ORM\AbstractQuery::useResultCache()``
+
+The method was instead split into ``AbstractQuery::enableResultCache()`` 
+and ``AbstractQuery::disableResultCache()``. This provides better API without 
+a boolean flag for changing behavior. If your code relies on this method,  
+replace ``$query->useResultCache(true [, <params> ])`` 
+with ``$query->enableResultCache([<params>])``, 
+and ``$query->useResultCache(false)`` 
+with``$query->disableResultCache()``.
+
 ## Enhancement: Mappings now store their declaring ``ClassMetadata``
 
 Every field, association or embedded now contains a pointer to its declaring ``ClassMetadata``.
