@@ -7,12 +7,14 @@ namespace Doctrine\ORM\Persisters\Entity;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement as DriverStatement;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Statement;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Mapping\AssociationMetadata;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ColumnMetadata;
@@ -30,6 +32,7 @@ use Doctrine\ORM\Mapping\OneToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\Property;
 use Doctrine\ORM\Mapping\ToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\ToOneAssociationMetadata;
+use Doctrine\ORM\Mapping\ValueGeneratorMetadata;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\Exception\CantUseInOperatorOnCompositeKeys;
@@ -44,6 +47,7 @@ use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Utility\StaticClassNameConverter;
 use function array_combine;
 use function array_filter;
+use function array_key_exists;
 use function array_keys;
 use function array_map;
 use function array_merge;
@@ -164,6 +168,9 @@ class BasicEntityPersister implements EntityPersister
      * @var string
      */
     private $insertSql;
+
+    /** @var bool|null */
+    private $insertGeneratorTypeIsIdentity;
 
     /** @var CachedPersisterContext */
     protected $currentPersisterContext;
@@ -436,14 +443,14 @@ class BasicEntityPersister implements EntityPersister
      * Performs an UPDATE statement for an entity on a specific table.
      * The UPDATE can optionally be versioned, which requires the entity to have a version field.
      *
-     * @param object $entity          The entity object being updated.
-     * @param string $quotedTableName The quoted name of the table to apply the UPDATE on.
-     * @param mixed[] $updateData     The map of columns to update (column => value).
-     * @param bool $versioned         Whether the UPDATE should be versioned.
+     * @param object  $entity          The entity object being updated.
+     * @param string  $quotedTableName The quoted name of the table to apply the UPDATE on.
+     * @param mixed[] $updateData      The map of columns to update (column => value).
+     * @param bool    $versioned       Whether the UPDATE should be versioned.
      *
      * @throws ORMException
      * @throws OptimisticLockException
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     final protected function updateTable($entity, $quotedTableName, array $updateData, $versioned = false)
     {
@@ -478,7 +485,6 @@ class BasicEntityPersister implements EntityPersister
                     $targetPersister = $this->em->getUnitOfWork()->getEntityPersister($property->getTargetEntity());
 
                     foreach ($property->getJoinColumns() as $joinColumn) {
-                        /** @var JoinColumnMetadata $joinColumn */
                         $quotedColumnName     = $this->platform->quoteIdentifier($joinColumn->getColumnName());
                         $referencedColumnName = $joinColumn->getReferencedColumnName();
                         $value                = $targetPersister->getColumnValue($identifier[$idField], $referencedColumnName);
@@ -1501,10 +1507,51 @@ class BasicEntityPersister implements EntityPersister
     }
 
     /**
+     * Set $this->insertSql and $this->insertColumns to null if generator type is IDENTITY change.
+     */
+    private function cleanOutdatedInsertCache() : void
+    {
+        $identifier = $this->class->getIdentifier();
+
+        if (! array_key_exists(0, $identifier)) {
+            return;
+        }
+
+        $propertyName   = $identifier[0];
+        $identityColumn = $this->class->getProperty($propertyName);
+
+        if (! $identityColumn instanceof LocalColumnMetadata) {
+            return;
+        }
+
+        $valueGeneratorMetadata = $identityColumn->getValueGenerator();
+
+        if ($valueGeneratorMetadata === null) {
+            $generatorType = GeneratorType::NONE;
+        } elseif ($valueGeneratorMetadata instanceof ValueGeneratorMetadata) {
+            $generatorType = $valueGeneratorMetadata->getType();
+        } else {
+            return;
+        }
+
+        $isIdentityGeneratorType = $generatorType === GeneratorType::IDENTITY;
+
+        if ($isIdentityGeneratorType === $this->insertGeneratorTypeIsIdentity) {
+            return;
+        }
+
+        $this->insertGeneratorTypeIsIdentity = $isIdentityGeneratorType;
+        $this->insertSql                     = null;
+        $this->insertColumns                 = null;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getInsertSQL()
     {
+        $this->cleanOutdatedInsertCache();
+
         if ($this->insertSql !== null) {
             return $this->insertSql;
         }
