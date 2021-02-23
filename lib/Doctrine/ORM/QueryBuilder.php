@@ -141,6 +141,13 @@ class QueryBuilder
     protected $lifetime = 0;
 
     /**
+     * Array of deferred criteria
+     *
+     * @var array<Criteria>
+     */
+    protected $deferredCriteria = [];
+
+    /**
      * Initializes a new <tt>QueryBuilder</tt> that uses the given <tt>EntityManager</tt>.
      *
      * @param EntityManagerInterface $em The EntityManager to use.
@@ -343,6 +350,20 @@ class QueryBuilder
      */
     public function getQuery()
     {
+        if (!empty($this->deferredCriteria)) {
+            $visitor = new QueryExpressionVisitor($this->getAllAliases());
+            foreach ($this->deferredCriteria as $criteria) {
+                if ($whereExpression = $criteria->getWhereExpression()) {
+                    $this->andWhere($visitor->dispatch($whereExpression));
+                    foreach ($visitor->getParameters() as $parameter) {
+                        $this->parameters->add($parameter);
+                    }
+                }
+            }
+
+            $this->deferredCriteria = [];
+        }
+
         $parameters = clone $this->parameters;
         $query      = $this->em->createQuery($this->getDQL())
             ->setParameters($parameters)
@@ -1261,6 +1282,59 @@ class QueryBuilder
         $orderBy = $sort instanceof Expr\OrderBy ? $sort : new Expr\OrderBy($sort, $order);
 
         return $this->add('orderBy', $orderBy, true);
+    }
+
+    /**
+     * Adds a deferred criteria to the query.
+     *
+     * Adds where expressions with AND operator in a deferred manner.
+     * Adds orderings immediately.
+     * Overrides firstResult and maxResults if they're set immediately.
+     *
+     * @param Criteria $criteria
+     *
+     * @return self
+     *
+     * @throws Query\QueryException
+     */
+    public function addDeferredCriteria(Criteria $criteria) {
+        $allAliases = $this->getAllAliases();
+        if ( ! isset($allAliases[0])) {
+            throw new Query\QueryException('No aliases are set before invoking addDeferredCriteria().');
+        }
+
+        // Only the whereExpression could be evaluated in a deferred manner
+        if ($criteria->getWhereExpression())
+            $this->deferredCriteria[] = clone $criteria;
+
+        if ($criteria->getOrderings()) {
+            foreach ($criteria->getOrderings() as $sort => $order) {
+
+                $hasValidAlias = false;
+                foreach($allAliases as $alias) {
+                    if(strpos($sort . '.', $alias . '.') === 0) {
+                        $hasValidAlias = true;
+                        break;
+                    }
+                }
+
+                if(!$hasValidAlias) {
+                    $sort = $allAliases[0] . '.' . $sort;
+                }
+
+                $this->addOrderBy($sort, $order);
+            }
+        }
+
+        // Overwrite limits only if they was set in criteria
+        if (($firstResult = $criteria->getFirstResult()) !== null) {
+            $this->setFirstResult($firstResult);
+        }
+        if (($maxResults = $criteria->getMaxResults()) !== null) {
+            $this->setMaxResults($maxResults);
+        }
+
+        return $this;
     }
 
     /**
