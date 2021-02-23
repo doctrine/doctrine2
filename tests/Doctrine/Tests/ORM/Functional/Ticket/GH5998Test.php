@@ -100,9 +100,7 @@ class GH5998Common
      */
     public $version;
 
-    /**
-     * @var mixed
-     */
+    /** @var mixed */
     public $other;
 }
 
