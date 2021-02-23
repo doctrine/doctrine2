@@ -7,11 +7,9 @@ namespace Doctrine\ORM\Persisters\Entity;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Statement;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\AssociationMetadata;
 use Doctrine\ORM\Mapping\ColumnMetadata;
 use Doctrine\ORM\Mapping\FieldMetadata;
-use Doctrine\ORM\Mapping\JoinColumnMetadata;
 use Doctrine\ORM\Mapping\ManyToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\ToManyAssociationMetadata;
 use Doctrine\ORM\Mapping\ToOneAssociationMetadata;
@@ -21,7 +19,6 @@ use function array_filter;
 use function array_keys;
 use function array_merge;
 use function implode;
-use function is_array;
 
 /**
  * The joined subclass persister maps a single entity instance to several tables in the
@@ -82,7 +79,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
         }
 
         // Collect identifier column values
-        $id = [];
+        $id           = [];
         $idParameters = [];
 
         foreach ($this->class->getIdentifier() as $propertyName) {

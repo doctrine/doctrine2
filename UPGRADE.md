@@ -1,5 +1,36 @@
 # Upgrade to 3.0
 
+## BC Break: `Expr::andX()` and `Expr::orX()` now use variadics
+
+If you extend `Expr` and override these methods, you have to use the new signature.
+
+old signature:
+```php
+class CustomExpr extends \Doctrine\ORM\Query\Expr
+{
+    public function andX($x = null){
+     // code
+    }
+
+    public function orX($x = null){
+     // code
+    }
+
+}
+```
+new signature:
+```php
+class CustomExpr extends \Doctrine\ORM\Query\Expr
+{
+    public function andX(...$clauses){
+     // code
+    }
+
+    public function orX(...$clauses){
+     // code
+    }
+}
+```
 ## BC Break: Removed ability to clear cache via console with some cache drivers
 
 The console commands `orm:clear-cache:metadata`, `orm:clear-cache:result`,

@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Persisters\Entity;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Driver\Statement as DriverStatement;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
@@ -436,14 +437,14 @@ class BasicEntityPersister implements EntityPersister
      * Performs an UPDATE statement for an entity on a specific table.
      * The UPDATE can optionally be versioned, which requires the entity to have a version field.
      *
-     * @param object $entity          The entity object being updated.
-     * @param string $quotedTableName The quoted name of the table to apply the UPDATE on.
-     * @param mixed[] $updateData     The map of columns to update (column => value).
-     * @param bool $versioned         Whether the UPDATE should be versioned.
+     * @param object  $entity          The entity object being updated.
+     * @param string  $quotedTableName The quoted name of the table to apply the UPDATE on.
+     * @param mixed[] $updateData      The map of columns to update (column => value).
+     * @param bool    $versioned       Whether the UPDATE should be versioned.
      *
      * @throws ORMException
      * @throws OptimisticLockException
-     * @throws \Doctrine\DBAL\DBALException
+     * @throws DBALException
      */
     final protected function updateTable($entity, $quotedTableName, array $updateData, $versioned = false)
     {

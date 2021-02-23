@@ -13,9 +13,7 @@ class DDC3303Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        $this->schemaTool->createSchema([
-            $this->em->getClassMetadata(DDC3303Employee::class)
-        ]);
+        $this->schemaTool->createSchema([$this->em->getClassMetadata(DDC3303Employee::class)]);
     }
 
     /**
