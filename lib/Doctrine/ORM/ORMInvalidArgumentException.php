@@ -218,7 +218,8 @@ class ORMInvalidArgumentException extends InvalidArgumentException
      */
     public static function invalidIdentifierBindingEntity()
     {
-        return new self('Binding entities to query parameters only allowed for entities that have an identifier.');
+        return new self('Binding entities to query parameters only allowed for entities that have an identifier. ' .
+            'Have you persisted the entity to the database?');
     }
 
     /**
