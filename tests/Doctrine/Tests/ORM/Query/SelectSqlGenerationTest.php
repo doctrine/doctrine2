@@ -620,6 +620,15 @@ class SelectSqlGenerationTest extends OrmTestCase
         );
     }
 
+    public function testCustomFunctionWithinInExpression() : void
+    {
+        $this->em->getConfiguration()->addCustomStringFunction('FOO', MyAbsFunction::class);
+        $this->assertSqlGeneration(
+            'SELECT u FROM Doctrine\Tests\Models\Forum\ForumUser u WHERE u.username IN (FOO(\'Lo\'), \'Lo\', :name)',
+            'SELECT t0."id" AS c0, t0."username" AS c1 FROM "forum_users" t0 WHERE t0."username" IN (ABS(\'Lo\'), \'Lo\', ?)'
+        );
+    }
+
     public function testInvalidInExpressionWithSingleValuedAssociationPathExpressionOnInverseSide() : void
     {
         // We do not support SingleValuedAssociationPathExpression on inverse side

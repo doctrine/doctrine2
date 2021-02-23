@@ -1689,7 +1689,7 @@ Literal Values
 .. code-block:: php
 
     Literal     ::= string | char | integer | float | boolean
-    InParameter ::= Literal | InputParameter
+    InParameter ::= ArithmeticExpression | InputParameter
 
 Input Parameter
 ~~~~~~~~~~~~~~~

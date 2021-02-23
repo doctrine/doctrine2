@@ -2637,7 +2637,7 @@ class Parser
     }
 
     /**
-     * InParameter ::= Literal | InputParameter
+     * InParameter ::= ArithmeticExpression | InputParameter
      *
      * @return string|AST\InputParameter
      */
@@ -2647,7 +2647,7 @@ class Parser
             return $this->InputParameter();
         }
 
-        return $this->Literal();
+        return $this->ArithmeticExpression();
     }
 
     /**
