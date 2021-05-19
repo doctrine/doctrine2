@@ -156,7 +156,7 @@ events during the life-time of their registered entities.
 -  ``postRemove`` - The ``postRemove`` event occurs for an entity after the
    entity has been deleted. It will be invoked after the database
    delete operations. It is not called for a DQL ``DELETE`` statement.
--  ``prePersist`` - The ``prePersist`` event occurs for a given entity
+-  :ref:`prepersist` occurs for a given entity
    before the respective ``EntityManager`` persist operation for that
    entity is executed. It should be noted that this event is only triggered on
    *initial* persist of an entity (i.e. it does not trigger on future updates).
@@ -513,6 +513,8 @@ For the described events that are also lifecycle callback events
 the restrictions apply as well, with the additional restriction
 that (prior to version 2.4) you do not have access to the
 ``EntityManager`` or ``UnitOfWork`` APIs inside these events.
+
+.. _prepersist:
 
 prePersist
 ~~~~~~~~~~
