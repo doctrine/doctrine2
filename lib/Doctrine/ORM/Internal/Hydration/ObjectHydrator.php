@@ -141,14 +141,6 @@ class ObjectHydrator extends AbstractHydrator
         $this->_uow->hydrationComplete();
     }
 
-    protected function cleanupAfterRowIteration(): void
-    {
-        $this->identifierMap          =
-        $this->initializedCollections =
-        $this->existingCollections    =
-        $this->resultPointers         = [];
-    }
-
     /**
      * {@inheritdoc}
      */

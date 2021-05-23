@@ -21,7 +21,6 @@
 namespace Doctrine\ORM\Internal\Hydration;
 
 use Doctrine\DBAL\Driver\ResultStatement;
-use Doctrine\DBAL\FetchMode;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
@@ -35,8 +34,8 @@ use ReflectionClass;
 
 use function array_map;
 use function array_merge;
+use function assert;
 use function count;
-use function end;
 use function in_array;
 use function trigger_error;
 
@@ -134,17 +133,7 @@ abstract class AbstractHydrator
             E_USER_DEPRECATED
         );
 
-        $this->_stmt  = $stmt;
-        $this->_rsm   = $resultSetMapping;
-        $this->_hints = $hints;
-
-        $evm = $this->_em->getEventManager();
-
-        $evm->addEventListener([Events::onClear], $this);
-
-        $this->prepare();
-
-        return new IterableResult($this);
+        return $this->doIterate($stmt, $resultSetMapping, $hints);
     }
 
     /**
@@ -156,6 +145,19 @@ abstract class AbstractHydrator
      */
     public function toIterable(ResultStatement $stmt, ResultSetMapping $resultSetMapping, array $hints = []): iterable
     {
+        foreach ($this->doIterate($stmt, $resultSetMapping, $hints) as $results) {
+            assert(count($results) === 1);
+            foreach ($results as $key => $row) {
+                yield $key => $row;
+            }
+        }
+    }
+
+    /**
+     * @psalm-param array<string, mixed> $hints
+     */
+    private function doIterate(object $stmt, object $resultSetMapping, array $hints = []): IterableResult
+    {
         $this->_stmt  = $stmt;
         $this->_rsm   = $resultSetMapping;
         $this->_hints = $hints;
@@ -166,27 +168,7 @@ abstract class AbstractHydrator
 
         $this->prepare();
 
-        while (true) {
-            $row = $this->_stmt->fetch(FetchMode::ASSOCIATIVE);
-
-            if ($row === false || $row === null) {
-                $this->cleanup();
-
-                break;
-            }
-
-            $result = [];
-
-            $this->hydrateRowData($row, $result);
-
-            $this->cleanupAfterRowIteration();
-
-            if (count($result) === 1) {
-                yield end($result);
-            } else {
-                yield $result;
-            }
-        }
+        return new IterableResult($this);
     }
 
     /**
@@ -280,10 +262,6 @@ abstract class AbstractHydrator
             ->_em
             ->getEventManager()
             ->removeEventListener([Events::onClear], $this);
-    }
-
-    protected function cleanupAfterRowIteration(): void
-    {
     }
 
     /**
