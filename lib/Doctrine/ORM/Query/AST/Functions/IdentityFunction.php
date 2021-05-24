@@ -58,15 +58,18 @@ class IdentityFunction extends FunctionNode
         $joinColumn    = reset($assoc['joinColumns']);
 
         if ($this->fieldMapping !== null) {
-            if (! isset($targetEntity->fieldMappings[$this->fieldMapping])) {
-                throw new QueryException(sprintf('Undefined reference field mapping "%s"', $this->fieldMapping));
-            }
-
-            $field      = $targetEntity->fieldMappings[$this->fieldMapping];
             $joinColumn = null;
 
+            if (isset($targetEntity->fieldMappings[$this->fieldMapping])) {
+                $columnName = $targetEntity->fieldMappings[$this->fieldMapping]['columnName'];
+            } elseif (isset($targetEntity->associationMappings[$this->fieldMapping])) {
+                $columnName = reset($targetEntity->associationMappings[$this->fieldMapping]['joinColumns'])['name'];
+            } else {
+                throw new QueryException(sprintf('Undefined reference mapping "%s"', $this->fieldMapping));
+            }
+
             foreach ($assoc['joinColumns'] as $mapping) {
-                if ($mapping['referencedColumnName'] === $field['columnName']) {
+                if ($mapping['referencedColumnName'] === $columnName) {
                     $joinColumn = $mapping;
 
                     break;
