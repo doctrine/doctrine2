@@ -659,9 +659,8 @@ postFlush
 preUpdate
 ~~~~~~~~~
 
-PreUpdate is the most restrictive to use event, since it is called
-right before an update statement is called for an entity inside the
-``EntityManager#flush()`` method. Note that this event is not
+PreUpdate is called inside the ``EntityManager#flush()`` method,
+right before an SQL ``UPDATE`` statement. This event is not
 triggered when the computed changeset is empty.
 
 Changes to associations of the updated entity are never allowed in
