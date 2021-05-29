@@ -99,3 +99,31 @@ class name. Now the new type can be used when mapping columns:
         private $field;
     }
 
+
+When you have implemented the mapping type that shares SQL declaration
+with another one, it will be ambiguous while mapping. ORM will use first
+registered type, probably built-in, what could make type mistakes and
+redundant auto-generated migrations. To make new types unambiguous,
+require SQL Comment Hints.
+
+.. code-block:: php
+
+    <?php
+    namespace My\Project\Types;
+
+    use Doctrine\DBAL\Types\Type;
+    use Doctrine\DBAL\Platforms\AbstractPlatform;
+
+    /**
+     * My custom datatype.
+     */
+    class MyType extends Type
+    {
+        // ...
+
+        public function requiresSQLCommentHint(AbstractPlatform $platform)
+        {
+            return true;
+        }
+    }
+
