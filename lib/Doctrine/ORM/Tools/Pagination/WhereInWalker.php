@@ -97,9 +97,9 @@ class WhereInWalker extends TreeWalkerAdapter
         $pathExpression       = new PathExpression(PathExpression::TYPE_STATE_FIELD | PathExpression::TYPE_SINGLE_VALUED_ASSOCIATION, $rootAlias, $identifierFieldName);
         $pathExpression->type = $pathType;
 
-        $count = $this->_getQuery()->getHint(self::HINT_PAGINATOR_ID_COUNT);
+        $hasIds = $this->_getQuery()->getHint(self::HINT_PAGINATOR_ID_COUNT);
 
-        if ($count > 0) {
+        if ($hasIds) {
             $arithmeticExpression                             = new ArithmeticExpression();
             $arithmeticExpression->simpleArithmeticExpression = new SimpleArithmeticExpression(
                 [$pathExpression]
