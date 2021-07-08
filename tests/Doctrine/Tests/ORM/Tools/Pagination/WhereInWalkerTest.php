@@ -32,7 +32,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -53,7 +53,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -74,7 +74,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -95,7 +95,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -116,7 +116,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -137,7 +137,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -158,7 +158,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -179,7 +179,7 @@ class WhereInWalkerTest extends PaginationTestCase
         );
         $whereInQuery = clone $query;
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -202,7 +202,7 @@ class WhereInWalkerTest extends PaginationTestCase
             'SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p JOIN Doctrine\Tests\ORM\Tools\Pagination\Category c WITH p.category = c'
         );
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -222,7 +222,7 @@ class WhereInWalkerTest extends PaginationTestCase
             'SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p JOIN Doctrine\Tests\ORM\Tools\Pagination\Category c WITH p.category = c WHERE 1 = 1'
         );
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 10);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
         $this->assertEquals(
@@ -242,7 +242,7 @@ class WhereInWalkerTest extends PaginationTestCase
             'SELECT e.id4 FROM ' . AuxiliaryEntity::class . ' e'
         );
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 3);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, ['foo', 'bar', 'baz']);
 
         $this->assertPaginatorWhereInParameterToBe(
@@ -257,7 +257,7 @@ class WhereInWalkerTest extends PaginationTestCase
             'SELECT e FROM ' . OwningManyToOneIdForeignKeyEntity::class . ' e'
         );
         $whereInQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [WhereInWalker::class]);
-        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_ID_COUNT, 3);
+        $whereInQuery->setHint(WhereInWalker::HINT_PAGINATOR_HAS_IDS, true);
         $whereInQuery->setParameter(WhereInWalker::PAGINATOR_ID_ALIAS, ['foo', 'bar', 'baz']);
 
         $this->assertPaginatorWhereInParameterToBe(
