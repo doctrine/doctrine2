@@ -1876,7 +1876,6 @@ class UnitOfWork implements PropertyChangedListener
         // can cause problems when a lazy proxy has to be initialized for the cascade operation.
         $this->cascadeRemove($entity, $visited);
 
-        $class       = $this->em->getClassMetadata(get_class($entity));
         $entityState = $this->getEntityState($entity);
 
         switch ($entityState) {
@@ -1886,6 +1885,7 @@ class UnitOfWork implements PropertyChangedListener
                 break;
 
             case self::STATE_MANAGED:
+                $class  = $this->em->getClassMetadata(get_class($entity));
                 $invoke = $this->listenersInvoker->getSubscribedSystems($class, Events::preRemove);
 
                 if ($invoke !== ListenersInvoker::INVOKE_NONE) {
@@ -2202,11 +2202,11 @@ class UnitOfWork implements PropertyChangedListener
 
         $visited[$oid] = $entity; // mark visited
 
-        $class = $this->em->getClassMetadata(get_class($entity));
-
         if ($this->getEntityState($entity) !== self::STATE_MANAGED) {
             throw ORMInvalidArgumentException::entityNotManaged($entity);
         }
+
+        $class = $this->em->getClassMetadata(get_class($entity));
 
         $this->getEntityPersister($class->name)->refresh(
             array_combine($class->getIdentifierFieldNames(), $this->entityIdentifiers[$oid]),
