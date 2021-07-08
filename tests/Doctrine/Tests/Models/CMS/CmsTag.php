@@ -34,6 +34,11 @@ class CmsTag
      */
     public $users;
 
+    public function getId(): int
+    {
+        return $this->id;
+    }
+
     public function setName(string $name): void
     {
         $this->name = $name;

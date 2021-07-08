@@ -46,6 +46,18 @@ class ManyToManyAssociationBuilder extends OneToManyAssociationBuilder
     }
 
     /**
+     * @param bool $name
+     *
+     * @return static
+     */
+    public function setIgnoreDuplicates($ignoreDuplicates)
+    {
+        $this->mapping['ignoreDuplicates'] = $ignoreDuplicates;
+
+        return $this;
+    }
+
+    /**
      * Adds Inverse Join Columns.
      *
      * @param string      $columnName

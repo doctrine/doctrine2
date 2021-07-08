@@ -510,6 +510,7 @@
     <xs:attribute name="index-by" type="xs:NMTOKEN" />
     <xs:attribute name="fetch" type="orm:fetch-type" default="LAZY" />
     <xs:attribute name="orphan-removal" type="xs:boolean" default="false" />
+    <xs:attribute name="ignore-duplicates" type="xs:boolean" default="false" />
     <xs:anyAttribute namespace="##other"/>
   </xs:complexType>
 

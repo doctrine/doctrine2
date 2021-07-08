@@ -613,6 +613,7 @@ class AnnotationDriver extends AbstractAnnotationDriver
             $mapping['inversedBy']    = $manyToManyAnnot->inversedBy;
             $mapping['cascade']       = $manyToManyAnnot->cascade;
             $mapping['indexBy']       = $manyToManyAnnot->indexBy;
+            $mapping['ignoreDuplicates'] = $manyToManyAnnot->ignoreDuplicates;
             $mapping['orphanRemoval'] = $manyToManyAnnot->orphanRemoval;
             $mapping['fetch']         = $this->getFetchMode($className, $manyToManyAnnot->fetch);
 

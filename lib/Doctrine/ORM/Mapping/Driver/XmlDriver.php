@@ -577,6 +577,10 @@ class XmlDriver extends FileDriver
                     $mapping['orphanRemoval'] = $this->evaluateBoolean($manyToManyElement['orphan-removal']);
                 }
 
+                if (isset($manyToManyElement['ignore-duplicates'])) {
+                    $mapping['ignoreDuplicates'] = $this->evaluateBoolean($manyToManyElement['ignore-duplicates']);
+                }
+
                 if (isset($manyToManyElement['mapped-by'])) {
                     $mapping['mappedBy'] = (string) $manyToManyElement['mapped-by'];
                 } elseif (isset($manyToManyElement->{'join-table'})) {

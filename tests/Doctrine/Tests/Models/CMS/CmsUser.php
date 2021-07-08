@@ -185,7 +185,7 @@ class CmsUser
 
     /**
      * @var Collection<int, CmsTag>
-     * @ManyToMany(targetEntity="CmsTag", inversedBy="users", cascade={"all"})
+     * @ManyToMany(targetEntity="CmsTag", inversedBy="users", cascade={"all"}, ignoreDuplicates=true)
      * @JoinTable(name="cms_users_tags",
      *      joinColumns={@JoinColumn(name="user_id", referencedColumnName="id")},
      *      inverseJoinColumns={@JoinColumn(name="tag_id", referencedColumnName="id")}

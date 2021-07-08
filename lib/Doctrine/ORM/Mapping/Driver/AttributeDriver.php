@@ -379,6 +379,7 @@ class AttributeDriver extends AnnotationDriver
                 $mapping['inversedBy']    = $manyToManyAttribute->inversedBy;
                 $mapping['cascade']       = $manyToManyAttribute->cascade;
                 $mapping['indexBy']       = $manyToManyAttribute->indexBy;
+                $mapping['ignoreDuplicates'] = $manyToManyAttribute->ignoreDuplicates;
                 $mapping['orphanRemoval'] = $manyToManyAttribute->orphanRemoval;
                 $mapping['fetch']         = $this->getFetchMode($className, $manyToManyAttribute->fetch);
 

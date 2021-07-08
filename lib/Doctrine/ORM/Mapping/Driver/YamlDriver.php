@@ -626,6 +626,10 @@ class YamlDriver extends FileDriver
                     $mapping['orphanRemoval'] = (bool) $manyToManyElement['orphanRemoval'];
                 }
 
+                if (isset($manyToManyElement['ignoreDuplicates'])) {
+                    $mapping['ignoreDuplicates'] = (bool) $manyToManyElement['ignoreDuplicates'];
+                }
+
                 // Evaluate second level cache
                 if (isset($manyToManyElement['cache'])) {
                     $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToManyElement['cache']));

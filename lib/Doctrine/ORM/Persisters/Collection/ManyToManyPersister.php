@@ -499,8 +499,13 @@ class ManyToManyPersister extends AbstractCollectionPersister
             $types[]   = PersisterHelper::getTypeOfColumn($joinColumn['referencedColumnName'], $targetClass, $this->em);
         }
 
+        $ignore = '';
+        if ($mapping['ignoreDuplicates']) {
+            $ignore = 'IGNORE'; // @todo
+        }
+
         return [
-            'INSERT INTO ' . $this->quoteStrategy->getJoinTableName($mapping, $class, $this->platform)
+            'INSERT ' . $ignore . ' INTO ' . $this->quoteStrategy->getJoinTableName($mapping, $class, $this->platform)
             . ' (' . implode(', ', $columns) . ')'
             . ' VALUES'
             . ' (' . implode(', ', array_fill(0, count($columns), '?')) . ')',
