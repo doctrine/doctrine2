@@ -392,7 +392,9 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
                     throw MappingException::illegalToManyAssociationOnMappedSuperclass($parentClass->name, $field);
                 }
 
-                $mapping['sourceEntity'] = $subClass->name;
+                if (! isset($mapping['inherited'])) {
+                    $mapping['sourceEntity'] = $subClass->name;
+                }
             }
 
             //$subclassMapping = $mapping;
