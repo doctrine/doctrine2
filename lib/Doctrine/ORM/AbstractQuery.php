@@ -823,24 +823,10 @@ abstract class AbstractQuery
     public function getOneOrNullResult($hydrationMode = null)
     {
         try {
-            $result = $this->execute(null, $hydrationMode);
+            return $this->getSingleResult($hydrationMode);
         } catch (NoResultException $e) {
             return null;
         }
-
-        if ($this->_hydrationMode !== self::HYDRATE_SINGLE_SCALAR && ! $result) {
-            return null;
-        }
-
-        if (! is_array($result)) {
-            return $result;
-        }
-
-        if (count($result) > 1) {
-            throw new NonUniqueResultException();
-        }
-
-        return array_shift($result);
     }
 
     /**
