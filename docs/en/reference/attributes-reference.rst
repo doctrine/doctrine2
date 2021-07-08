@@ -62,7 +62,8 @@ as part of the lifecycle of the instance variables entity-class.
 Required attributes:
 
 -  **type**: Name of the DBAL Type which does the conversion between PHP
-   and Database representation.
+   and Database representation. Defaults to ``string`` or 
+   :ref:`type from PHP property type <reference-php-mapping-types>`.
 
 Optional attributes:
 
@@ -86,8 +87,9 @@ Optional attributes:
 -  **unique**: Boolean value to determine if the value of the column
    should be unique across all rows of the underlying entities table.
 
--  **nullable**: Determines if NULL values allowed for this column.
-    If not specified, default value is ``false``.
+-  **nullable**: Determines if NULL values are allowed for this column. 
+   If not specified and a type hint is given (e.g. ?int or int), the nullability
+   of the type hint is used. Defaults to false.
 
 -  **options**: Array of additional options:
 
