@@ -321,11 +321,13 @@ interface EntityManagerInterface extends ObjectManager
      * {@inheritDoc}
      *
      * @psalm-param string|class-string<T> $className
+     * @phpstan-param string $className
      *
      * @return Mapping\ClassMetadata
      * @psalm-return Mapping\ClassMetadata<T>
+     * @phpstan-return Mapping\ClassMetadata<object>
      *
-     * @template T of object
+     * @psalm-template T of object
      */
     public function getClassMetadata($className);
 }
