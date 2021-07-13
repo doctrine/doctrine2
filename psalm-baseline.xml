@@ -490,7 +490,7 @@
       <code>getClassMetadata</code>
       <code>getReference</code>
     </InvalidReturnType>
-    <InvalidScalarArgument occurrences="2">
+    <InvalidScalarArgument occurrences="1">
       <code>$hydrationMode</code>
       <code>$hydrationMode</code>
     </InvalidScalarArgument>

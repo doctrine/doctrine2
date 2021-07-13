@@ -851,7 +851,7 @@ use function sprintf;
                 }
         }
 
-        throw InvalidHydrationMode::fromMode($hydrationMode);
+        throw InvalidHydrationMode::fromMode((string) $hydrationMode);
     }
 
     /**
