@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM\Tools\Event;
 
 use Doctrine\Common\EventArgs;

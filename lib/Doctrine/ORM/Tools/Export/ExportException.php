@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM\Tools\Export;
 
 use Doctrine\ORM\Exception\ORMException;

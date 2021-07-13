@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Tests;
 
 use Doctrine\Common\Cache\Cache;

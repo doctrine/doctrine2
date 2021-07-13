@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM\Persisters\Entity;
 
 use Doctrine\ORM\Query\ResultSetMapping;
