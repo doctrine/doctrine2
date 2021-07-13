@@ -2563,9 +2563,6 @@
       <code>call_user_func($functionClass, $functionName)</code>
       <code>call_user_func($functionClass, $functionName)</code>
     </DocblockTypeContradiction>
-    <ImplicitToStringCast occurrences="1">
-      <code>Subselect|string</code>
-    </ImplicitToStringCast>
     <InvalidArrayOffset occurrences="2">
       <code>$this-&gt;identVariableExpressions[$dqlAlias]</code>
       <code>$this-&gt;queryComponents[$dqlAlias]</code>
