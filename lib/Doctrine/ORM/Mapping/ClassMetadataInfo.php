@@ -33,6 +33,7 @@ use function array_map;
 use function array_merge;
 use function array_pop;
 use function array_values;
+use function assert;
 use function class_exists;
 use function count;
 use function explode;
@@ -973,12 +974,14 @@ class ClassMetadataInfo implements ClassMetadata
 
         foreach ($this->embeddedClasses as $property => $embeddedClass) {
             if (isset($embeddedClass['declaredField'])) {
+                $childProperty = $reflService->getAccessibleProperty(
+                    $this->embeddedClasses[$embeddedClass['declaredField']]['class'],
+                    $embeddedClass['originalField']
+                );
+                assert($childProperty !== null);
                 $parentReflFields[$property] = new ReflectionEmbeddedProperty(
                     $parentReflFields[$embeddedClass['declaredField']],
-                    $reflService->getAccessibleProperty(
-                        $this->embeddedClasses[$embeddedClass['declaredField']]['class'],
-                        $embeddedClass['originalField']
-                    ),
+                    $childProperty,
                     $this->embeddedClasses[$embeddedClass['declaredField']]['class']
                 );
 

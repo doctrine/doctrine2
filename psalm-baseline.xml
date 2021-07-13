@@ -1040,7 +1040,7 @@
       <code>$this-&gt;reflFields[$name]</code>
       <code>$this-&gt;reflFields[$this-&gt;identifier[0]]</code>
     </NullableReturnStatement>
-    <PossiblyNullArgument occurrences="10">
+    <PossiblyNullArgument occurrences="9">
       <code>$class</code>
       <code>$class</code>
       <code>$className</code>
