@@ -3667,12 +3667,6 @@
     <DeprecatedClass occurrences="1">
       <code>AbstractExporter</code>
     </DeprecatedClass>
-    <InvalidScalarArgument occurrences="3">
-      <code>$field['length']</code>
-      <code>$field['length']</code>
-      <code>$field['precision']</code>
-      <code>$field['scale']</code>
-    </InvalidScalarArgument>
     <MissingClosureParamType occurrences="2">
       <code>$m1</code>
       <code>$m2</code>

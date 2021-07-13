@@ -2142,11 +2142,6 @@ parameters:
 			path: lib/Doctrine/ORM/Tools/Export/Driver/XmlExporter.php
 
 		-
-			message: "#^Parameter \\#2 \\$value of method SimpleXMLElement\\:\\:addAttribute\\(\\) expects string, int given\\.$#"
-			count: 3
-			path: lib/Doctrine/ORM/Tools/Export/Driver/XmlExporter.php
-
-		-
 			message: "#^Right side of && is always true\\.$#"
 			count: 2
 			path: lib/Doctrine/ORM/Tools/Export/Driver/XmlExporter.php

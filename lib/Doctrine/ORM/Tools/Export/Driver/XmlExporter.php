@@ -154,7 +154,7 @@ class XmlExporter extends AbstractExporter
                 }
 
                 if (isset($field['length'])) {
-                    $idXml->addAttribute('length', $field['length']);
+                    $idXml->addAttribute('length', (string) $field['length']);
                 }
 
                 if (isset($field['associationKey']) && $field['associationKey']) {
@@ -186,11 +186,11 @@ class XmlExporter extends AbstractExporter
                 }
 
                 if (isset($field['precision'])) {
-                    $fieldXml->addAttribute('precision', $field['precision']);
+                    $fieldXml->addAttribute('precision', (string) $field['precision']);
                 }
 
                 if (isset($field['scale'])) {
-                    $fieldXml->addAttribute('scale', $field['scale']);
+                    $fieldXml->addAttribute('scale', (string) $field['scale']);
                 }
 
                 if (isset($field['unique']) && $field['unique']) {
