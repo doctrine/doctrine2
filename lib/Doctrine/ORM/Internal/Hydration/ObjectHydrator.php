@@ -15,7 +15,7 @@ use function count;
 use function is_array;
 use function key;
 use function ltrim;
-use function spl_object_hash;
+use function spl_object_id;
 
 /**
  * The ObjectHydrator constructs an object graph out of an SQL result set.
@@ -162,7 +162,7 @@ class ObjectHydrator extends AbstractHydrator
         string $fieldName,
         string $parentDqlAlias
     ): PersistentCollection {
-        $oid      = spl_object_hash($entity);
+        $oid      = spl_object_id($entity);
         $relation = $class->associationMappings[$fieldName];
         $value    = $class->reflFields[$fieldName]->getValue($entity);
 
@@ -356,7 +356,7 @@ class ObjectHydrator extends AbstractHydrator
                     continue;
                 }
 
-                $oid = spl_object_hash($parentObject);
+                $oid = spl_object_id($parentObject);
 
                 // Check the type of the relation (many or single-valued)
                 if (! ($relation['type'] & ClassMetadata::TO_ONE)) {
@@ -429,7 +429,7 @@ class ObjectHydrator extends AbstractHydrator
                                     $inverseAssoc = $targetClass->associationMappings[$relation['inversedBy']];
                                     if ($inverseAssoc['type'] & ClassMetadata::TO_ONE) {
                                         $targetClass->reflFields[$inverseAssoc['fieldName']]->setValue($element, $parentObject);
-                                        $this->_uow->setOriginalEntityProperty(spl_object_hash($element), $inverseAssoc['fieldName'], $parentObject);
+                                        $this->_uow->setOriginalEntityProperty(spl_object_id($element), $inverseAssoc['fieldName'], $parentObject);
                                     }
                                 } elseif ($parentClass === $targetClass && $relation['mappedBy']) {
                                     // Special case: bi-directional self-referencing one-one on the same class
@@ -438,7 +438,7 @@ class ObjectHydrator extends AbstractHydrator
                             } else {
                                 // For sure bidirectional, as there is no inverse side in unidirectional mappings
                                 $targetClass->reflFields[$relation['mappedBy']]->setValue($element, $parentObject);
-                                $this->_uow->setOriginalEntityProperty(spl_object_hash($element), $relation['mappedBy'], $parentObject);
+                                $this->_uow->setOriginalEntityProperty(spl_object_id($element), $relation['mappedBy'], $parentObject);
                             }
 
                             // Update result pointer

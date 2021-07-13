@@ -5,7 +5,7 @@ namespace Doctrine\ORM\Repository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ObjectRepository;
 
-use function spl_object_hash;
+use function spl_object_id;
 
 /**
  * This factory is used to create default repository objects for entities at runtime.
@@ -24,7 +24,7 @@ final class DefaultRepositoryFactory implements RepositoryFactory
      */
     public function getRepository(EntityManagerInterface $entityManager, $entityName): ObjectRepository
     {
-        $repositoryHash = $entityManager->getClassMetadata($entityName)->getName() . spl_object_hash($entityManager);
+        $repositoryHash = $entityManager->getClassMetadata($entityName)->getName() . spl_object_id($entityManager);
 
         if (isset($this->repositoryList[$repositoryHash])) {
             return $this->repositoryList[$repositoryHash];

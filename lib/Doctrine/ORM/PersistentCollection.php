@@ -17,7 +17,7 @@ use function array_udiff_assoc;
 use function array_walk;
 use function get_class;
 use function is_object;
-use function spl_object_hash;
+use function spl_object_id;
 
 /**
  * A PersistentCollection represents a collection of elements that have persistent state.
@@ -158,7 +158,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             );
 
             $this->em->getUnitOfWork()->setOriginalEntityProperty(
-                spl_object_hash($element),
+                spl_object_id($element),
                 $this->backRefFieldName,
                 $this->owner
             );
@@ -687,7 +687,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
     /**
      * @param object[] $newObjects
      *
-     * Note: the only reason why this entire looping/complexity is performed via `spl_object_hash`
+     * Note: the only reason why this entire looping/complexity is performed via `spl_object_id`
      *       is because we want to prevent using `array_udiff()`, which is likely to cause very
      *       high overhead (complexity of O(n^2)). `array_diff_key()` performs the operation in
      *       core, which is faster than using a callback for comparisons
@@ -695,8 +695,8 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
     private function restoreNewObjectsInDirtyCollection(array $newObjects): void
     {
         $loadedObjects               = $this->collection->toArray();
-        $newObjectsByOid             = array_combine(array_map('spl_object_hash', $newObjects), $newObjects);
-        $loadedObjectsByOid          = array_combine(array_map('spl_object_hash', $loadedObjects), $loadedObjects);
+        $newObjectsByOid             = array_combine(array_map('spl_object_id', $newObjects), $newObjects);
+        $loadedObjectsByOid          = array_combine(array_map('spl_object_id', $loadedObjects), $loadedObjects);
         $newObjectsThatWereNotLoaded = array_diff_key($newObjectsByOid, $loadedObjectsByOid);
 
         if ($newObjectsThatWereNotLoaded) {

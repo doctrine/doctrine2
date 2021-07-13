@@ -8,7 +8,7 @@ use Doctrine\ORM\ORMInvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
-use function spl_object_hash;
+use function spl_object_id;
 use function uniqid;
 
 /**
@@ -87,7 +87,7 @@ class ORMInvalidArgumentExceptionTest extends TestCase
                     ],
                 ],
                 'A new entity was found through the relationship \'foo1#bar1\' that was not configured to cascade '
-                . 'persist operations for entity: stdClass@' . spl_object_hash($entity1)
+                . 'persist operations for entity: stdClass@' . spl_object_id($entity1)
                 . '. To solve this issue: Either explicitly call EntityManager#persist() on this unknown entity '
                 . 'or configure cascade persist this association in the mapping for example '
                 . '@ManyToOne(..,cascade={"persist"}). If you cannot find out which entity causes the problem '
@@ -106,13 +106,13 @@ class ORMInvalidArgumentExceptionTest extends TestCase
                 ],
                 'Multiple non-persisted new entities were found through the given association graph:' . "\n\n"
                 . ' * A new entity was found through the relationship \'foo1#bar1\' that was not configured to '
-                . 'cascade persist operations for entity: stdClass@' . spl_object_hash($entity1) . '. '
+                . 'cascade persist operations for entity: stdClass@' . spl_object_id($entity1) . '. '
                 . 'To solve this issue: Either explicitly call EntityManager#persist() on this unknown entity '
                 . 'or configure cascade persist this association in the mapping for example '
                 . '@ManyToOne(..,cascade={"persist"}). If you cannot find out which entity causes the problem '
                 . 'implement \'baz1#__toString()\' to get a clue.' . "\n"
                 . ' * A new entity was found through the relationship \'foo2#bar2\' that was not configured to '
-                . 'cascade persist operations for entity: stdClass@' . spl_object_hash($entity2) . '. To solve '
+                . 'cascade persist operations for entity: stdClass@' . spl_object_id($entity2) . '. To solve '
                 . 'this issue: Either explicitly call EntityManager#persist() on this unknown entity or '
                 . 'configure cascade persist this association in the mapping for example '
                 . '@ManyToOne(..,cascade={"persist"}). If you cannot find out which entity causes the problem '

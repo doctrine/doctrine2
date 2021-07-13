@@ -7,7 +7,7 @@ namespace Doctrine\Tests\Mocks;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\ORM\UnitOfWork;
 
-use function spl_object_hash;
+use function spl_object_id;
 
 /**
  * Mock class for UnitOfWork.
@@ -33,7 +33,7 @@ class UnitOfWorkMock extends UnitOfWork
      */
     public function & getEntityChangeSet($entity)
     {
-        $oid = spl_object_hash($entity);
+        $oid = spl_object_id($entity);
 
         if (isset($this->_mockDataChangeSets[$oid])) {
             return $this->_mockDataChangeSets[$oid];
@@ -60,6 +60,6 @@ class UnitOfWorkMock extends UnitOfWork
      */
     public function setOriginalEntityData($entity, array $originalData)
     {
-        $this->_originalEntityData[spl_object_hash($entity)] = $originalData;
+        $this->_originalEntityData[spl_object_id($entity)] = $originalData;
     }
 }

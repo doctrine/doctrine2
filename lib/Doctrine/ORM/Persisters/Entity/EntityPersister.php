@@ -29,7 +29,7 @@ interface EntityPersister
     /**
      * Get all queued inserts.
      *
-     * @psalm-return array<string, object>
+     * @psalm-return array<string|int, object>
      */
     public function getInserts();
 

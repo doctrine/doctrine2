@@ -43,7 +43,7 @@ use function implode;
 use function is_array;
 use function is_object;
 use function reset;
-use function spl_object_hash;
+use function spl_object_id;
 use function sprintf;
 use function strpos;
 use function strtoupper;
@@ -132,7 +132,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * Queued inserts.
      *
-     * @psalm-var array<string, object>
+     * @psalm-var array<int, object>
      */
     protected $queuedInserts = [];
 
@@ -233,7 +233,7 @@ class BasicEntityPersister implements EntityPersister
      */
     public function addInsert($entity)
     {
-        $this->queuedInserts[spl_object_hash($entity)] = $entity;
+        $this->queuedInserts[spl_object_id($entity)] = $entity;
     }
 
     /**
@@ -640,7 +640,7 @@ class BasicEntityPersister implements EntityPersister
             }
 
             if ($newVal !== null) {
-                $oid = spl_object_hash($newVal);
+                $oid = spl_object_id($newVal);
 
                 if (isset($this->queuedInserts[$oid]) || $uow->isScheduledForInsert($newVal)) {
                     // The associated entity $newVal is not yet persisted, so we must

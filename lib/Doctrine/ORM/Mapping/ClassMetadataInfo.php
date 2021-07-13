@@ -41,7 +41,7 @@ use function is_array;
 use function is_subclass_of;
 use function ltrim;
 use function method_exists;
-use function spl_object_hash;
+use function spl_object_id;
 use function str_replace;
 use function strpos;
 use function strtolower;
@@ -833,7 +833,7 @@ class ClassMetadataInfo implements ClassMetadata
      */
     public function __toString()
     {
-        return self::class . '@' . spl_object_hash($this);
+        return self::class . '@' . spl_object_id($this);
     }
 
     /**
