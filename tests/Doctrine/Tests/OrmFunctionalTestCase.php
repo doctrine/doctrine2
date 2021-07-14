@@ -809,11 +809,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             $last25queries = array_slice(array_reverse($this->_sqlLoggerStack->queries, true), 0, 25, true);
             foreach ($last25queries as $i => $query) {
                 $params   = array_map(static function ($p) {
-                    if (is_object($p)) {
-                        return get_class($p);
-                    } else {
-                        return var_export($p, true);
-                    }
+                    return is_object($p) ? get_class($p) : var_export($p, true);
                 }, $query['params'] ?: []);
                 $queries .= $i . ". SQL: '" . $query['sql'] . "' Params: " . implode(', ', $params) . PHP_EOL;
             }

@@ -42,9 +42,9 @@ class StatementArrayMock extends StatementMock
         $row = reset($this->_result);
         if ($row) {
             return count($row);
-        } else {
-            return 0;
         }
+
+        return 0;
     }
 
     /**
