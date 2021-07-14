@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\SequenceGenerator;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use Exception;
 
@@ -50,7 +54,7 @@ class SequenceEntity
     /**
      * @var int
      * @Id
-     * @column(type="integer")
+     * @Column(type="integer")
      * @GeneratedValue(strategy="SEQUENCE")
      * @SequenceGenerator(allocationSize=5, sequenceName="person_id_seq")
      */

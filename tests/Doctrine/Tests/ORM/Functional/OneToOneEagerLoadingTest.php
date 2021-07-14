@@ -6,6 +6,14 @@ namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\OneToOne;
 use Doctrine\ORM\Proxy\Proxy;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Tests\OrmFunctionalTestCase;
@@ -311,7 +319,7 @@ class TrainDriver
 
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     public $name;
 
@@ -349,7 +357,7 @@ class TrainOwner
 
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     public $name;
 
@@ -379,9 +387,9 @@ class Waggon
 {
     /**
      * @var int
-     * @id
-     * @generatedValue
-     * @column(type="integer")
+     * @Id
+     * @GeneratedValue
+     * @Column(type="integer")
      */
     public $id;
     /**
@@ -404,9 +412,9 @@ class TrainOrder
 {
     /**
      * @var int
-     * @id
-     * @generatedValue
-     * @column(type="integer")
+     * @Id
+     * @GeneratedValue
+     * @Column(type="integer")
      */
     public $id;
 

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DDC117;
 
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+
 /**
  * Foreign Key Entity without additional fields!
  *

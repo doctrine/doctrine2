@@ -5,6 +5,9 @@ namespace Doctrine\Tests\Models\Company;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\EntityListeners;
 
 use function max;
 
@@ -17,7 +20,7 @@ use function max;
 class CompanyFlexUltraContract extends CompanyFlexContract
 {
     /**
-     * @column(type="integer")
+     * @Column(type="integer")
      * @var int
      */
     private $maxPrice = 0;

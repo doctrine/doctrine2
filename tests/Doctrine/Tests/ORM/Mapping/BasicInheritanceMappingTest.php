@@ -5,10 +5,23 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Mapping;
 
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\Id\SequenceGenerator;
+use Doctrine\ORM\Id\SequenceGenerator as IdSequenceGenerator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\DiscriminatorColumn;
+use Doctrine\ORM\Mapping\DiscriminatorMap;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\Index;
+use Doctrine\ORM\Mapping\InheritanceType;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\MappedSuperclass;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\OneToOne;
+use Doctrine\ORM\Mapping\SequenceGenerator;
+use Doctrine\ORM\Mapping\Table;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\DDC869\DDC869ChequePayment;
 use Doctrine\Tests\Models\DDC869\DDC869CreditCardPayment;
@@ -158,7 +171,7 @@ class BasicInheritanceMappingTest extends OrmTestCase
         $class = $this->cmf->getMetadataFor(SuperclassEntity::class);
         assert($class instanceof ClassMetadata);
 
-        $this->assertInstanceOf(SequenceGenerator::class, $class->idGenerator);
+        $this->assertInstanceOf(IdSequenceGenerator::class, $class->idGenerator);
         $this->assertEquals(
             ['allocationSize' => 1, 'initialValue' => 10, 'sequenceName' => 'foo'],
             $class->sequenceGeneratorDefinition
@@ -174,7 +187,7 @@ class BasicInheritanceMappingTest extends OrmTestCase
         $class = $this->cmf->getMetadataFor(HierarchyD::class);
         assert($class instanceof ClassMetadata);
 
-        $this->assertInstanceOf(SequenceGenerator::class, $class->idGenerator);
+        $this->assertInstanceOf(IdSequenceGenerator::class, $class->idGenerator);
         $this->assertEquals(
             ['allocationSize' => 1, 'initialValue' => 10, 'sequenceName' => 'foo'],
             $class->sequenceGeneratorDefinition
@@ -190,7 +203,7 @@ class BasicInheritanceMappingTest extends OrmTestCase
         $class = $this->cmf->getMetadataFor(MediumSuperclassEntity::class);
         assert($class instanceof ClassMetadata);
 
-        $this->assertInstanceOf(SequenceGenerator::class, $class->idGenerator);
+        $this->assertInstanceOf(IdSequenceGenerator::class, $class->idGenerator);
         $this->assertEquals(
             ['allocationSize' => 1, 'initialValue' => 10, 'sequenceName' => 'foo'],
             $class->sequenceGeneratorDefinition

@@ -64,9 +64,7 @@ abstract class OrmTestCase extends DoctrineTestCase
     protected function createAnnotationDriver(array $paths = [], $alias = null): AnnotationDriver
     {
         // Register the ORM Annotations in the AnnotationRegistry
-        $reader = new Annotations\SimpleAnnotationReader();
-
-        $reader->addNamespace('Doctrine\ORM\Mapping');
+        $reader = new Annotations\AnnotationReader();
 
         if (class_exists(Annotations\PsrCachedReader::class)) {
             $reader = new Annotations\PsrCachedReader($reader, new ArrayAdapter());

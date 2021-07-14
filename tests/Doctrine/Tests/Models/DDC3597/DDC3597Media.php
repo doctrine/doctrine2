@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DDC3597;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+
 /**
  * Description of Media
  *

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\Tests\Models\DDC889;
 
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
 
 class DDC889Class extends DDC889SuperClass
 {

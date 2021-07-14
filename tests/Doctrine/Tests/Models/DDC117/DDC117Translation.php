@@ -6,6 +6,13 @@ namespace Doctrine\Tests\Models\DDC117;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToMany;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
 
 /**
  * @Entity
@@ -22,13 +29,13 @@ class DDC117Translation
 
     /**
      * @var string
-     * @Id @column(type="string")
+     * @Id @Column(type="string")
      */
     private $language;
 
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     private $title;
 

@@ -9,6 +9,7 @@ use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
 use Doctrine\ORM\Tools\EntityGenerator;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
@@ -63,7 +64,6 @@ class EntityGeneratorTest extends OrmTestCase
         $this->tmpDir    = sys_get_temp_dir();
         mkdir($this->tmpDir . DIRECTORY_SEPARATOR . $this->namespace);
         $this->generator = new EntityGenerator();
-        $this->generator->setAnnotationPrefix('');
         $this->generator->setGenerateAnnotations(true);
         $this->generator->setGenerateStubMethods(true);
         $this->generator->setRegenerateEntityIfExists(false);
@@ -251,7 +251,7 @@ class EntityGeneratorTest extends OrmTestCase
         self::assertTrue($refClass->hasProperty('testEmbedded'));
 
         $docComment = $refClass->getProperty('testEmbedded')->getDocComment();
-        $needle     = sprintf('@Embedded(class="%s", columnPrefix="%s")', $testMetadata->name, $columnPrefix);
+        $needle     = sprintf('@ORM\Embedded(class="%s", columnPrefix="%s")', $testMetadata->name, $columnPrefix);
         self::assertStringContainsString($needle, $docComment);
     }
 
@@ -267,7 +267,7 @@ class EntityGeneratorTest extends OrmTestCase
         self::assertTrue($refClass->hasProperty('testEmbedded'));
 
         $docComment = $refClass->getProperty('testEmbedded')->getDocComment();
-        $needle     = sprintf('@Embedded(class="%s", columnPrefix=false)', $testMetadata->name);
+        $needle     = sprintf('@ORM\Embedded(class="%s", columnPrefix=false)', $testMetadata->name);
         self::assertStringContainsString($needle, $docComment);
     }
 
@@ -613,11 +613,11 @@ class EntityGeneratorTest extends OrmTestCase
         $reflection = new ReflectionProperty($metadata->name, 'id');
         $docComment = $reflection->getDocComment();
 
-        $this->assertStringContainsString('@Id', $docComment);
-        $this->assertStringContainsString('@Column(name="id", type="integer")', $docComment);
-        $this->assertStringContainsString('@GeneratedValue(strategy="SEQUENCE")', $docComment);
+        $this->assertStringContainsString('@ORM\Id', $docComment);
+        $this->assertStringContainsString('@ORM\Column(name="id", type="integer")', $docComment);
+        $this->assertStringContainsString('@ORM\GeneratedValue(strategy="SEQUENCE")', $docComment);
         $this->assertStringContainsString(
-            '@SequenceGenerator(sequenceName="DDC1784_ID_SEQ", allocationSize=1, initialValue=2)',
+            '@ORM\SequenceGenerator(sequenceName="DDC1784_ID_SEQ", allocationSize=1, initialValue=2)',
             $docComment
         );
     }
@@ -661,20 +661,20 @@ class EntityGeneratorTest extends OrmTestCase
 
         //joinColumns
         $this->assertStringContainsString(
-            '@JoinColumn(name="idorcamento", referencedColumnName="idorcamento"),',
+            '@ORM\JoinColumn(name="idorcamento", referencedColumnName="idorcamento"),',
             $docComment
         );
         $this->assertStringContainsString(
-            '@JoinColumn(name="idunidade", referencedColumnName="idunidade")',
+            '@ORM\JoinColumn(name="idunidade", referencedColumnName="idunidade")',
             $docComment
         );
         //inverseJoinColumns
         $this->assertStringContainsString(
-            '@JoinColumn(name="idcentrocusto", referencedColumnName="idcentrocusto"),',
+            '@ORM\JoinColumn(name="idcentrocusto", referencedColumnName="idcentrocusto"),',
             $docComment
         );
         $this->assertStringContainsString(
-            '@JoinColumn(name="idpais", referencedColumnName="idpais")',
+            '@ORM\JoinColumn(name="idpais", referencedColumnName="idpais")',
             $docComment
         );
     }
@@ -1250,31 +1250,31 @@ class
     {
         return [
             'string-default'   => [
-                '@Column(name="test", type="string", length=10, options={"default"="testing"})',
+                '@ORM\Column(name="test", type="string", length=10, options={"default"="testing"})',
                 ['type' => 'string', 'length' => 10, 'options' => ['default' => 'testing']],
             ],
             'string-fixed'     => [
-                '@Column(name="test", type="string", length=10, options={"fixed"=true})',
+                '@ORM\Column(name="test", type="string", length=10, options={"fixed"=true})',
                 ['type' => 'string', 'length' => 10, 'options' => ['fixed' => true]],
             ],
             'string-comment'   => [
-                '@Column(name="test", type="string", length=10, options={"comment"="testing"})',
+                '@ORM\Column(name="test", type="string", length=10, options={"comment"="testing"})',
                 ['type' => 'string', 'length' => 10, 'options' => ['comment' => 'testing']],
             ],
             'string-comment-quote'   => [
-                '@Column(name="test", type="string", length=10, options={"comment"="testing ""quotes"""})',
+                '@ORM\Column(name="test", type="string", length=10, options={"comment"="testing ""quotes"""})',
                 ['type' => 'string', 'length' => 10, 'options' => ['comment' => 'testing "quotes"']],
             ],
             'string-collation' => [
-                '@Column(name="test", type="string", length=10, options={"collation"="utf8mb4_general_ci"})',
+                '@ORM\Column(name="test", type="string", length=10, options={"collation"="utf8mb4_general_ci"})',
                 ['type' => 'string', 'length' => 10, 'options' => ['collation' => 'utf8mb4_general_ci']],
             ],
             'string-check'     => [
-                '@Column(name="test", type="string", length=10, options={"check"="CHECK (test IN (""test""))"})',
+                '@ORM\Column(name="test", type="string", length=10, options={"check"="CHECK (test IN (""test""))"})',
                 ['type' => 'string', 'length' => 10, 'options' => ['check' => 'CHECK (test IN (""test""))']],
             ],
             'string-all'       => [
-                '@Column(name="test", type="string", length=10, options={"default"="testing","fixed"=true,"comment"="testing","collation"="utf8mb4_general_ci","check"="CHECK (test IN (""test""))"})',
+                '@ORM\Column(name="test", type="string", length=10, options={"default"="testing","fixed"=true,"comment"="testing","collation"="utf8mb4_general_ci","check"="CHECK (test IN (""test""))"})',
                 [
                     'type' => 'string',
                     'length' => 10,
@@ -1288,23 +1288,23 @@ class
                 ],
             ],
             'int-default'      => [
-                '@Column(name="test", type="integer", options={"default"="10"})',
+                '@ORM\Column(name="test", type="integer", options={"default"="10"})',
                 ['type' => 'integer', 'options' => ['default' => 10]],
             ],
             'int-unsigned'     => [
-                '@Column(name="test", type="integer", options={"unsigned"=true})',
+                '@ORM\Column(name="test", type="integer", options={"unsigned"=true})',
                 ['type' => 'integer', 'options' => ['unsigned' => true]],
             ],
             'int-comment'      => [
-                '@Column(name="test", type="integer", options={"comment"="testing"})',
+                '@ORM\Column(name="test", type="integer", options={"comment"="testing"})',
                 ['type' => 'integer', 'options' => ['comment' => 'testing']],
             ],
             'int-check'        => [
-                '@Column(name="test", type="integer", options={"check"="CHECK (test > 5)"})',
+                '@ORM\Column(name="test", type="integer", options={"check"="CHECK (test > 5)"})',
                 ['type' => 'integer', 'options' => ['check' => 'CHECK (test > 5)']],
             ],
             'int-all'        => [
-                '@Column(name="test", type="integer", options={"default"="10","unsigned"=true,"comment"="testing","check"="CHECK (test > 5)"})',
+                '@ORM\Column(name="test", type="integer", options={"default"="10","unsigned"=true,"comment"="testing","check"="CHECK (test > 5)"})',
                 [
                     'type' => 'integer',
                     'options' => [

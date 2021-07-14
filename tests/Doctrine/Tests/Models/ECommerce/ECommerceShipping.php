@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\ECommerce;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\Table;
+
 /**
  * ECommerceShipping
  * Represents a shipping method.

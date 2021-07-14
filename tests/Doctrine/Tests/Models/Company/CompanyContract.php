@@ -8,6 +8,25 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\DiscriminatorColumn;
+use Doctrine\ORM\Mapping\DiscriminatorMap;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\EntityListeners;
+use Doctrine\ORM\Mapping\EntityResult;
+use Doctrine\ORM\Mapping\FieldResult;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\InheritanceType;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\JoinTable;
+use Doctrine\ORM\Mapping\ManyToMany;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\NamedNativeQueries;
+use Doctrine\ORM\Mapping\NamedNativeQuery;
+use Doctrine\ORM\Mapping\SqlResultSetMapping;
+use Doctrine\ORM\Mapping\SqlResultSetMappings;
+use Doctrine\ORM\Mapping\Table;
 
 /**
  * @Entity
@@ -71,7 +90,8 @@ abstract class CompanyContract
     /**
      * @var int
      * @Id
-     * @column(type="integer")
+     * @Column(type="integer")
+use Doctrine\ORM\Mapping\OrderBy;
      * @GeneratedValue
      */
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]

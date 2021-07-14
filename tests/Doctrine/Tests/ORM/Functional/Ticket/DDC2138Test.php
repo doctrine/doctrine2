@@ -6,7 +6,18 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
-use Doctrine\DBAL\Schema\Table;
+use Doctrine\DBAL\Schema\Table as DbalTable;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\DiscriminatorColumn;
+use Doctrine\ORM\Mapping\DiscriminatorMap;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\InheritanceType;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
@@ -35,7 +46,7 @@ class DDC2138Test extends OrmFunctionalTestCase
         $this->assertTrue($schema->hasTable('users_followed_objects'), 'Table users_followed_objects should exist.');
 
         $table = $schema->getTable('users_followed_objects');
-        assert($table instanceof Table);
+        assert($table instanceof DbalTable);
         $this->assertTrue($table->columnsAreIndexed(['object_id']));
         $this->assertTrue($table->columnsAreIndexed(['user_id']));
         $foreignKeys = $table->getForeignKeys();

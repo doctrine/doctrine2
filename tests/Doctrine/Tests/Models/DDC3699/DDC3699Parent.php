@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DDC3699;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\MappedSuperclass;
+
 /** @MappedSuperclass */
 abstract class DDC3699Parent
 {

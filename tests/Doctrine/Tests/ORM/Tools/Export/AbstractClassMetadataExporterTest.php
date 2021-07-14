@@ -114,7 +114,6 @@ abstract class AbstractClassMetadataExporterTest extends OrmTestCase
         if ($type === 'annotation') {
             $entityGenerator = new EntityGenerator();
 
-            $entityGenerator->setAnnotationPrefix('');
             $exporter->setEntityGenerator($entityGenerator);
         }
 
