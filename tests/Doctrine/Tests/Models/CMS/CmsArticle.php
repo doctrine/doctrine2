@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace Doctrine\Tests\Models\CMS;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\Table;
 
 /**
  * @Entity
@@ -48,7 +56,7 @@ class CmsArticle
     /**
      * @var int
      * @Version
-     * @column(type="integer")
+     * @Column(type="integer")
      */
     public $version;
 

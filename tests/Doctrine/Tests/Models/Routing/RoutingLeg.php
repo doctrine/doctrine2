@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\Routing;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+
 /**
  * @Entity
  */
@@ -11,8 +18,8 @@ class RoutingLeg
 {
     /**
      * @var int
-     * @Id @generatedValue
-     * @column(type="integer")
+     * @Id @GeneratedValue
+     * @Column(type="integer")
      */
     public $id;
 

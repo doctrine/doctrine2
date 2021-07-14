@@ -3,6 +3,14 @@
 namespace Doctrine\Tests\Models\Company;
 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\PostLoad;
+use Doctrine\ORM\Mapping\PostPersist;
+use Doctrine\ORM\Mapping\PostRemove;
+use Doctrine\ORM\Mapping\PostUpdate;
+use Doctrine\ORM\Mapping\PreFlush;
+use Doctrine\ORM\Mapping\PrePersist;
+use Doctrine\ORM\Mapping\PreRemove;
+use Doctrine\ORM\Mapping\PreUpdate;
 
 use function func_get_args;
 

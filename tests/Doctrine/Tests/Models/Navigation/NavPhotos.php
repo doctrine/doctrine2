@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\Navigation;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\JoinColumns;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\Table;
+
 /**
  * @Entity
  * @Table(name="navigation_photos")
@@ -13,8 +22,8 @@ class NavPhotos
     /**
      * @var int
      * @Id
-     * @column(type="integer")
-     * @generatedValue
+     * @Column(type="integer")
+     * @GeneratedValue
      */
     private $id;
 
@@ -30,7 +39,7 @@ class NavPhotos
 
     /**
      * @var string
-     * @column(type="string", name="file_name")
+     * @Column(type="string", name="file_name")
      */
     private $file;
 

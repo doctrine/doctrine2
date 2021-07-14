@@ -6,6 +6,13 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use Exception;
 
@@ -227,7 +234,7 @@ class DDC1430OrderProduct
 
     /**
      * @var float
-     * @column(type="float")
+     * @Column(type="float")
      */
     private $value;
 

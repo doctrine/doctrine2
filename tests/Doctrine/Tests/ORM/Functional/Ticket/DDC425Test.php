@@ -6,6 +6,10 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use DateTime;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
 class DDC425Test extends OrmFunctionalTestCase

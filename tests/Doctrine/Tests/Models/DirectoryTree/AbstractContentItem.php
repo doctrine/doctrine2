@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DirectoryTree;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\MappedSuperclass;
+
 /**
  * @MappedSuperclass
  */
@@ -25,7 +31,7 @@ abstract class AbstractContentItem
 
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     protected $name;
 

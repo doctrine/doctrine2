@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DDC1872;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\OneToOne;
+
 trait DDC1872ExampleTrait
 {
     /**

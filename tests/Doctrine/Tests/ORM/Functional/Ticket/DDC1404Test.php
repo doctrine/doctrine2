@@ -5,6 +5,13 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\MappedSuperclass;
+use Doctrine\ORM\Mapping\NamedQueries;
+use Doctrine\ORM\Mapping\NamedQuery;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
 use function count;
@@ -97,7 +104,7 @@ class DDC1404ChildEntity extends DDC1404ParentEntity
 {
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     private $name;
 

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Tools\Console;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Tools\Console\MetadataFilter;
 use Doctrine\ORM\Tools\DisconnectedClassMetadataFactory;
 use Doctrine\Tests\OrmTestCase;

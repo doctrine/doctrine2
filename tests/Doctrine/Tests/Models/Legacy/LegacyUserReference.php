@@ -5,6 +5,12 @@ declare(strict_types=1);
 namespace Doctrine\Tests\Models\Legacy;
 
 use DateTime;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\Table;
 
 /**
  * @Entity
@@ -30,7 +36,7 @@ class LegacyUserReference
 
     /**
      * @var string
-     * @column(type="string", name="description")
+     * @Column(type="string", name="description")
      */
     private $_description;
 

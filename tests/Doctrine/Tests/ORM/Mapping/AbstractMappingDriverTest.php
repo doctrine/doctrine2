@@ -11,11 +11,33 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\CustomIdGenerator;
 use Doctrine\ORM\Mapping\DefaultNamingStrategy;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
+use Doctrine\ORM\Mapping\DiscriminatorMap;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\GeneratedValue;
+use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\Index;
+use Doctrine\ORM\Mapping\InheritanceType;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\JoinTable;
+use Doctrine\ORM\Mapping\ManyToMany;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\NamedQueries;
+use Doctrine\ORM\Mapping\NamedQuery;
+use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\OneToOne;
+use Doctrine\ORM\Mapping\OrderBy;
+use Doctrine\ORM\Mapping\PostPersist;
+use Doctrine\ORM\Mapping\PrePersist;
+use Doctrine\ORM\Mapping\SequenceGenerator;
+use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
+use Doctrine\ORM\Mapping\UniqueConstraint;
+use Doctrine\ORM\Mapping\Version;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\Cache\City;
@@ -1120,7 +1142,7 @@ class User
      * @var int
      * @Id
      * @Column(type="integer", options={"foo": "bar", "unsigned": false})
-     * @generatedValue(strategy="AUTO")
+     * @GeneratedValue(strategy="AUTO")
      * @SequenceGenerator(sequenceName="tablename_seq", initialValue=1, allocationSize=100)
      **/
     #[ORM\Id, ORM\Column(type: 'integer', options: ['foo' => 'bar', 'unsigned' => false])]
@@ -1359,7 +1381,7 @@ class UserIncorrectIndex
      * @var int
      * @Id
      * @Column(type="integer")
-     * @generatedValue(strategy="AUTO")
+     * @GeneratedValue(strategy="AUTO")
      **/
     public $id;
 
@@ -1418,7 +1440,7 @@ class UserIncorrectUniqueConstraint
      * @var int
      * @Id
      * @Column(type="integer")
-     * @generatedValue(strategy="AUTO")
+     * @GeneratedValue(strategy="AUTO")
      **/
     public $id;
 

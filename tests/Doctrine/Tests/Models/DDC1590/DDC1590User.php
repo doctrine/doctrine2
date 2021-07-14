@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\Models\DDC1590;
 
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Table;
 use Doctrine\Tests\Models\DDC1590\DDC1590Entity;
 
 /**

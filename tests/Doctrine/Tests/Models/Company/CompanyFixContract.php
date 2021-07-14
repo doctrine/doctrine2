@@ -4,6 +4,8 @@ namespace Doctrine\Tests\Models\Company;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
 
 /**
  * @Entity
@@ -12,7 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 class CompanyFixContract extends CompanyContract
 {
     /**
-     * @column(type="integer")
+     * @Column(type="integer")
      * @var int
      */
     private $fixPrice = 0;

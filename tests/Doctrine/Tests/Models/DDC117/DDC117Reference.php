@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Doctrine\Tests\Models\DDC117;
 
 use DateTime;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\ManyToOne;
 
 /**
  * @Entity
@@ -29,13 +34,13 @@ class DDC117Reference
 
     /**
      * @var string
-     * @column(type="string")
+     * @Column(type="string")
      */
     private $description;
 
     /**
      * @var DateTime
-     * @column(type="datetime")
+     * @Column(type="datetime")
      */
     private $created;
 

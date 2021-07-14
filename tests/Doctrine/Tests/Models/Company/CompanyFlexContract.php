@@ -5,6 +5,18 @@ namespace Doctrine\Tests\Models\Company;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\Entity;
+use Doctrine\ORM\Mapping\EntityResult;
+use Doctrine\ORM\Mapping\FieldResult;
+use Doctrine\ORM\Mapping\JoinColumn;
+use Doctrine\ORM\Mapping\JoinTable;
+use Doctrine\ORM\Mapping\ManyToMany;
+use Doctrine\ORM\Mapping\NamedNativeQueries;
+use Doctrine\ORM\Mapping\NamedNativeQuery;
+use Doctrine\ORM\Mapping\OrderBy;
+use Doctrine\ORM\Mapping\SqlResultSetMapping;
+use Doctrine\ORM\Mapping\SqlResultSetMappings;
 
 /**
  * @Entity
@@ -53,7 +65,7 @@ use Doctrine\ORM\Mapping\ClassMetadataInfo;
 class CompanyFlexContract extends CompanyContract
 {
     /**
-     * @column(type="integer")
+     * @Column(type="integer")
      * @var int
      */
     private $hoursWorked = 0;
