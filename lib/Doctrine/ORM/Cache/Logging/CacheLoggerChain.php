@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM\Cache\Logging;
 
 use Doctrine\ORM\Cache\CollectionCacheKey;

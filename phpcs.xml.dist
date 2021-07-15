@@ -20,7 +20,6 @@
     <exclude-pattern>*/tests/Doctrine/Tests/ORM/Tools/Export/export/*</exclude-pattern>
 
     <rule ref="Doctrine">
-        <exclude name="SlevomatCodingStandard.TypeHints.DeclareStrictTypes"/>
         <exclude name="SlevomatCodingStandard.TypeHints.ParameterTypeHint.MissingAnyTypeHint" />
         <exclude name="SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingReturnTypeHint"/>
         <exclude name="SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint" />

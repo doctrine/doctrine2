@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\Tests\ORM\Functional;
 
 use DateTimeImmutable;
@@ -38,7 +40,7 @@ class QueryDqlFunctionTest extends OrmFunctionalTestCase
         $salaryAvg = $this->_em->createQuery('SELECT AVG(m.salary) AS salary FROM Doctrine\Tests\Models\Company\CompanyManager m')
                                ->getSingleResult();
 
-        $this->assertEquals(375000, round($salaryAvg['salary'], 0));
+        $this->assertEquals(375000, round((float) $salaryAvg['salary'], 0));
     }
 
     public function testAggregateMin(): void
@@ -150,10 +152,10 @@ class QueryDqlFunctionTest extends OrmFunctionalTestCase
                          ->getArrayResult();
 
         $this->assertEquals(4, count($result));
-        $this->assertEquals(316, round($result[0]['sqrtsalary']));
-        $this->assertEquals(447, round($result[1]['sqrtsalary']));
-        $this->assertEquals(632, round($result[2]['sqrtsalary']));
-        $this->assertEquals(894, round($result[3]['sqrtsalary']));
+        $this->assertEquals(316, round((float) $result[0]['sqrtsalary']));
+        $this->assertEquals(447, round((float) $result[1]['sqrtsalary']));
+        $this->assertEquals(632, round((float) $result[2]['sqrtsalary']));
+        $this->assertEquals(894, round((float) $result[3]['sqrtsalary']));
     }
 
     public function testFunctionUpper(): void

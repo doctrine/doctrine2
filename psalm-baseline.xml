@@ -490,7 +490,7 @@
       <code>getClassMetadata</code>
       <code>getReference</code>
     </InvalidReturnType>
-    <InvalidScalarArgument occurrences="2">
+    <InvalidScalarArgument occurrences="1">
       <code>$hydrationMode</code>
       <code>$hydrationMode</code>
     </InvalidScalarArgument>
@@ -522,9 +522,8 @@
     <RedundantCondition occurrences="1">
       <code>is_object($connection)</code>
     </RedundantCondition>
-    <RedundantConditionGivenDocblockType occurrences="2">
+    <RedundantConditionGivenDocblockType occurrences="1">
       <code>$this-&gt;filterCollection !== null</code>
-      <code>method_exists($this-&gt;metadataFactory, 'setCache')</code>
     </RedundantConditionGivenDocblockType>
     <TypeDoesNotContainType occurrences="2">
       <code>$connection instanceof Connection</code>
@@ -602,7 +601,7 @@
     </DeprecatedClass>
   </file>
   <file src="lib/Doctrine/ORM/Id/AssignedGenerator.php">
-    <PossiblyNullArgument occurrences="3">
+    <PossiblyNullArgument occurrences="1">
       <code>$entity</code>
       <code>$entity</code>
       <code>$entity</code>
@@ -716,9 +715,6 @@
     <PossiblyNullArgument occurrences="1">
       <code>$objectClass</code>
     </PossiblyNullArgument>
-    <PossiblyNullArrayAccess occurrences="1">
-      <code>$objectClass[key($objectClass)]</code>
-    </PossiblyNullArrayAccess>
     <PossiblyNullReference occurrences="6">
       <code>getValue</code>
       <code>getValue</code>
@@ -824,7 +820,7 @@
     <ArgumentTypeCoercion occurrences="1">
       <code>$className</code>
     </ArgumentTypeCoercion>
-    <PossiblyNullArgument occurrences="2">
+    <PossiblyNullArgument occurrences="1">
       <code>$class</code>
       <code>$class</code>
     </PossiblyNullArgument>
@@ -1044,7 +1040,7 @@
       <code>$this-&gt;reflFields[$name]</code>
       <code>$this-&gt;reflFields[$this-&gt;identifier[0]]</code>
     </NullableReturnStatement>
-    <PossiblyNullArgument occurrences="11">
+    <PossiblyNullArgument occurrences="9">
       <code>$class</code>
       <code>$class</code>
       <code>$className</code>
@@ -1782,7 +1778,7 @@
     <DeprecatedMethod occurrences="1">
       <code>fetchColumn</code>
     </DeprecatedMethod>
-    <PossiblyNullArgument occurrences="39">
+    <PossiblyNullArgument occurrences="38">
       <code>$association</code>
       <code>$collection-&gt;getOwner()</code>
       <code>$collection-&gt;getOwner()</code>
@@ -2308,7 +2304,7 @@
     </PropertyNotSetInConstructor>
   </file>
   <file src="lib/Doctrine/ORM/Query/AST/Functions/TrimFunction.php">
-    <PossiblyNullArgument occurrences="3">
+    <PossiblyNullArgument occurrences="1">
       <code>$value</code>
       <code>$value</code>
       <code>$value</code>
@@ -2563,9 +2559,6 @@
       <code>call_user_func($functionClass, $functionName)</code>
       <code>call_user_func($functionClass, $functionName)</code>
     </DocblockTypeContradiction>
-    <ImplicitToStringCast occurrences="1">
-      <code>Subselect|string</code>
-    </ImplicitToStringCast>
     <InvalidArrayOffset occurrences="2">
       <code>$this-&gt;identVariableExpressions[$dqlAlias]</code>
       <code>$this-&gt;queryComponents[$dqlAlias]</code>
@@ -2627,7 +2620,7 @@
       <code>$this-&gt;ConditionalExpression()</code>
       <code>$this-&gt;ConditionalExpression()</code>
     </PossiblyInvalidPropertyAssignmentValue>
-    <PossiblyNullArgument occurrences="29">
+    <PossiblyNullArgument occurrences="25">
       <code>$aliasIdentVariable</code>
       <code>$dql</code>
       <code>$dql</code>
@@ -3510,7 +3503,7 @@
     </DeprecatedClass>
   </file>
   <file src="lib/Doctrine/ORM/Tools/DebugUnitOfWorkListener.php">
-    <PossiblyNullArgument occurrences="3">
+    <PossiblyNullArgument occurrences="2">
       <code>$entity</code>
       <code>$entity</code>
       <code>$entity</code>
@@ -3628,7 +3621,7 @@
     <InvalidNullableReturnType occurrences="1">
       <code>string</code>
     </InvalidNullableReturnType>
-    <PossiblyNullArgument occurrences="2">
+    <PossiblyNullArgument occurrences="1">
       <code>$this-&gt;_outputDir</code>
       <code>$this-&gt;_outputDir</code>
     </PossiblyNullArgument>
@@ -3667,12 +3660,6 @@
     <DeprecatedClass occurrences="1">
       <code>AbstractExporter</code>
     </DeprecatedClass>
-    <InvalidScalarArgument occurrences="3">
-      <code>$field['length']</code>
-      <code>$field['length']</code>
-      <code>$field['precision']</code>
-      <code>$field['scale']</code>
-    </InvalidScalarArgument>
     <MissingClosureParamType occurrences="2">
       <code>$m1</code>
       <code>$m2</code>
@@ -3884,7 +3871,7 @@
     <PossiblyInvalidArrayOffset occurrences="1">
       <code>$this-&gt;identityMap[$rootClassName]</code>
     </PossiblyInvalidArrayOffset>
-    <PossiblyNullArgument occurrences="13">
+    <PossiblyNullArgument occurrences="11">
       <code>$assoc</code>
       <code>$assoc</code>
       <code>$assoc['targetEntity']</code>

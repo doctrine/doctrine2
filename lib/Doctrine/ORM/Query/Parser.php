@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM\Query;
 
 use Doctrine\Deprecations\Deprecation;
@@ -2944,7 +2946,7 @@ class Parser
     /**
      * StringExpression ::= StringPrimary | ResultVariable | "(" Subselect ")"
      *
-     * @return Subselect|string
+     * @return Subselect|Node|string
      */
     public function StringExpression()
     {

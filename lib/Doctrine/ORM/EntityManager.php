@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Doctrine\ORM;
 
 use BadMethodCallException;
@@ -851,7 +853,7 @@ use function sprintf;
                 }
         }
 
-        throw InvalidHydrationMode::fromMode($hydrationMode);
+        throw InvalidHydrationMode::fromMode((string) $hydrationMode);
     }
 
     /**
