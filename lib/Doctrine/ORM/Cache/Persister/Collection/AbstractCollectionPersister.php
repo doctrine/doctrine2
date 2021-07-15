@@ -2,6 +2,7 @@
 
 namespace Doctrine\ORM\Cache\Persister\Collection;
 
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Util\ClassUtils;
 use Doctrine\ORM\Cache\CollectionCacheKey;
@@ -20,7 +21,6 @@ use Doctrine\ORM\UnitOfWork;
 use function array_values;
 use function assert;
 use function count;
-use function is_array;
 
 abstract class AbstractCollectionPersister implements CachedCollectionPersister
 {
@@ -133,7 +133,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
         // Only preserve ordering if association configured it
         if (! (isset($associationMapping['indexBy']) && $associationMapping['indexBy'])) {
             // Elements may be an array or a Collection
-            $elements = array_values(is_array($elements) ? $elements : $elements->getValues());
+            $elements = array_values($elements instanceof Collection ? $elements->getValues() : $elements);
         }
 
         $entry = $this->hydrator->buildCacheEntry($this->targetEntity, $key, $elements);
