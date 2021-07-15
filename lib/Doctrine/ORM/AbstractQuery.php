@@ -381,6 +381,14 @@ abstract class AbstractQuery
      */
     public function setParameter($key, $value, $type = null)
     {
+        if ($type === null) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/issues/8379',
+                'Consider adding the type as third argument since null will not be accepted anymore in Doctrine ORM 3.0.'
+            );
+        }
+
         $existingParameter = $this->getParameter($key);
 
         if ($existingParameter !== null) {

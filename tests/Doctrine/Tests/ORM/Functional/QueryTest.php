@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\Proxy\Proxy;
@@ -29,6 +30,8 @@ use function iterator_to_array;
  */
 class QueryTest extends OrmFunctionalTestCase
 {
+    use VerifyDeprecations;
+
     protected function setUp(): void
     {
         $this->useModelSet('cms');
@@ -120,6 +123,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->_em->clear();
 
         $q = $this->_em->createQuery('SELECT u FROM ' . CmsUser::class . ' u WHERE u.username = ?0');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $q->setParameter(0, 'jwage');
         $user = $q->getSingleResult();
 
@@ -132,6 +138,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->expectExceptionMessage('Invalid parameter: token 2 is not defined in the query.');
 
         $q = $this->_em->createQuery('SELECT u FROM ' . CmsUser::class . ' u WHERE u.name = ?1');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $q->setParameter(2, 'jwage');
         $user = $q->getSingleResult();
     }
@@ -142,6 +151,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->expectExceptionMessage('Too many parameters: the query defines 1 parameters and you bound 2');
 
         $q = $this->_em->createQuery('SELECT u FROM ' . CmsUser::class . ' u WHERE u.name = ?1');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $q->setParameter(1, 'jwage');
         $q->setParameter(2, 'jwage');
 
@@ -160,6 +172,8 @@ class QueryTest extends OrmFunctionalTestCase
     public function testInvalidInputParameterThrowsException(): void
     {
         $this->expectException(QueryException::class);
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
 
         $this->_em->createQuery('SELECT u FROM ' . CmsUser::class . ' u WHERE u.name = ?')
                   ->setParameter(1, 'jwage')
@@ -523,6 +537,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->_em->persist($article);
         $this->_em->flush();
         $this->_em->clear();
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         //$this->_em->getConnection()->getConfiguration()->setSQLLogger(new \Doctrine\DBAL\Logging\EchoSQLLogger);
         $q = $this->_em->createQuery('select a from Doctrine\Tests\Models\CMS\CmsArticle a where a.topic = :topic and a.user = :user')
                 ->setParameter('user', $this->_em->getReference(CmsUser::class, $author->id))
@@ -690,6 +707,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->_em->clear();
 
         $query = $this->_em->createQuery('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE u.username IN (?0)');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $query->setParameter(0, ['beberlei', 'jwage']);
 
         $users = $query->execute();
@@ -735,6 +755,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->_em->clear();
 
         $query = $this->_em->createQuery('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE u IN (?0) OR u.username = ?1');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $query->setParameter(0, [$userA, $userC]);
         $query->setParameter(1, 'beberlei');
 
@@ -788,6 +811,9 @@ class QueryTest extends OrmFunctionalTestCase
         $this->_em->clear();
 
         $q = $this->_em->createQuery('SELECT DISTINCT u from Doctrine\Tests\Models\CMS\CmsUser u WHERE u.id = ?1');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $q->setParameter(1, $userC);
 
         $this->assertEquals($userC, $q->getParameter(1)->getValue());
@@ -829,6 +855,9 @@ class QueryTest extends OrmFunctionalTestCase
         $userCollection->add($u3->getId());
 
         $q = $this->_em->createQuery('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE u IN (:users) ORDER BY u.id');
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/8379');
+
         $q->setParameter('users', $userCollection);
         $users = $q->execute();
 
