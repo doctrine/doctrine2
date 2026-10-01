@@ -77,6 +77,8 @@ final class WindowPage implements Page
 
     /**
      * Returns the 1-based number of this page.
+     *
+     * @return int<1, max>
      */
     public function getPageNumber(): int
     {
@@ -86,6 +88,8 @@ final class WindowPage implements Page
     /**
      * Returns the total number of pages, at least 1 even for an empty result
      * set.
+     *
+     * @return int<1, max>
      */
     public function getPageCount(): int
     {

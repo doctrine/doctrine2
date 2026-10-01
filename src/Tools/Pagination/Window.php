@@ -24,6 +24,10 @@ use function max;
  */
 final class Window
 {
+    /**
+     * @param int<0, max> $firstResult
+     * @param int<1, max> $maxResults
+     */
     public function __construct(
         private readonly int $firstResult,
         private readonly int $maxResults,
@@ -39,6 +43,9 @@ final class Window
 
     /**
      * Builds a window from a 1-based page number and a page size.
+     *
+     * @param int<1, max> $pageNumber
+     * @param int<1, max> $pageSize
      */
     public static function fromPageNumberAndSize(int $pageNumber, int $pageSize): self
     {
@@ -49,11 +56,13 @@ final class Window
         return new self(($pageNumber - 1) * $pageSize, $pageSize);
     }
 
+    /** @return int<0, max> */
     public function getFirstResult(): int
     {
         return $this->firstResult;
     }
 
+    /** @return int<1, max> */
     public function getMaxResults(): int
     {
         return $this->maxResults;
@@ -61,6 +70,8 @@ final class Window
 
     /**
      * Returns the 1-based page number this window points at.
+     *
+     * @return int<1, max>
      */
     public function getPageNumber(): int
     {
