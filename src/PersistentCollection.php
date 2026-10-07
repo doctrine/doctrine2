@@ -395,13 +395,53 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
     public function set(string|int $key, mixed $value): void
     {
+        $replaced = parent::get($key);
+
         parent::set($key, $value);
 
         $this->changed();
 
+        $this->orphanReplacedElement($replaced);
+
         if (is_object($value) && $this->em) {
             $this->getUnitOfWork()->cancelOrphanRemoval($value);
         }
+    }
+
+    /**
+     * Schedules the element displaced by a set() for orphan removal, like an
+     * explicit remove() does. Only an element that left the collection
+     * entirely is scheduled: one that keeps its membership under another key
+     * survives, and one set under another key afterwards is revived by the
+     * cancel-orphan-removal pass of that set().
+     */
+    private function orphanReplacedElement(mixed $replaced): void
+    {
+        if (! is_object($replaced)) {
+            return;
+        }
+
+        if (! $this->managesOrphanRemoval()) {
+            return;
+        }
+
+        if ($this->unwrap()->contains($replaced)) {
+            return;
+        }
+
+        $this->getUnitOfWork()->scheduleOrphanRemoval($replaced);
+    }
+
+    /**
+     * Whether elements dropped from this collection are subject to orphan
+     * removal, the same condition under which remove() orphans an element.
+     */
+    private function managesOrphanRemoval(): bool
+    {
+        return $this->association !== null
+            && $this->association->isToMany()
+            && $this->owner
+            && $this->getMapping()->orphanRemoval;
     }
 
     private function doAdd(mixed $value): void
