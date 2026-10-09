@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Internal\UnitOfWork;
 
-use Doctrine\ORM\Internal\UnitOfWork\ConstraintEdgePlan;
 use Doctrine\ORM\Internal\UnitOfWork\ConstraintEdgePlanner;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMapping;
@@ -17,24 +16,17 @@ use PHPUnit\Framework\TestCase;
 use function spl_object_id;
 
 #[CoversClass(ConstraintEdgePlanner::class)]
-#[CoversClass(ConstraintEdgePlan::class)]
 #[Group('#6776')]
 final class ConstraintEdgePlannerTest extends TestCase
 {
-    public function testUniqueFieldCollisionProducesEdgeForEarlyDeletion(): void
+    public function testUniqueFieldCollisionProducesEarlyDeletion(): void
     {
         $old    = new PlannerItem();
         $old->f = 'v';
         $new    = new PlannerItem();
         $new->f = 'v';
 
-        $plan = $this->plan([$old], [$new]);
-
-        self::assertCount(1, $plan->edges);
-        self::assertSame($old, $plan->edges[0]->deletion);
-        self::assertSame($new, $plan->edges[0]->insertion);
-        self::assertSame([$old], $plan->earlyDeletions());
-        self::assertSame([], $plan->blockedDeletions);
+        self::assertSame([$old], $this->plan([$old], [$new]));
     }
 
     public function testNullTupleComponentNeverCollides(): void
@@ -44,11 +36,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new    = new PlannerItem();
         $new->f = null;
 
-        $plan = $this->plan([$old], [$new]);
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([], $plan->blockedDeletions);
-        self::assertSame([], $plan->earlyDeletions());
+        self::assertSame([], $this->plan([$old], [$new]));
     }
 
     #[Group('planner-mixed-composite-unit')]
@@ -63,15 +51,9 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new->f     = 'v';
         $new->owner = $owner;
 
-        $plan = $this->plan([$old], [$new], [], [], [], [], [], [
+        self::assertSame([$old], $this->plan([$old], [$new], [], [], [], [], [], [
             PlannerItem::class => $this->mixedCompositeItemMetadata(),
-        ]);
-
-        self::assertCount(1, $plan->edges);
-        self::assertSame($old, $plan->edges[0]->deletion);
-        self::assertSame($new, $plan->edges[0]->insertion);
-        self::assertSame([$old], $plan->earlyDeletions());
-        self::assertSame([], $plan->blockedDeletions);
+        ]));
     }
 
     #[Group('planner-mixed-composite-unit')]
@@ -87,12 +69,9 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new->f     = 'v';
         $new->owner = $secondOwner;
 
-        $plan = $this->plan([$old], [$new], [], [], [], [], [], [
+        self::assertSame([], $this->plan([$old], [$new], [], [], [], [], [], [
             PlannerItem::class => $this->mixedCompositeItemMetadata(),
-        ]);
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([], $plan->blockedDeletions);
+        ]));
     }
 
     #[Group('planner-mixed-composite-unit')]
@@ -105,12 +84,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new      = new PlannerItem();
         $new->ref = $ref;
 
-        $plan = $this->plan([$old], [$new]);
-
-        self::assertCount(1, $plan->edges);
-        self::assertSame($old, $plan->edges[0]->deletion);
-        self::assertSame($new, $plan->edges[0]->insertion);
-        self::assertSame([$old], $plan->earlyDeletions());
+        self::assertSame([$old], $this->plan([$old], [$new]));
     }
 
     public function testUniqueJoinColumnWithNullAssociationDoesNotCollide(): void
@@ -118,9 +92,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $old = new PlannerItem();
         $new = new PlannerItem();
 
-        $plan = $this->plan([$old], [$new]);
-
-        self::assertSame([], $plan->edges);
+        self::assertSame([], $this->plan([$old], [$new]));
     }
 
     public function testCandidateWithoutInsertionsStaysOnBaselineOrder(): void
@@ -128,11 +100,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $old    = new PlannerItem();
         $old->f = 'v';
 
-        $plan = $this->plan([$old], []);
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([], $plan->blockedDeletions);
-        self::assertSame([], $plan->earlyDeletions());
+        self::assertSame([], $this->plan([$old], []));
     }
 
     public function testFkReferenceFromInsertFallsBackToBaselineOrder(): void
@@ -147,11 +115,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $referencing->f     = 'w';
         $referencing->owner = $old;
 
-        $plan = $this->plan([$old], [$new, $referencing]);
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([$old], $plan->blockedDeletions);
-        self::assertSame([], $plan->earlyDeletions());
+        self::assertSame([], $this->plan([$old], [$new, $referencing]));
     }
 
     public function testFkReferenceFromUpdateOriginalValueFallsBackToBaselineOrder(): void
@@ -165,17 +129,14 @@ final class ConstraintEdgePlannerTest extends TestCase
         $updater    = new PlannerItem();
         $updater->f = 'w';
 
-        $plan = $this->plan(
+        self::assertSame([], $this->plan(
             [$old],
             [$new],
             [spl_object_id($updater) => $updater],
             [],
             [],
             [spl_object_id($updater) => ['owner' => [$old, null]]],
-        );
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([$old], $plan->blockedDeletions);
+        ));
     }
 
     public function testFkReferenceFromUpdateOriginalEntityDataFallsBackToBaselineOrder(): void
@@ -189,16 +150,13 @@ final class ConstraintEdgePlannerTest extends TestCase
         $updater    = new PlannerItem();
         $updater->f = 'w';
 
-        $plan = $this->plan(
+        self::assertSame([], $this->plan(
             [$old],
             [$new],
             [spl_object_id($updater) => $updater],
             [],
             [spl_object_id($updater) => ['owner' => $old]],
-        );
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([$old], $plan->blockedDeletions);
+        ));
     }
 
     public function testFkReferenceFromPendingDeletionCurrentValueFallsBackToBaselineOrder(): void
@@ -213,15 +171,12 @@ final class ConstraintEdgePlannerTest extends TestCase
         $deleter->f     = 'w';
         $deleter->owner = $old;
 
-        $plan = $this->plan(
+        self::assertSame([], $this->plan(
             [$old],
             [$new],
             [],
             [spl_object_id($deleter) => $deleter],
-        );
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([$old], $plan->blockedDeletions);
+        ));
     }
 
     public function testFkReferenceFromPendingManyToManyCollectionOperationFallsBackToBaselineOrder(): void
@@ -232,7 +187,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new    = new PlannerItem();
         $new->f = 'v';
 
-        $plan = $this->plan(
+        self::assertSame([], $this->plan(
             [$old],
             [$new],
             [],
@@ -240,11 +195,7 @@ final class ConstraintEdgePlannerTest extends TestCase
             [],
             [],
             [PlannerItem::class => true],
-        );
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([$old], $plan->blockedDeletions);
-        self::assertSame([], $plan->earlyDeletions());
+        ));
     }
 
     public function testCollisionIsOnlyMatchedWithinSameClass(): void
@@ -254,10 +205,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         $new    = new PlannerOther();
         $new->f = 'v';
 
-        $plan = $this->plan([$old], [$new]);
-
-        self::assertSame([], $plan->edges);
-        self::assertSame([], $plan->blockedDeletions);
+        self::assertSame([], $this->plan([$old], [$new]));
     }
 
     /**
@@ -269,6 +217,8 @@ final class ConstraintEdgePlannerTest extends TestCase
      * @param array<int, array<string, array{0: mixed, 1: mixed}>> $entityChangeSets
      * @param array<string, true>                                  $manyToManyTargetClasses
      * @param array<string, ClassMetadata<object>>                 $metadataOverrides
+     *
+     * @return list<object>
      */
     private function plan(
         array $candidates,
@@ -279,7 +229,7 @@ final class ConstraintEdgePlannerTest extends TestCase
         array $entityChangeSets = [],
         array $manyToManyTargetClasses = [],
         array $metadataOverrides = [],
-    ): ConstraintEdgePlan {
+    ): array {
         $metadata = [
             PlannerItem::class => $this->itemMetadata(),
             PlannerRef::class => new ClassMetadata(PlannerRef::class),
@@ -292,7 +242,11 @@ final class ConstraintEdgePlannerTest extends TestCase
             $candidateDeletions[spl_object_id($entity)] = $entity;
         }
 
-        return ConstraintEdgePlanner::planEarlyDeletions(
+        $planner = new ConstraintEdgePlanner(
+            static fn (string $class): ClassMetadata => $metadata[$class],
+        );
+
+        return $planner->planEarlyDeletions(
             $candidates,
             $insertions,
             $updates,
@@ -300,7 +254,6 @@ final class ConstraintEdgePlannerTest extends TestCase
             $originalEntityData,
             $entityChangeSets,
             $manyToManyTargetClasses,
-            static fn (string $class): ClassMetadata => $metadata[$class],
         );
     }
 

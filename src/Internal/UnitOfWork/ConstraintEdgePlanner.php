@@ -25,9 +25,9 @@ use function spl_object_id;
  * falls back to the baseline commit order, a false negative would violate
  * a foreign key.
  *
- * Pure module: entities and mapping metadata in, ordering edges out. Tuples
- * are compared as PHP values (referenced-entity identity for association
- * components); no database-level conversion is performed.
+ * Pure module: entities and mapping metadata in, the early-deletion list
+ * out. Tuples are compared as PHP values (referenced-entity identity for
+ * association components); no database-level conversion is performed.
  *
  * @internal
  */
@@ -45,6 +45,11 @@ final class ConstraintEdgePlanner
     /** @var array<string, list<string>> */
     private array $toOneOwningFields = [];
 
+    /** @param Closure(string): ClassMetadata<object> $classMetadata */
+    public function __construct(private readonly Closure $classMetadata)
+    {
+    }
+
     /**
      * @param list<object>                                         $candidates
      * @param array<int, object>                                   $insertions
@@ -56,9 +61,10 @@ final class ConstraintEdgePlanner
      *                                                            of class names referenced as
      *                                                            elements by pending many-to-many
      *                                                            collection operations of this flush
-     * @param Closure(string): ClassMetadata<object>               $classMetadata
+     *
+     * @return list<object>
      */
-    public static function planEarlyDeletions(
+    public function planEarlyDeletions(
         array $candidates,
         array $insertions,
         array $updates,
@@ -66,20 +72,17 @@ final class ConstraintEdgePlanner
         array $originalEntityData,
         array $entityChangeSets,
         array $manyToManyTargetClasses,
-        Closure $classMetadata,
-    ): ConstraintEdgePlan {
-        $planner = new self();
-
+    ): array {
         if ($candidates === [] || $insertions === []) {
-            return new ConstraintEdgePlan([], []);
+            return [];
         }
 
         $insertIndex = [];
         foreach ($insertions as $insertion) {
-            $class = $classMetadata($insertion::class);
+            $class = ($this->classMetadata)($insertion::class);
 
-            foreach ($planner->uniqueDeclarations($class) as $declarationId => $declaration) {
-                $key = $planner->tupleKey($class, $insertion, $declaration);
+            foreach ($this->uniqueDeclarations($class) as $declarationId => $declaration) {
+                $key = $this->tupleKey($class, $insertion, $declaration);
                 if ($key === null) {
                     continue;
                 }
@@ -90,52 +93,34 @@ final class ConstraintEdgePlanner
 
         $fkTargets = [];
         foreach ($insertions as $oid => $entity) {
-            $planner->collectFkTargets($classMetadata($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
+            $this->collectFkTargets(($this->classMetadata)($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
         }
 
         foreach ($updates as $oid => $entity) {
-            $planner->collectFkTargets($classMetadata($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
+            $this->collectFkTargets(($this->classMetadata)($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
         }
 
         foreach ($deletions as $oid => $entity) {
-            $planner->collectFkTargets($classMetadata($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
+            $this->collectFkTargets(($this->classMetadata)($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
         }
 
-        $edges   = [];
-        $blocked = [];
+        $earlyDeletions = [];
 
         foreach ($candidates as $entity) {
-            $class = $classMetadata($entity::class);
+            $class = ($this->classMetadata)($entity::class);
 
-            $collidingInsertions = null;
-            foreach ($planner->uniqueDeclarations($class) as $declarationId => $declaration) {
-                $key = $planner->tupleKey($class, $entity, $declaration);
-                if ($key === null) {
-                    continue;
-                }
-
-                $collidingInsertion = $insertIndex[$class->name][$declarationId][$key] ?? null;
-                if ($collidingInsertion !== null) {
-                    $collidingInsertions[] = $collidingInsertion;
-                }
-            }
-
-            if ($collidingInsertions === null) {
+            if (! $this->collidesWithInsertion($class, $entity, $insertIndex)) {
                 continue;
             }
 
             if (isset($fkTargets[spl_object_id($entity)]) || isset($manyToManyTargetClasses[$class->name])) {
-                $blocked[] = $entity;
-
                 continue;
             }
 
-            foreach ($collidingInsertions as $insertion) {
-                $edges[] = new ConstraintEdge($entity, $insertion);
-            }
+            $earlyDeletions[] = $entity;
         }
 
-        return new ConstraintEdgePlan($edges, $blocked);
+        return $earlyDeletions;
     }
 
     /**
@@ -200,6 +185,29 @@ final class ConstraintEdgePlanner
         }
 
         return $this->uniqueDeclarations[$class->name] = $declarations;
+    }
+
+    /**
+     * Whether the entity's tuple matches a pending insertion's tuple on any
+     * metadata-declared unique constraint of the class.
+     *
+     * @param ClassMetadata<object>                                             $class
+     * @param array<class-string<object>, array<string, array<string, object>>> $insertIndex
+     */
+    private function collidesWithInsertion(ClassMetadata $class, object $entity, array $insertIndex): bool
+    {
+        foreach ($this->uniqueDeclarations($class) as $declarationId => $declaration) {
+            $key = $this->tupleKey($class, $entity, $declaration);
+            if ($key === null) {
+                continue;
+            }
+
+            if (isset($insertIndex[$class->name][$declarationId][$key])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

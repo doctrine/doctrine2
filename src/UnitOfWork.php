@@ -1311,7 +1311,7 @@ class UnitOfWork implements PropertyChangedListener
      * on a metadata-declared unique constraint and are safe to run before
      * the insertions.
      *
-     * @return array<int, object>
+     * @return list<object>
      */
     private function computeEarlyDeletions(): array
     {
@@ -1339,7 +1339,11 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        return ConstraintEdgePlanner::planEarlyDeletions(
+        $planner = new ConstraintEdgePlanner(
+            fn (string $class): ClassMetadata => $this->em->getClassMetadata($class),
+        );
+
+        return $planner->planEarlyDeletions(
             $candidates,
             $this->entityInsertions,
             $this->entityUpdates,
@@ -1347,8 +1351,7 @@ class UnitOfWork implements PropertyChangedListener
             $this->originalEntityData,
             $this->entityChangeSets,
             $manyToManyTargetClasses,
-            fn (string $class): ClassMetadata => $this->em->getClassMetadata($class),
-        )->earlyDeletions();
+        );
     }
 
     /**

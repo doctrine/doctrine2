@@ -304,12 +304,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
         $this->changed();
 
-        if (
-            $this->association !== null &&
-            $this->association->isToMany() &&
-            $this->owner &&
-            $this->getMapping()->orphanRemoval
-        ) {
+        if ($this->managesOrphanRemoval()) {
             $this->getUnitOfWork()->scheduleOrphanRemoval($removed);
         }
 
@@ -326,12 +321,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
         $this->changed();
 
-        if (
-            $this->association !== null &&
-            $this->association->isToMany() &&
-            $this->owner &&
-            $this->getMapping()->orphanRemoval
-        ) {
+        if ($this->managesOrphanRemoval()) {
             $this->getUnitOfWork()->scheduleOrphanRemoval($element);
         }
 
@@ -434,7 +424,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
     /**
      * Whether elements dropped from this collection are subject to orphan
-     * removal, the same condition under which remove() orphans an element.
+     * removal.
      */
     private function managesOrphanRemoval(): bool
     {
