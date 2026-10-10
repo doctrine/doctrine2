@@ -6,7 +6,6 @@ namespace Doctrine\ORM\Internal\UnitOfWork;
 
 use Closure;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\ToOneOwningSideMapping;
 
 use function implode;
 use function is_object;
@@ -31,7 +30,7 @@ use function spl_object_id;
  *
  * @internal
  */
-final class ConstraintEdgePlanner
+final class EarlyDeletionPlanner
 {
     /**
      * Unique-tuple declarations per class name: declaration id to components,
@@ -146,7 +145,7 @@ final class ConstraintEdgePlanner
         }
 
         foreach ($class->associationMappings as $assoc) {
-            if (! $assoc instanceof ToOneOwningSideMapping) {
+            if (! $assoc->isToOneOwningSide()) {
                 continue;
             }
 
@@ -241,7 +240,7 @@ final class ConstraintEdgePlanner
             $parts[] = serialize($value);
         }
 
-        return implode("\x1f", $parts);
+        return implode(' ', $parts);
     }
 
     /**
@@ -316,7 +315,7 @@ final class ConstraintEdgePlanner
     private function associationFieldForColumn(ClassMetadata $class, string $column): string|null
     {
         foreach ($class->associationMappings as $assoc) {
-            if (! $assoc instanceof ToOneOwningSideMapping) {
+            if (! $assoc->isToOneOwningSide()) {
                 continue;
             }
 

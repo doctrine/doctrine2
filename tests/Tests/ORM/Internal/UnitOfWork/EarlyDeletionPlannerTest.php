@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Internal\UnitOfWork;
 
-use Doctrine\ORM\Internal\UnitOfWork\ConstraintEdgePlanner;
+use Doctrine\ORM\Internal\UnitOfWork\EarlyDeletionPlanner;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\ORM\Mapping\ManyToOneAssociationMapping;
@@ -15,9 +15,9 @@ use PHPUnit\Framework\TestCase;
 
 use function spl_object_id;
 
-#[CoversClass(ConstraintEdgePlanner::class)]
+#[CoversClass(EarlyDeletionPlanner::class)]
 #[Group('#6776')]
-final class ConstraintEdgePlannerTest extends TestCase
+final class EarlyDeletionPlannerTest extends TestCase
 {
     public function testUniqueFieldCollisionProducesEarlyDeletion(): void
     {
@@ -242,7 +242,7 @@ final class ConstraintEdgePlannerTest extends TestCase
             $candidateDeletions[spl_object_id($entity)] = $entity;
         }
 
-        $planner = new ConstraintEdgePlanner(
+        $planner = new EarlyDeletionPlanner(
             static fn (string $class): ClassMetadata => $metadata[$class],
         );
 
