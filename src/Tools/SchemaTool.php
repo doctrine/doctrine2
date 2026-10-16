@@ -75,6 +75,7 @@ class SchemaTool
     private readonly QuoteStrategy $quoteStrategy;
     private readonly AbstractSchemaManager $schemaManager;
     private readonly ExperimentalSchemaTool|null $experimentalSchemaTool;
+    private SchemaOperation|null $pendingSchemaOperation = null;
 
     /**
      * Initializes a new SchemaTool instance that uses the connection of the
@@ -132,7 +133,7 @@ class SchemaTool
      */
     public function getCreateSchemaSql(array $classes): array
     {
-        $schema = $this->getSchemaFromMetadata($classes);
+        $schema = $this->getSchemaForOperation($classes, SchemaOperation::Create);
 
         return $schema->toSql($this->platform);
     }
@@ -207,8 +208,21 @@ class SchemaTool
      */
     public function getSchemaFromMetadata(array $classes): Schema
     {
+        $operation                    = $this->pendingSchemaOperation;
+        $this->pendingSchemaOperation = null;
+
+        try {
+            return $this->generateSchemaFromMetadata($classes, $operation);
+        } finally {
+            $this->pendingSchemaOperation = $operation;
+        }
+    }
+
+    /** @param list<ClassMetadata<object>> $classes */
+    private function generateSchemaFromMetadata(array $classes, SchemaOperation|null $operation): Schema
+    {
         if ($this->experimentalSchemaTool !== null) {
-            return $this->experimentalSchemaTool->getSchemaFromMetadata($classes);
+            return $this->experimentalSchemaTool->getSchemaFromMetadata($classes, $operation);
         }
 
         Deprecation::ignoreDeprecations('https://github.com/doctrine/dbal/pull/7373');
@@ -514,7 +528,7 @@ class SchemaTool
             );
         }
 
-        $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema);
+        $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema, $operation);
         $eventManager->dispatchEvent(
             ToolEvents::postGenerateSchema,
             $schemaEventArgs,
@@ -1104,7 +1118,7 @@ class SchemaTool
      */
     public function getDropSchemaSQL(array $classes): array
     {
-        $schema = $this->getSchemaFromMetadata($classes);
+        $schema = $this->getSchemaForOperation($classes, SchemaOperation::Drop);
 
         $deployedSchema = $this->schemaManager->introspectSchema();
 
@@ -1178,7 +1192,7 @@ class SchemaTool
      */
     public function getUpdateSchemaSql(array $classes): array
     {
-        $toSchema   = $this->getSchemaFromMetadata($classes);
+        $toSchema   = $this->getSchemaForOperation($classes, SchemaOperation::Update);
         $fromSchema = $this->createSchemaForComparison($toSchema);
 
         if (class_exists(ComparatorConfig::class)) {
@@ -1296,5 +1310,18 @@ class SchemaTool
             ? $asset->getObjectName()->toString()
             // @phpstan-ignore method.deprecated (DBAL < 4.4)
             : $asset->getName();
+    }
+
+    /** @param list<ClassMetadata<object>> $classes */
+    private function getSchemaForOperation(array $classes, SchemaOperation $operation): Schema
+    {
+        $previousOperation            = $this->pendingSchemaOperation;
+        $this->pendingSchemaOperation = $operation;
+
+        try {
+            return $this->getSchemaFromMetadata($classes);
+        } finally {
+            $this->pendingSchemaOperation = $previousOperation;
+        }
     }
 }
