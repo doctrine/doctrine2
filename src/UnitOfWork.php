@@ -371,11 +371,14 @@ class UnitOfWork implements PropertyChangedListener
      *
      * The operations are executed in the following order:
      *
-     * 1) All entity insertions
-     * 2) All entity updates
-     * 3) All collection deletions
-     * 4) All collection updates
-     * 5) All entity deletions
+     * 1) All collection deletions
+     * 2) The early batch of entity deletions: deletions that collide with a
+     *    pending insertion on a metadata-declared unique constraint and are
+     *    safe to run first
+     * 3) All entity insertions
+     * 4) All entity updates, plus any extra updates requested by persisters
+     * 5) All collection updates
+     * 6) All entity deletions
      *
      * @throws Exception
      */
@@ -433,9 +436,7 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
-            // A deletion colliding with a pending insert on a unique value
-            // has to run first: run the foreign-key-safe subset before the
-            // insertions.
+            // Early batch of deletions (before the insertions)
             $earlyDeletions = $this->computeEarlyDeletions();
             if ($earlyDeletions) {
                 $this->executeDeletions($earlyDeletions);
@@ -1321,21 +1322,37 @@ class UnitOfWork implements PropertyChangedListener
 
         $candidates = array_values($this->entityDeletions);
 
-        // A pending many-to-many collection operation may still hold a join
-        // row referencing the candidate when these deletions run: candidates
-        // of the element class stay on the baseline commit order.
+        // Guard inputs from pending owning many-to-many collection updates:
+        // the element class names and the owners' object ids.
+        // Collection deletions are not part of the guard input: they have
+        // already been executed above, so their join rows are gone.
         $manyToManyTargetClasses = [];
-        foreach ([$this->collectionUpdates, $this->collectionDeletions] as $collections) {
-            foreach ($collections as $collection) {
-                $mapping = $collection->getMapping();
-                if ($mapping->isManyToManyOwningSide()) {
-                    $manyToManyTargetClasses[$mapping->targetEntity] = true;
-                }
+        $manyToManyOwnerIds      = [];
+        foreach ($this->collectionUpdates as $collection) {
+            $mapping = $collection->getMapping();
+            if (! $mapping->isManyToManyOwningSide()) {
+                continue;
+            }
+
+            $owner = $collection->getOwner();
+            if ($owner !== null) {
+                $manyToManyOwnerIds[spl_object_id($owner)] = true;
+            }
+
+            $manyToManyTargetClasses[$mapping->targetEntity] = true;
+        }
+
+        // The elements of a many-to-many collection may be instances of the
+        // target entity's subclasses: close the element match downwards.
+        foreach (array_keys($manyToManyTargetClasses) as $targetClass) {
+            foreach ($this->em->getClassMetadata($targetClass)->subClasses as $subClass) {
+                $manyToManyTargetClasses[$subClass] = true;
             }
         }
 
         $planner = new EarlyDeletionPlanner(
             fn (string $class): ClassMetadata => $this->em->getClassMetadata($class),
+            $this->em->getConnection()->getDatabasePlatform(),
         );
 
         return $planner->planEarlyDeletions(
@@ -1346,15 +1363,24 @@ class UnitOfWork implements PropertyChangedListener
             $this->originalEntityData,
             $this->entityChangeSets,
             $manyToManyTargetClasses,
+            $manyToManyOwnerIds,
         );
     }
 
     /**
-     * Executes all entity deletions
+     * Executes the given batch of entity deletions.
      *
-     * @param array<int, object>|null $deletions Subset of the scheduled entity
-     *                                           deletions to execute; null for
-     *                                           all of them.
+     * The commit runs this method twice: once for the early batch of
+     * deletions that must precede the insertions, and once for the
+     * remaining deletions at the end of the flush. Within a batch, all
+     * DELETE statements of the batch run before the batch's postRemove
+     * listeners are dispatched: a listener observes a consistent state of
+     * its batch, the deleted entity's identifier is already reset when its
+     * postRemove listener runs, and the entity is no longer scheduled for
+     * deletion. The postRemove listeners of the early batch therefore run
+     * before the insertions' postPersist listeners.
+     *
+     * @param array<int, object>|null $deletions Subset of the scheduled entity deletions to execute; null for all of them.
      */
     private function executeDeletions(array|null $deletions = null): void
     {
@@ -1489,9 +1515,7 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * @param array<int, object>|null $deletions Subset of the scheduled entity
-     *                                           deletions to order; null for
-     *                                           all of them.
+     * @param array<int, object>|null $deletions Subset of the scheduled entity deletions to order; null for all of them.
      *
      * @return list<object>
      */

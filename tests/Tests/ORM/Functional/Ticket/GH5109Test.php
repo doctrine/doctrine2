@@ -34,7 +34,7 @@ class GH5109Test extends OrmFunctionalTestCase
         );
     }
 
-    #[Group('gh5109-repro')]
+    #[Group('GH-5109')]
     public function testRemoveAndReinsertWithSameUniqueValueInSingleFlush(): void
     {
         $oldArticle = new GH5109Article('v');
@@ -61,7 +61,7 @@ class GH5109Test extends OrmFunctionalTestCase
         self::assertSame(['remove', 'insert'], GH5109Article::$events);
     }
 
-    #[Group('gh5109-fk-ref')]
+    #[Group('GH-5109')]
     public function testCollidingRemovalUnderForeignKeyReferenceKeepsBaselineOrder(): void
     {
         // The unique value is distinct from the values used by the other
@@ -90,7 +90,7 @@ class GH5109Test extends OrmFunctionalTestCase
         $this->_em->flush();
     }
 
-    #[Group('gh5109-m2m')]
+    #[Group('GH-5109')]
     public function testCollidingRemovalAsPendingManyToManyElementKeepsBaselineOrder(): void
     {
         $oldArticle = new GH5109Article('m2m');
@@ -117,7 +117,7 @@ class GH5109Test extends OrmFunctionalTestCase
         $this->_em->flush();
     }
 
-    #[Group('gh5109-no-collision')]
+    #[Group('GH-5109')]
     public function testRemovalWithoutCollisionKeepsBaselineOrder(): void
     {
         $oldArticle = new GH5109Article('stale');
@@ -144,7 +144,7 @@ class GH5109Test extends OrmFunctionalTestCase
         self::assertSame(['insert', 'remove'], GH5109Article::$events);
     }
 
-    #[Group('gh5109-mixed-provenance')]
+    #[Group('GH-5109')]
     public function testExplicitRemoveOfEntityAlsoManagedByOrphanRemovalRemovedExactlyOnce(): void
     {
         $cart = new GH5109Cart();

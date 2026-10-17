@@ -29,7 +29,7 @@ class GH7721Test extends OrmFunctionalTestCase
         );
     }
 
-    #[Group('gh7721-repro')]
+    #[Group('GH-7721')]
     public function testReplaceOneToOneTargetFromInverseSideWithUniqueJoinColumnInSingleFlush(): void
     {
         $wife       = new GH7721Wife();
@@ -58,7 +58,7 @@ class GH7721Test extends OrmFunctionalTestCase
         self::assertSame($newHusband->id, $this->_em->find(GH7721Wife::class, $wife->id)->husband->id);
     }
 
-    #[Group('gh7721-no-collision')]
+    #[Group('GH-7721')]
     public function testReplacementResolvingToDifferentReferencedEntityKeepsBaselineOrder(): void
     {
         $firstWife  = new GH7721Wife();

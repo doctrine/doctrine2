@@ -6,6 +6,7 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
@@ -38,12 +39,14 @@ class GH4153Test extends OrmFunctionalTestCase
             GH4153Email::class,
             GH4153PersonNoOrphanRemoval::class,
             GH4153EmailNoOrphanRemoval::class,
+            GH4153PersonNoOrphanUnique::class,
+            GH4153EmailNoOrphanUnique::class,
             GH4153PersonNoUnique::class,
             GH4153EmailNoUnique::class,
         );
     }
 
-    #[Group('gh4153-form1-set-replace')]
+    #[Group('GH-4153')]
     public function testBareSetReplacesIndexedElementInSingleFlush(): void
     {
         $person = new GH4153Person();
@@ -80,7 +83,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($newEmail->id, $person->emailAddresses->get('work')->id);
     }
 
-    #[Group('gh4153-form2-remove-set')]
+    #[Group('GH-4153')]
     public function testRemoveAndSetReplaceIndexedElementInSingleFlush(): void
     {
         $person = new GH4153Person();
@@ -115,7 +118,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($newEmail->id, $person->emailAddresses->get('work')->id);
     }
 
-    #[Group('gh4153-set-no-orphan-removal')]
+    #[Group('GH-4153')]
     public function testSetWithoutOrphanRemovalKeepsReplacedElement(): void
     {
         $person = new GH4153PersonNoOrphanRemoval();
@@ -143,7 +146,30 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertCount(2, $this->_em->getRepository(GH4153EmailNoOrphanRemoval::class)->findAll());
     }
 
-    #[Group('gh4153-set-new-key')]
+    #[Group('GH-4153')]
+    public function testSetWithoutOrphanRemovalFailsOnUniqueConstraint(): void
+    {
+        $person = new GH4153PersonNoOrphanUnique();
+        $person->emails->add(new GH4153EmailNoOrphanUnique('work', $person));
+
+        $this->_em->persist($person);
+        $this->_em->flush();
+
+        $personId = $person->id;
+
+        $this->_em->clear();
+        $person = $this->_em->find(GH4153PersonNoOrphanUnique::class, $personId);
+
+        // Without orphan removal a bare set() does not delete the replaced
+        // element: the insertion of the replacement runs against the row of
+        // the replaced element, and the flush fails on the unique constraint.
+        $person->emails->set('work', new GH4153EmailNoOrphanUnique('work', $person));
+
+        $this->expectException(UniqueConstraintViolationException::class);
+        $this->_em->flush();
+    }
+
+    #[Group('GH-4153')]
     public function testSetUnderNewKeyRemovesNothing(): void
     {
         $person = new GH4153Person();
@@ -178,7 +204,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($newEmail->id, $person->emailAddresses->get('home')->id);
     }
 
-    #[Group('gh4153-key-swap')]
+    #[Group('GH-4153')]
     public function testSwappingKeysThroughSetsKeepsBothElements(): void
     {
         $person = new GH4153Person();
@@ -220,7 +246,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($homeId, $person->emailAddresses->get('home')->id);
     }
 
-    #[Group('gh4153-re-home')]
+    #[Group('GH-4153')]
     public function testReHomingElementToAnotherOwnerKeepsItAlive(): void
     {
         $person1 = new GH4153Person();
@@ -265,7 +291,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($emailId, $person2->emailAddresses->get('work')->id);
     }
 
-    #[Group('gh4153-set-replace-no-unique')]
+    #[Group('GH-4153')]
     public function testBareSetWithoutUniqueConstraintStillRemovesReplacedElement(): void
     {
         $person = new GH4153PersonNoUnique();
@@ -300,7 +326,7 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertSame($newEmail->id, $person->emails->get('work')->id);
     }
 
-    #[Group('gh4153-same-key-return')]
+    #[Group('GH-4153')]
     public function testReturningReplacedElementUnderSameKeyRevivesIt(): void
     {
         $person = new GH4153Person();
@@ -340,7 +366,6 @@ class GH4153Test extends OrmFunctionalTestCase
         self::assertCount(1, $person->emailAddresses);
         self::assertSame($emailId, $person->emailAddresses->get('work')->id);
 
-        // The revived element kept its row, the replacement never got one.
         self::assertCount($rowsBefore, $this->_em->getRepository(GH4153Email::class)->findAll());
     }
 }
@@ -438,10 +463,60 @@ class GH4153EmailNoOrphanRemoval
 }
 
 /**
- * The replacement-under-orphan-removal fixtures without the unique constraint:
- * with nothing to collide on, the removal of the replaced element has to be
- * observable directly by the absence of its row, not indirectly through a
- * constraint violation.
+ * The no-orphan-removal fixtures with the unique constraint: a set() replaces
+ * the element without deleting the replaced one, so the flush collides with
+ * the still-existing row.
+ */
+#[ORM\Entity]
+class GH4153PersonNoOrphanUnique
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    public int|null $id = null;
+
+    /** @var Collection<string, GH4153EmailNoOrphanUnique> */
+    #[ORM\OneToMany(
+        targetEntity: GH4153EmailNoOrphanUnique::class,
+        mappedBy: 'owner',
+        indexBy: 'name',
+        cascade: ['persist'],
+    )]
+    public Collection $emails;
+
+    public function __construct()
+    {
+        $this->emails = new ArrayCollection();
+    }
+}
+
+#[ORM\Entity]
+#[ORM\UniqueConstraint(name: 'gh4153_no_orphan_owner_name_uniq', columns: ['owner_id', 'name'])]
+class GH4153EmailNoOrphanUnique
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
+    public int|null $id = null;
+
+    #[ORM\Column]
+    public string $name;
+
+    #[ORM\ManyToOne(targetEntity: GH4153PersonNoOrphanUnique::class, inversedBy: 'emails')]
+    #[ORM\JoinColumn(name: 'owner_id', referencedColumnName: 'id')]
+    public GH4153PersonNoOrphanUnique|null $owner = null;
+
+    public function __construct(string $name, GH4153PersonNoOrphanUnique|null $owner = null)
+    {
+        $this->name  = $name;
+        $this->owner = $owner;
+    }
+}
+
+/**
+ * The replacement-under-orphan-removal fixtures without the unique
+ * constraint: with nothing to collide on, the removal of the replaced
+ * element is observed by the absence of its row.
  */
 #[ORM\Entity]
 class GH4153PersonNoUnique

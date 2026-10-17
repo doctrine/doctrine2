@@ -5,11 +5,10 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Internal\UnitOfWork;
 
 use Closure;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\Mapping\ClassMetadata;
 
-use function implode;
 use function is_object;
-use function serialize;
 use function spl_object_id;
 
 /**
@@ -18,20 +17,36 @@ use function spl_object_id;
  *
  * A collision is resolvable only when no pending operation of this flush
  * holds an owning (FK-carrying) to-one reference to the candidate, current
- * or original value, and the candidate's class is not the element class of
- * a pending many-to-many collection operation: a live join row may still
- * reference it. The filter is conservative by design: a false positive
- * falls back to the baseline commit order, a false negative would violate
- * a foreign key.
+ * or original value, the candidate is not the owner of a pending
+ * many-to-many collection update (its update would run against a deleted
+ * owner), and the candidate's class is not the element class of a pending
+ * many-to-many collection update: a live join row may still reference it.
+ * The filter is conservative: a false positive falls back to the
+ * baseline commit order, a false negative would violate a foreign key.
+ * The element match is class-wide and is closed over the subclasses of
+ * each target entity; the owner exclusion above is applied at instance
+ * precision.
  *
  * Pure module: entities and mapping metadata in, the early-deletion list
- * out. Tuples are compared as PHP values (referenced-entity identity for
- * association components); no database-level conversion is performed.
+ * out. Tuple components are compared in their database representation.
+ * Equality beyond that representation is not detected: strings that a
+ * collation (or another server-side normalization) treats as equal in a
+ * unique index compare as different here, since that equality is decided
+ * by the server. When a component has no database representation — no
+ * field mapping, a value the converter rejects, a converter failure or a
+ * non-scalar conversion result — the comparison of that candidate against
+ * that declaration is skipped and the candidate stays on the baseline
+ * commit order. A table-level declaration is only consumed when
+ * each of its components resolves to a field or an owning to-one
+ * association of the class (a discriminator column, for instance, resolves
+ * to neither), and tuples are only matched within one class.
  *
  * @internal
  */
 final class EarlyDeletionPlanner
 {
+    private UniqueTupleKey $uniqueTupleKey;
+
     /**
      * Unique-tuple declarations per class name: declaration id to components,
      * each a pair of property name and whether the component is a to-one
@@ -45,8 +60,11 @@ final class EarlyDeletionPlanner
     private array $toOneOwningFields = [];
 
     /** @param Closure(string): ClassMetadata<object> $classMetadata */
-    public function __construct(private readonly Closure $classMetadata)
-    {
+    public function __construct(
+        private readonly Closure $classMetadata,
+        AbstractPlatform $platform,
+    ) {
+        $this->uniqueTupleKey = new UniqueTupleKey($platform);
     }
 
     /**
@@ -56,10 +74,8 @@ final class EarlyDeletionPlanner
      * @param array<int, object>                                   $deletions
      * @param array<int, array<string, mixed>>                     $originalEntityData
      * @param array<int, array<string, array{0: mixed, 1: mixed}>> $entityChangeSets
-     * @param array<string, true>                                  $manyToManyTargetClasses hash-set
-     *                                                            of class names referenced as
-     *                                                            elements by pending many-to-many
-     *                                                            collection operations of this flush
+     * @param array<string, true>                                  $manyToManyTargetClasses element class names of pending many-to-many collection updates, closed over subclasses
+     * @param array<int, true>                                     $manyToManyOwnerIds      spl_object_id() of the owners of pending many-to-many collection updates
      *
      * @return list<object>
      */
@@ -71,17 +87,99 @@ final class EarlyDeletionPlanner
         array $originalEntityData,
         array $entityChangeSets,
         array $manyToManyTargetClasses,
+        array $manyToManyOwnerIds,
     ): array {
         if ($candidates === [] || $insertions === []) {
             return [];
         }
 
+        $candidateClasses = $this->candidateClasses($candidates);
+
+        if (! $this->hasUniqueDeclarations($candidateClasses)) {
+            return [];
+        }
+
+        $insertIndex = $this->insertionIndex($insertions, $candidateClasses);
+        $fkTargets   = $this->collectFkTargetsFromOperations($insertions, $updates, $deletions, $originalEntityData, $entityChangeSets);
+
+        $earlyDeletions = [];
+
+        foreach ($candidates as $entity) {
+            $class = $candidateClasses[$entity::class];
+
+            if (! $this->collidesWithInsertion($class, $entity, $originalEntityData[spl_object_id($entity)] ?? [], $insertIndex)) {
+                continue;
+            }
+
+            $oid = spl_object_id($entity);
+            if (
+                isset($fkTargets[$oid])
+                || isset($manyToManyOwnerIds[$oid])
+                || isset($manyToManyTargetClasses[$class->name])
+            ) {
+                continue;
+            }
+
+            $earlyDeletions[] = $entity;
+        }
+
+        return $earlyDeletions;
+    }
+
+    /**
+     * @param list<object> $candidates
+     *
+     * @return array<class-string<object>, ClassMetadata<object>>
+     */
+    private function candidateClasses(array $candidates): array
+    {
+        $candidateClasses = [];
+        foreach ($candidates as $entity) {
+            $candidateClasses[$entity::class] ??= ($this->classMetadata)($entity::class);
+        }
+
+        return $candidateClasses;
+    }
+
+    /**
+     * Whether at least one candidate class declares a unique tuple.
+     * Declarations are only computed for the candidate classes: when none
+     * of them declares a unique tuple, no insertion index is built at all.
+     *
+     * @param array<class-string<object>, ClassMetadata<object>> $candidateClasses
+     */
+    private function hasUniqueDeclarations(array $candidateClasses): bool
+    {
+        foreach ($candidateClasses as $class) {
+            if ($this->uniqueDeclarations($class) !== []) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The index only holds insertions of the candidate classes: keys of
+     * other classes can never be matched, since a collision is only
+     * detected within one class.
+     *
+     * @param array<int, object>                                 $insertions
+     * @param array<class-string<object>, ClassMetadata<object>> $candidateClasses
+     *
+     * @return array<class-string<object>, array<string, array<string, object>>>
+     */
+    private function insertionIndex(array $insertions, array $candidateClasses): array
+    {
         $insertIndex = [];
         foreach ($insertions as $insertion) {
-            $class = ($this->classMetadata)($insertion::class);
+            $class = $candidateClasses[$insertion::class] ?? null;
+            if ($class === null) {
+                continue;
+            }
 
             foreach ($this->uniqueDeclarations($class) as $declarationId => $declaration) {
-                $key = $this->tupleKey($class, $insertion, $declaration);
+                $key = $this->uniqueTupleKey->forDeclaration($class, $insertion, $declaration, null);
                 if ($key === null) {
                     continue;
                 }
@@ -90,6 +188,29 @@ final class EarlyDeletionPlanner
             }
         }
 
+        return $insertIndex;
+    }
+
+    /**
+     * Collects the FK targets of the pending operations of this flush —
+     * insertions, updates and deletions — into one hash for the guard chain
+     * of planEarlyDeletions().
+     *
+     * @param array<int, object>                                   $insertions
+     * @param array<int, object>                                   $updates
+     * @param array<int, object>                                   $deletions
+     * @param array<int, array<string, mixed>>                     $originalEntityData
+     * @param array<int, array<string, array{0: mixed, 1: mixed}>> $entityChangeSets
+     *
+     * @return array<int, true>
+     */
+    private function collectFkTargetsFromOperations(
+        array $insertions,
+        array $updates,
+        array $deletions,
+        array $originalEntityData,
+        array $entityChangeSets,
+    ): array {
         $fkTargets = [];
         foreach ($insertions as $oid => $entity) {
             $this->collectFkTargets(($this->classMetadata)($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
@@ -103,28 +224,14 @@ final class EarlyDeletionPlanner
             $this->collectFkTargets(($this->classMetadata)($entity::class), $entity, $oid, $originalEntityData, $entityChangeSets, $fkTargets);
         }
 
-        $earlyDeletions = [];
-
-        foreach ($candidates as $entity) {
-            $class = ($this->classMetadata)($entity::class);
-
-            if (! $this->collidesWithInsertion($class, $entity, $insertIndex)) {
-                continue;
-            }
-
-            if (isset($fkTargets[spl_object_id($entity)]) || isset($manyToManyTargetClasses[$class->name])) {
-                continue;
-            }
-
-            $earlyDeletions[] = $entity;
-        }
-
-        return $earlyDeletions;
+        return $fkTargets;
     }
 
     /**
      * Metadata-declared unique tuples of the class: field-level and join-column
-     * level unique flags, plus table-level unique constraints.
+     * level unique flags, plus table-level unique constraints in either the
+     * columns or the fields form (a fields component may name a field or an
+     * owning to-one association).
      *
      * @param ClassMetadata<object> $class
      *
@@ -161,21 +268,45 @@ final class EarlyDeletionPlanner
         foreach ($class->table['uniqueConstraints'] ?? [] as $constraintName => $constraint) {
             $components = [];
 
-            foreach ($constraint['columns'] ?? [] as $column) {
-                if (isset($class->fieldNames[$column])) {
-                    $components[] = [$class->fieldNames[$column], false];
+            if (isset($constraint['columns'])) {
+                foreach ($constraint['columns'] as $column) {
+                    if (isset($class->fieldNames[$column])) {
+                        $components[] = [$class->fieldNames[$column], false];
 
-                    continue;
+                        continue;
+                    }
+
+                    $associationField = $this->associationFieldForColumn($class, $column);
+                    if ($associationField === null) {
+                        // Column is not backed by a field or FK association
+                        // (e.g. a discriminator column): tuple is not computable.
+                        continue 2;
+                    }
+
+                    $components[] = [$associationField, true];
                 }
+            } elseif (isset($constraint['fields'])) {
+                foreach ($constraint['fields'] as $fieldName) {
+                    if (isset($class->fieldMappings[$fieldName])) {
+                        $components[] = [$fieldName, false];
 
-                $associationField = $this->associationFieldForColumn($class, $column);
-                if ($associationField === null) {
-                    // Column is not backed by a field or FK association
-                    // (e.g. a discriminator column): tuple is not computable.
+                        continue;
+                    }
+
+                    $assoc = $class->associationMappings[$fieldName] ?? null;
+                    if ($assoc !== null && $assoc->isToOneOwningSide()) {
+                        $components[] = [$fieldName, true];
+
+                        continue;
+                    }
+
+                    // Component resolves to neither a field nor an owning
+                    // to-one association: tuple is not computable.
                     continue 2;
                 }
-
-                $components[] = [$associationField, true];
+            } else {
+                // Neither form is declared: tuple is not computable.
+                continue;
             }
 
             if ($components !== []) {
@@ -191,12 +322,13 @@ final class EarlyDeletionPlanner
      * metadata-declared unique constraint of the class.
      *
      * @param ClassMetadata<object>                                             $class
+     * @param array<string, mixed>                                              $snapshot    the candidate's original entity data
      * @param array<class-string<object>, array<string, array<string, object>>> $insertIndex
      */
-    private function collidesWithInsertion(ClassMetadata $class, object $entity, array $insertIndex): bool
+    private function collidesWithInsertion(ClassMetadata $class, object $entity, array $snapshot, array $insertIndex): bool
     {
         foreach ($this->uniqueDeclarations($class) as $declarationId => $declaration) {
-            $key = $this->tupleKey($class, $entity, $declaration);
+            $key = $this->uniqueTupleKey->forDeclaration($class, $entity, $declaration, $snapshot);
             if ($key === null) {
                 continue;
             }
@@ -207,40 +339,6 @@ final class EarlyDeletionPlanner
         }
 
         return false;
-    }
-
-    /**
-     * String key of the unique tuple for the entity, or null when a component
-     * is NULL: NULL never conflicts in a unique constraint.
-     *
-     * @param ClassMetadata<object>     $class
-     * @param list<array{string, bool}> $declaration
-     */
-    private function tupleKey(ClassMetadata $class, object $entity, array $declaration): string|null
-    {
-        $parts = [];
-
-        foreach ($declaration as [$fieldName, $isAssociation]) {
-            $value = $class->getFieldValue($entity, $fieldName);
-
-            if ($isAssociation) {
-                if (! is_object($value)) {
-                    return null;
-                }
-
-                $parts[] = 'o' . spl_object_id($value);
-
-                continue;
-            }
-
-            if ($value === null) {
-                return null;
-            }
-
-            $parts[] = serialize($value);
-        }
-
-        return implode(' ', $parts);
     }
 
     /**
