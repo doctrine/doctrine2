@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional\ValueConversionType;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\Models\ValueConversionType as Entity;
 use Doctrine\Tests\Models\ValueConversionType\InversedManyToManyEntity;
 use Doctrine\Tests\Models\ValueConversionType\OwningManyToManyEntity;
@@ -20,6 +21,61 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('DDC-3380')]
 class ManyToManyTest extends OrmFunctionalTestCase
 {
+    #[Group('non-cacheable')]
+    public function testBatchEagerFetchOwningSideConvertsIdentifiers(): void
+    {
+        $this->createSecondPair();
+        $query = $this->_em->createQuery('SELECT e FROM ' . OwningManyToManyEntity::class . ' e ORDER BY e.id2');
+        $query->setFetchMode(OwningManyToManyEntity::class, 'associatedEntities', ClassMetadata::FETCH_EAGER);
+
+        $this->getQueryLog()->reset()->enable();
+        $entities = $query->getResult();
+
+        self::assertCount(2, $entities);
+        self::assertSame('def', $entities[0]->id2);
+        self::assertSame('ghi', $entities[1]->id2);
+        self::assertCount(2, $entities[0]->associatedEntities);
+        self::assertCount(1, $entities[1]->associatedEntities);
+        self::assertTrue($entities[0]->associatedEntities->contains($entities[1]->associatedEntities->first()));
+        $this->assertQueryCount(2);
+    }
+
+    #[Group('non-cacheable')]
+    public function testBatchEagerFetchInverseSideConvertsIdentifiers(): void
+    {
+        $this->createSecondPair();
+        $query = $this->_em->createQuery('SELECT e FROM ' . InversedManyToManyEntity::class . ' e ORDER BY e.id1');
+        $query->setFetchMode(InversedManyToManyEntity::class, 'associatedEntities', ClassMetadata::FETCH_EAGER);
+
+        $this->getQueryLog()->reset()->enable();
+        $entities = $query->getResult();
+
+        self::assertCount(2, $entities);
+        self::assertSame('abc', $entities[0]->id1);
+        self::assertSame('jkl', $entities[1]->id1);
+        self::assertCount(2, $entities[0]->associatedEntities);
+        self::assertCount(1, $entities[1]->associatedEntities);
+        self::assertTrue($entities[0]->associatedEntities->contains($entities[1]->associatedEntities->first()));
+        $this->assertQueryCount(2);
+    }
+
+    private function createSecondPair(): void
+    {
+        $owning   = $this->_em->find(OwningManyToManyEntity::class, 'def');
+        $inversed = $this->_em->find(InversedManyToManyEntity::class, 'abc');
+
+        $otherOwning      = new OwningManyToManyEntity();
+        $otherOwning->id2 = 'ghi';
+        $otherOwning->associatedEntities->add($inversed);
+        $otherInversed      = new InversedManyToManyEntity();
+        $otherInversed->id1 = 'jkl';
+        $owning->associatedEntities->add($otherInversed);
+        $this->_em->persist($otherOwning);
+        $this->_em->persist($otherInversed);
+        $this->_em->flush();
+        $this->_em->clear();
+    }
+
     protected function setUp(): void
     {
         $this->useModelSet('vct_manytomany');

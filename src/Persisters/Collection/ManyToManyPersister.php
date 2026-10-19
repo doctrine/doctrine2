@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -29,6 +30,7 @@ use function implode;
 use function in_array;
 use function reset;
 use function sprintf;
+use function substr;
 
 /**
  * Persister for many-to-many collections.
@@ -36,6 +38,51 @@ use function sprintf;
 class ManyToManyPersister extends AbstractCollectionPersister
 {
     use CompatOrderings;
+
+    /**
+     * Loads a batch of collections whose owners are already managed.
+     *
+     * @internal
+     *
+     * @param array<array-key, PersistentCollection<array-key, object>> $collections
+     */
+    public function loadCollections(array $collections, AssociationMapping&ManyToManyAssociationMapping $mapping): void
+    {
+        $sourceClass = $this->em->getClassMetadata($mapping->sourceEntity);
+        $targetClass = $this->em->getClassMetadata($mapping->targetEntity);
+        $owningSide  = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $joinColumns = $mapping->isOwningSide()
+            ? $owningSide->joinTable->joinColumns
+            : $owningSide->joinTable->inverseJoinColumns;
+        $joinColumn  = $joinColumns[0];
+        $joinTable   = $this->quoteStrategy->getJoinTableName($owningSide, $targetClass, $this->platform);
+        $ownerColumn = $joinTable . '.' . $this->quoteStrategy->getJoinColumnName($joinColumn, $sourceClass, $this->platform);
+        $field       = $sourceClass->identifier[0];
+        $typeName    = $sourceClass->fieldMappings[$field]->type;
+        $type        = Type::getType($typeName);
+        $ids         = [];
+
+        foreach ($collections as $collection) {
+            $ids[] = $this->uow->getEntityIdentifier($collection->getOwner())[$field];
+        }
+
+        $persister  = $this->uow->getEntityPersister($mapping->targetEntity);
+        $sql        = $persister->getSelectSQL([$ownerColumn => $ids], $mapping);
+        $rsm        = clone $persister->getResultSetMapping();
+        $ownerAlias = $this->quoteStrategy->getColumnAlias('collection_owner', 0, $this->platform);
+
+        // Hydrate the targets as a fetch join onto owners already in the identity map.
+        // Selecting only their ID avoids repeating the owners' fields for every target.
+        $rsm->addEntityResult($mapping->sourceEntity, 'collection_owner');
+        $rsm->addFieldResult('collection_owner', $ownerAlias, $field);
+        $rsm->addJoinedEntityResult($mapping->targetEntity, 'r', 'collection_owner', $mapping->fieldName);
+        $sql = 'SELECT ' . $type->convertToPHPValueSQL($ownerColumn, $this->platform)
+            . ' AS ' . $ownerAlias . ', ' . substr($sql, 7);
+
+        $stmt = $this->conn->executeQuery($sql, $ids, array_fill(0, count($ids), $typeName));
+
+        $this->em->newHydrator(Query::HYDRATE_OBJECT)->hydrateAll($stmt, $rsm);
+    }
 
     public function delete(PersistentCollection $collection): void
     {

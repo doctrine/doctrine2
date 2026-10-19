@@ -37,7 +37,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\ReadonlyAccessor;
-use Doctrine\ORM\Mapping\ToManyInverseSideMapping;
+use Doctrine\ORM\Mapping\ToManyAssociationMapping;
 use Doctrine\ORM\Persisters\Collection\CollectionPersister;
 use Doctrine\ORM\Persisters\Collection\ManyToManyPersister;
 use Doctrine\ORM\Persisters\Collection\OneToManyPersister;
@@ -2791,12 +2791,9 @@ class UnitOfWork implements PropertyChangedListener
 
                     if ($hints['fetchMode'][$class->name][$field] === ClassMetadata::FETCH_EAGER) {
                         if (
-                            $assoc->isOneToMany()
+                            $this->canBatchLoadCollection($assoc, $class, $targetClass)
                             // is iteration
                             && ! (isset($hints[Query::HINT_INTERNAL_ITERATION]) && $hints[Query::HINT_INTERNAL_ITERATION])
-                            // is foreign key composite
-                            && ! ($targetClass->hasAssociation($assoc->mappedBy) && count($targetClass->getAssociationMapping($assoc->mappedBy)->joinColumns) > 1)
-                            && ! $assoc->isIndexed()
                             // Loading from the second-level cache does not go through ObjectHydrator,
                             // so deferred batch eager loads are never flushed there. Load immediately
                             // instead (also allows hitting the collection cache region).
@@ -2858,15 +2855,24 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @param PersistentCollection[] $collections
      */
-    private function eagerLoadCollections(array $collections, ToManyInverseSideMapping $mapping): void
+    private function eagerLoadCollections(array $collections, AssociationMapping&ToManyAssociationMapping $mapping): void
     {
         $targetEntity = $mapping->targetEntity;
         $class        = $this->em->getClassMetadata($mapping->sourceEntity);
-        $mappedBy     = $mapping->mappedBy;
 
         $batches = array_chunk($collections, $this->em->getConfiguration()->getEagerFetchBatchSize(), true);
 
         foreach ($batches as $collectionBatch) {
+            if ($mapping->isManyToMany()) {
+                $persister = $this->getCollectionPersister($mapping);
+                assert($persister instanceof ManyToManyPersister);
+                $persister->loadCollections($collectionBatch, $mapping);
+
+                continue;
+            }
+
+            assert($mapping->isOneToMany());
+            $mappedBy = $mapping->mappedBy;
             $entities = [];
 
             foreach ($collectionBatch as $collection) {
@@ -2911,6 +2917,31 @@ class UnitOfWork implements PropertyChangedListener
             $association->setInitialized(true);
             $association->takeSnapshot();
         }
+    }
+
+    /**
+     * @param ClassMetadata<object> $sourceClass
+     * @param ClassMetadata<object> $targetClass
+     */
+    private function canBatchLoadCollection(AssociationMapping $mapping, ClassMetadata $sourceClass, ClassMetadata $targetClass): bool
+    {
+        if ($mapping->isIndexed()) {
+            return false;
+        }
+
+        if ($mapping->isOneToMany()) {
+            return ! ($targetClass->hasAssociation($mapping->mappedBy) && count($targetClass->getAssociationMapping($mapping->mappedBy)->joinColumns) > 1);
+        }
+
+        // Keep unsupported mappings on the existing per-owner loading path.
+        return $mapping->isManyToMany()
+            && $mapping->cache === null
+            && ! $sourceClass->isIdentifierComposite
+            && ! $targetClass->isIdentifierComposite
+            && ! $sourceClass->containsForeignIdentifier
+            && ! $targetClass->containsForeignIdentifier
+            && ! $sourceClass->containsEnumIdentifier
+            && $sourceClass->inheritanceType === ClassMetadata::INHERITANCE_TYPE_NONE;
     }
 
     /**
