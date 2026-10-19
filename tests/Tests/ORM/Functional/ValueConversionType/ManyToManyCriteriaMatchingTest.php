@@ -62,5 +62,7 @@ class ManyToManyCriteriaMatchingTest extends OrmFunctionalTestCase
     {
         yield [Criteria::expr()->eq('field', 'match this')]; // should convert to 'zngpu guvf'
         yield [Criteria::expr()->in('field', ['match this'])]; // should convert to ['zngpu guvf']
+        yield [Criteria::expr()->in('field', ['first' => 'match this', 9 => 'missing', 'duplicate' => 'match this'])];
+        yield [Criteria::expr()->notIn('field', ['this is no match', 'missing'])];
     }
 }
