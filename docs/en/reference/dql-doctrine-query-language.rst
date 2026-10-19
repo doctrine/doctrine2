@@ -1552,9 +1552,14 @@ Given that there are 10 users and corresponding addresses in the database the ex
     all the necessary IDs are available after the root entity (``user`` in the above example) has been loaded. So, one
     query per association can be executed to fetch all the referred-to entities (``address``).
 
-    For one-to-many relations, changing the fetch mode to eager will cause to execute one query **for every root entity
-    loaded**. This gives no improvement over the ``lazy`` fetch mode which will also initialize the associations on
-    a one-by-one basis once they are accessed.
+    One-to-many collections are also loaded in batches, except for indexed collections, composite foreign keys,
+    iteration and loading from the second-level cache.
+
+    Many-to-many collections are loaded in batches when both entity types have simple, non-association identifiers,
+    the owner does not use inheritance or an enum identifier, and the collection is neither indexed nor cached.
+    Iteration and loading from the second-level cache use one query per owner instead.
+
+    The batch size defaults to 100 and can be changed with ``Configuration::setEagerFetchBatchSize()``.
 
 
 .. _dql_ebnf_grammar:
