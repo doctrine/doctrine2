@@ -7,6 +7,7 @@ namespace Doctrine\Tests\ORM\Functional;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
+use Doctrine\Tests\Models\CustomType\CustomTypeGeneratedUpperCase;
 use Doctrine\Tests\Models\CustomType\CustomTypeParent;
 use Doctrine\Tests\Models\CustomType\CustomTypeQuotedUpperCase;
 use Doctrine\Tests\Models\CustomType\CustomTypeUpperCase;
@@ -114,6 +115,19 @@ class TypeValueSqlTest extends OrmFunctionalTestCase
 
         self::assertSame('bar', $entity->lowerCaseString, 'Entity holds lowercase string');
         self::assertSame('BAR', $connection->fetchOne($sql, [$id]), 'Database holds uppercase string');
+    }
+
+    public function testUpperCaseStringTypeOfGeneratedColumn(): void
+    {
+        $this->createSchemaForModels(CustomTypeGeneratedUpperCase::class);
+
+        $entity       = new CustomTypeGeneratedUpperCase();
+        $entity->name = 'test';
+
+        $this->_em->persist($entity);
+        $this->_em->flush();
+
+        self::assertSame('generated', $entity->generatedLowerCaseString, 'Entity holds the converted generated value');
     }
 
     public function testTypeValueSqlWithAssociations(): void

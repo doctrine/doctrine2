@@ -320,7 +320,10 @@ class BasicEntityPersister implements EntityPersister
         $columnNames = [];
         foreach ($this->class->fieldMappings as $key => $column) {
             if (isset($column->generated) || ($this->class->isVersioned && $key === $versionedClass->versionField)) {
-                $columnNames[$key] = $this->quoteStrategy->getColumnName($key, $versionedClass, $this->platform);
+                $columnNames[$key] = $this->getType($column->type)->convertToPHPValueSQL(
+                    $this->quoteStrategy->getColumnName($key, $versionedClass, $this->platform),
+                    $this->platform,
+                );
             }
         }
 
