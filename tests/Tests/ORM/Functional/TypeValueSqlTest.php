@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
@@ -128,6 +129,39 @@ class TypeValueSqlTest extends OrmFunctionalTestCase
         $this->_em->flush();
 
         self::assertSame('generated', $entity->generatedLowerCaseString, 'Entity holds the converted generated value');
+    }
+
+    public function testTypeValueSqlInManyToManyCollectionCriteria(): void
+    {
+        $parent = new CustomTypeParent();
+
+        foreach ([-5, -7, -9] as $customInteger) {
+            $friend                = new CustomTypeParent();
+            $friend->customInteger = $customInteger;
+
+            $parent->addMyFriend($friend);
+            $this->_em->persist($friend);
+        }
+
+        $this->_em->persist($parent);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $parent = $this->_em->find(CustomTypeParent::class, $parent->id);
+
+        $friends = $parent->getMyFriends()->matching(
+            Criteria::create()->where(Criteria::expr()->eq('customInteger', -7)),
+        );
+
+        self::assertFalse($parent->getMyFriends()->isInitialized());
+        self::assertCount(1, $friends);
+        self::assertSame(-7, $friends->first()->customInteger);
+
+        $friends = $parent->getMyFriends()->matching(
+            Criteria::create()->where(Criteria::expr()->in('customInteger', [-5, -9])),
+        );
+
+        self::assertCount(2, $friends);
     }
 
     public function testTypeValueSqlWithAssociations(): void
