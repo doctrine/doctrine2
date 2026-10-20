@@ -8,9 +8,12 @@ use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
 use Doctrine\Tests\Models\CustomType\CustomTypeParent;
+use Doctrine\Tests\Models\CustomType\CustomTypeQuotedUpperCase;
 use Doctrine\Tests\Models\CustomType\CustomTypeUpperCase;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
+
+use function sprintf;
 
 class TypeValueSqlTest extends OrmFunctionalTestCase
 {
@@ -73,6 +76,44 @@ class TypeValueSqlTest extends OrmFunctionalTestCase
         $entity = $this->_em->find(CustomTypeUpperCase::class, $id);
         self::assertEquals('bar', $entity->namedLowerCaseString, 'Entity holds lowercase string');
         self::assertEquals('BAR', $this->_em->getConnection()->fetchOne('select named_lower_case_string from customtype_uppercases where id=' . $entity->id . ''), 'Database holds uppercase string');
+    }
+
+    #[Group('GH-7460')]
+    #[Group('GH-8191')]
+    public function testUpperCaseStringTypeWhenColumnNameIsQuoted(): void
+    {
+        $this->createSchemaForModels(CustomTypeQuotedUpperCase::class);
+
+        $connection = $this->_em->getConnection();
+        $sql        = sprintf(
+            'SELECT %s FROM customtype_quoted_uppercases WHERE id = ?',
+            $connection->getDatabasePlatform()->quoteSingleIdentifier('key'),
+        );
+
+        $entity                  = new CustomTypeQuotedUpperCase();
+        $entity->lowerCaseString = 'foo';
+
+        $this->_em->persist($entity);
+        $this->_em->flush();
+
+        $id = $entity->id;
+
+        $this->_em->clear();
+
+        $entity = $this->_em->find(CustomTypeQuotedUpperCase::class, $id);
+
+        self::assertSame('foo', $entity->lowerCaseString, 'Entity holds lowercase string');
+        self::assertSame('FOO', $connection->fetchOne($sql, [$id]), 'Database holds uppercase string');
+
+        $entity->lowerCaseString = 'bar';
+
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $entity = $this->_em->find(CustomTypeQuotedUpperCase::class, $id);
+
+        self::assertSame('bar', $entity->lowerCaseString, 'Entity holds lowercase string');
+        self::assertSame('BAR', $connection->fetchOne($sql, [$id]), 'Database holds uppercase string');
     }
 
     public function testTypeValueSqlWithAssociations(): void
