@@ -16,7 +16,9 @@ use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Query as ORMQuery;
+use Doctrine\ORM\Query\AST\ExpressionWithReturnType;
 use Doctrine\ORM\Query\AST\Functions\FunctionNode;
+use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\AST\SimpleArithmeticExpression;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\QueryException;
@@ -1822,6 +1824,32 @@ class SelectSqlGenerationTest extends OrmTestCase
         );
     }
 
+    public function testCustomTypeValueSqlForFunctionReturnType(): void
+    {
+        if (DBALType::hasType('negative_to_positive')) {
+            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
+        } else {
+            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
+        }
+
+        $this->entityManager->getConfiguration()->addCustomNumericFunction(
+            'NEGATIVE_ABS',
+            MyNegativeAbsFunction::class,
+        );
+
+        $this->assertSqlGeneration(
+            'SELECT NEGATIVE_ABS(p.customInteger) FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p',
+            'SELECT -(ABS(c0_.customInteger)) AS sclr_0 FROM customtype_parents c0_',
+        );
+
+        // a hidden result is only used to order the rows
+        $this->assertSqlGeneration(
+            'SELECT p.id, NEGATIVE_ABS(p.customInteger) AS HIDDEN v'
+                . ' FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p ORDER BY v',
+            'SELECT c0_.id AS id_0, ABS(c0_.customInteger) AS sclr_1 FROM customtype_parents c0_ ORDER BY sclr_1 ASC',
+        );
+    }
+
     public function testCustomTypeValueSqlForAllFields(): void
     {
         if (DBALType::hasType('negative_to_positive')) {
@@ -2198,6 +2226,31 @@ SQL,
     public static function mathematicOperatorsProvider(): array
     {
         return [['+'], ['-'], ['*'], ['/']];
+    }
+}
+
+class MyNegativeAbsFunction extends FunctionNode implements ExpressionWithReturnType
+{
+    public SimpleArithmeticExpression|Node|string $simpleArithmeticExpression;
+
+    public function getSql(SqlWalker $sqlWalker): string
+    {
+        return 'ABS(' . $sqlWalker->walkSimpleArithmeticExpression($this->simpleArithmeticExpression) . ')';
+    }
+
+    public function parse(Parser $parser): void
+    {
+        $parser->match(TokenType::T_IDENTIFIER);
+        $parser->match(TokenType::T_OPEN_PARENTHESIS);
+
+        $this->simpleArithmeticExpression = $parser->SimpleArithmeticExpression();
+
+        $parser->match(TokenType::T_CLOSE_PARENTHESIS);
+    }
+
+    public function getReturnTypeName(): string
+    {
+        return NegativeToPositiveType::NAME;
     }
 }
 
