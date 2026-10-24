@@ -262,4 +262,6 @@ parameters:
         # That file is not intended for use with DBAL 3
         -
             message: '~.*~'
-            path: src/Tools/ExperimentalSchemaTool.php
+            paths:
+                - src/Tools/ExperimentalSchemaTool.php
+                - src/Internal/Name/NameParser.php

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Tools;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint\ReferentialAction;
 use Doctrine\DBAL\Schema\ForeignKeyConstraintEditor;
 use Doctrine\DBAL\Schema\Index as DbalIndex;
@@ -684,6 +687,40 @@ class SchemaToolTest extends OrmTestCase
         }
 
         self::assertSame(['field', 'anotherField'], self::getIndexedColumns($tableIndex));
+    }
+
+    #[DataProvider('platformsProvider')]
+    public function testQuotedIdentifiersOnPlatform(AbstractPlatform $platform): void
+    {
+        $em = $this->createTestEntityManagerWithPlatform($platform);
+
+        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
+            self::markTestSkipped('Requires the DBAL editor API.');
+        }
+
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(QuotedEntity::class)]);
+
+        $table = $schema->getTable('quoted-table');
+
+        $objectName = $table->getObjectName();
+        self::assertTrue($objectName->getUnqualifiedName()->isQuoted());
+        self::assertSame('quoted-table', $objectName->getUnqualifiedName()->getValue());
+
+        $primaryKey = $table->getPrimaryKeyConstraint();
+        self::assertNotNull($primaryKey);
+
+        [$pkColumn] = $primaryKey->getColumnNames();
+        self::assertTrue($pkColumn->getIdentifier()->isQuoted());
+        self::assertSame('quoted-id', $pkColumn->getIdentifier()->getValue());
+    }
+
+    /** @return iterable<string, array{AbstractPlatform}> */
+    public static function platformsProvider(): iterable
+    {
+        yield 'MySQL (backticks)' => [new MySQLPlatform()];
+        yield 'SQL Server (square brackets)' => [new SQLServerPlatform()];
     }
 
     public function testQuotedIdentifiers(): void
