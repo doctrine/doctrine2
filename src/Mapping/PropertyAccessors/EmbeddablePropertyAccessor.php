@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping\PropertyAccessors;
 
 use Doctrine\Instantiator\Instantiator;
+use ReflectionClass;
 use ReflectionProperty;
+
+use const PHP_VERSION_ID;
 
 /** @internal */
 class EmbeddablePropertyAccessor implements PropertyAccessor
 {
     private static Instantiator|null $instantiator = null;
+
+    /** @var ReflectionClass<object>|null */
+    private ReflectionClass|null $embeddedReflectionClass = null;
 
     public function __construct(
         private PropertyAccessor $parent,
@@ -41,6 +47,16 @@ class EmbeddablePropertyAccessor implements PropertyAccessor
 
         if ($embeddedObject === null) {
             return null;
+        }
+
+        // Embeddables are never Doctrine proxies: a lazy one comes from userland, and reading its raw
+        // values without initializing it first would return null for every property.
+        if (PHP_VERSION_ID >= 80400) {
+            $this->embeddedReflectionClass ??= new ReflectionClass($this->embeddedClass);
+
+            if ($this->embeddedReflectionClass->isUninitializedLazyObject($embeddedObject)) {
+                $this->embeddedReflectionClass->initializeLazyObject($embeddedObject);
+            }
         }
 
         return $this->child->getValue($embeddedObject);
