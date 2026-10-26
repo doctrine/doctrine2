@@ -36,6 +36,8 @@ class EmbeddablePropertyAccessor implements PropertyAccessor
             $embeddedObject = self::$instantiator->instantiate($this->embeddedClass);
 
             $this->parent->setValue($object, $embeddedObject);
+        } else {
+            $this->initializeLazyObject($object, $embeddedObject);
         }
 
         $this->child->setValue($embeddedObject, $value);
@@ -49,15 +51,7 @@ class EmbeddablePropertyAccessor implements PropertyAccessor
             return null;
         }
 
-        // Embeddables are never Doctrine proxies: a lazy one comes from userland, and reading its raw
-        // values without initializing it first would return null for every property.
-        if (PHP_VERSION_ID >= 80400) {
-            $this->embeddedReflectionClass ??= new ReflectionClass($this->embeddedClass);
-
-            if ($this->embeddedReflectionClass->isUninitializedLazyObject($embeddedObject)) {
-                $this->embeddedReflectionClass->initializeLazyObject($embeddedObject);
-            }
-        }
+        $this->initializeLazyObject($object, $embeddedObject);
 
         return $this->child->getValue($embeddedObject);
     }
@@ -65,5 +59,25 @@ class EmbeddablePropertyAccessor implements PropertyAccessor
     public function getUnderlyingReflector(): ReflectionProperty
     {
         return $this->child->getUnderlyingReflector();
+    }
+
+    private function initializeLazyObject(object $object, object $embeddedObject): void
+    {
+        if (PHP_VERSION_ID < 80400) {
+            return;
+        }
+
+        $this->embeddedReflectionClass ??= new ReflectionClass($this->embeddedClass);
+
+        if (! $this->embeddedReflectionClass->isUninitializedLazyObject($embeddedObject)) {
+            return;
+        }
+
+        // The embedded objects of a partial entity are ghosts that load the entity when initialized.
+        if ((new ReflectionClass($object))->isUninitializedLazyObject($object)) {
+            return;
+        }
+
+        $this->embeddedReflectionClass->initializeLazyObject($embeddedObject);
     }
 }

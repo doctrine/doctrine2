@@ -20,7 +20,9 @@ use ReflectionProperty;
 interface PropertyAccessor
 {
     /**
-     * Writes the value of the property, without triggering the initialization of lazy objects.
+     * Writes the value of the property, without triggering the initialization of the given object.
+     *
+     * A lazy embedded object is initialized, unless the given object is itself an uninitialized lazy object.
      *
      * Passing null unsets the property, so that it counts as not initialized.
      *
@@ -29,7 +31,9 @@ interface PropertyAccessor
     public function setValue(object $object, mixed $value): void;
 
     /**
-     * Reads the value of the property, without triggering the initialization of lazy objects.
+     * Reads the value of the property, without triggering the initialization of the given object.
+     *
+     * A lazy embedded object is initialized, unless the given object is itself an uninitialized lazy object.
      *
      * @return mixed The value of the object property, null if the property is not initialized.
      */

@@ -36,4 +36,28 @@ final class GH12706Test extends OrmFunctionalTestCase
             [$studio->id],
         ));
     }
+
+    public function testRefreshingIntoUninitializedLazyEmbeddableIsNotOverwrittenByItsInitializer(): void
+    {
+        $studio = new Studio(new Address('Paris'));
+        $this->_em->persist($studio);
+        $this->_em->flush();
+
+        $this->_em->getConnection()->update('gh12706_studio', ['address_city' => 'Lyon'], ['id' => $studio->id]);
+
+        $studio->address = (new ReflectionClass(Address::class))->newLazyGhost(
+            static function (Address $address): void {
+                $address->__construct('Paris');
+            },
+        );
+
+        $this->_em->refresh($studio);
+        $this->_em->flush();
+
+        self::assertSame('Lyon', $studio->address->city);
+        self::assertSame('Lyon', $this->_em->getConnection()->fetchOne(
+            'SELECT address_city FROM gh12706_studio WHERE id = ?',
+            [$studio->id],
+        ));
+    }
 }
