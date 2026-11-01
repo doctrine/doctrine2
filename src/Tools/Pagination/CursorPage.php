@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Tools\Pagination;
 
 use ArrayIterator;
 use Closure;
+use JsonException;
 use LogicException;
 use Traversable;
 
@@ -127,6 +128,7 @@ final class CursorPage implements Page
      * Returns the encoded cursor string for the next page.
      *
      * @throws LogicException If there is no next page. Check {@see hasNextPage()} first.
+     * @throws JsonException  If a parameter cannot be encoded, e.g. a non-finite float.
      */
     public function getNextCursorAsString(): string
     {
@@ -137,6 +139,7 @@ final class CursorPage implements Page
      * Returns the encoded cursor string for the previous page.
      *
      * @throws LogicException If there is no previous page. Check {@see hasPreviousPage()} first.
+     * @throws JsonException  If a parameter cannot be encoded, e.g. a non-finite float.
      */
     public function getPreviousCursorAsString(): string
     {

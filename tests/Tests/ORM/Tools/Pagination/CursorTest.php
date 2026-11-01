@@ -7,13 +7,18 @@ namespace Doctrine\Tests\ORM\Tools\Pagination;
 use Doctrine\ORM\Tools\Pagination\Cursor;
 use Doctrine\ORM\Tools\Pagination\Exception\InvalidCursor;
 use JsonException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+use function base64_decode;
 use function base64_encode;
+use function json_decode;
 use function json_encode;
 use function rtrim;
 use function strtr;
+
+use const INF;
 
 class CursorTest extends TestCase
 {
@@ -124,5 +129,72 @@ class CursorTest extends TestCase
         $payload = rtrim(strtr(base64_encode((string) json_encode('just-a-string')), '+/', '-_'), '=');
         $this->expectException(InvalidCursor::class);
         Cursor::fromEncodedString($payload);
+    }
+
+    public function testEncodeAndDecodeBinaryParameter(): void
+    {
+        $parameters = ['u.id' => "\x01\x92\xe4\xa5\xff\x00", 'u.name' => 'test'];
+        $cursor     = new Cursor($parameters, false);
+
+        $decoded = Cursor::fromEncodedString($cursor->encodeToString());
+
+        self::assertSame($parameters, $decoded->getParameters());
+        self::assertTrue($decoded->isPrevious());
+    }
+
+    public function testEncodeListsOnlyBinaryParameters(): void
+    {
+        $cursor = new Cursor(['u.id' => "\xff", 'u.name' => 'é']);
+
+        self::assertSame(
+            ['u.id' => '/w==', 'u.name' => 'é', '_isNext' => true, '_binary' => ['u.id']],
+            json_decode((string) base64_decode(strtr($cursor->encodeToString(), '-_', '+/')), true),
+        );
+    }
+
+    public function testEncodeWithoutBinaryParameterKeepsThePayloadUnchanged(): void
+    {
+        $cursor = new Cursor(['id' => 10, 'name' => 'test']);
+
+        self::assertSame(
+            self::encode(['id' => 10, 'name' => 'test', '_isNext' => true]),
+            $cursor->encodeToString(),
+        );
+    }
+
+    public function testEncodeThrowsForUnencodableParameter(): void
+    {
+        $this->expectException(JsonException::class);
+
+        (new Cursor(['price' => INF]))->encodeToString();
+    }
+
+    /** @param array<string, mixed> $payload */
+    #[DataProvider('invalidBinaryPayloads')]
+    public function testFromEncodedStringThrowsForInvalidBinaryParameters(array $payload): void
+    {
+        $this->expectException(InvalidCursor::class);
+
+        Cursor::fromEncodedString(self::encode($payload));
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidBinaryPayloads(): iterable
+    {
+        yield 'not a list' => [['u.id' => '/w==', '_binary' => 'u.id']];
+        yield 'keyed list' => [['u.id' => '/w==', '_binary' => ['key' => 'u.id']]];
+        yield 'unknown key' => [['u.id' => '/w==', '_binary' => ['u.name']]];
+        yield 'non-string key' => [['u.id' => '/w==', '_binary' => [1]]];
+        yield 'non-string value' => [['u.id' => 10, '_binary' => ['u.id']]];
+        yield 'invalid base64' => [['u.id' => 'not base64!', '_binary' => ['u.id']]];
+
+        // "QUJDRA==" decodes to "ABCD", itself valid Base64: decoding it twice would move the pivot
+        yield 'duplicate key' => [['u.id' => 'QUJDRA==', '_binary' => ['u.id', 'u.id']]];
+    }
+
+    /** @param array<string, mixed> $payload */
+    private static function encode(array $payload): string
+    {
+        return rtrim(strtr(base64_encode((string) json_encode($payload)), '+/', '-_'), '=');
     }
 }
