@@ -266,7 +266,9 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
         $orderByClause      = $AST->orderByClause;
         $AST->orderByClause = null;
 
-        $innerSql = $this->getInnerSQL($AST);
+        $innerSql = $this->withRawColumns(
+            fn (): string => $this->getInnerSQL($AST),
+        );
 
         $sqlIdentifier = $this->getSQLIdentifier($AST);
 

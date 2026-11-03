@@ -63,6 +63,9 @@ class SqlWalker
 
     private readonly ResultSetMapping $rsm;
 
+    /** Whether the selected entity fields use their raw columns, without PHP value conversion. */
+    private bool $useRawColumns = false;
+
     /**
      * Counter for generating unique column aliases.
      */
@@ -1417,6 +1420,36 @@ class SqlWalker
     }
 
     /**
+     * Runs the given callback with the raw columns of the selected entity fields,
+     * without applying the PHP value conversion of their mapping types.
+     *
+     * The paginator uses it to generate its identifier subquery, which is never
+     * hydrated, so its ORDER BY must use the stored column.
+     *
+     * @internal
+     *
+     * @param callable(): T $callback
+     *
+     * @return T
+     *
+     * @template T
+     */
+    protected function withRawColumns(callable $callback): mixed
+    {
+        if ($this->useRawColumns) {
+            throw new LogicException('Raw columns are already used.');
+        }
+
+        $this->useRawColumns = true;
+
+        try {
+            return $callback();
+        } finally {
+            $this->useRawColumns = false;
+        }
+    }
+
+    /**
      * Walks down an Object Expression AST node and return Sql Parts
      *
      * @param mixed[] $partialFieldSet
@@ -1454,8 +1487,10 @@ class SqlWalker
 
             $col = $sqlTableAlias . '.' . $quotedColumnName;
 
-            $type = $this->typeProvider->get($mapping->type);
-            $col  = $type->convertToPHPValueSQL($col, $this->platform);
+            if (! $this->useRawColumns) {
+                $type = $this->typeProvider->get($mapping->type);
+                $col  = $type->convertToPHPValueSQL($col, $this->platform);
+            }
 
             $sqlParts[] = $col . ' AS ' . $columnAlias;
 
@@ -1489,8 +1524,10 @@ class SqlWalker
 
                     $col = $sqlTableAlias . '.' . $quotedColumnName;
 
-                    $type = $this->typeProvider->get($mapping->type);
-                    $col  = $type->convertToPHPValueSQL($col, $this->platform);
+                    if (! $this->useRawColumns) {
+                        $type = $this->typeProvider->get($mapping->type);
+                        $col  = $type->convertToPHPValueSQL($col, $this->platform);
+                    }
 
                     $sqlParts[] = $col . ' AS ' . $columnAlias;
 
