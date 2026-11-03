@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryWalker;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\ORM\Utility\IdentifierFlattener;
 use Generator;
 use LogicException;
 use ReflectionClass;
@@ -55,6 +56,11 @@ abstract class AbstractHydrator
     protected UnitOfWork $uow;
 
     /**
+     * The IdentifierFlattener used for manipulating identifiers
+     */
+    protected IdentifierFlattener $identifierFlattener;
+
+    /**
      * Local ClassMetadata cache to avoid going to the EntityManager all the time.
      *
      * @var array<string, ClassMetadata<object>>
@@ -85,8 +91,9 @@ abstract class AbstractHydrator
      */
     public function __construct(protected EntityManagerInterface $em)
     {
-        $this->platform = $em->getConnection()->getDatabasePlatform();
-        $this->uow      = $em->getUnitOfWork();
+        $this->platform            = $em->getConnection()->getDatabasePlatform();
+        $this->uow                 = $em->getUnitOfWork();
+        $this->identifierFlattener = new IdentifierFlattener($this->uow, $em->getMetadataFactory());
     }
 
     /**
@@ -566,29 +573,14 @@ abstract class AbstractHydrator
      * Register entity as managed in UnitOfWork.
      *
      * @param mixed[] $data
-     *
-     * @todo The "$id" generation is the same of UnitOfWork#createEntity. Remove this duplication somehow
      */
     protected function registerManaged(ClassMetadata $class, object $entity, array $data): void
     {
-        if ($class->isIdentifierComposite) {
-            $id = [];
-
-            foreach ($class->identifier as $fieldName) {
-                $id[$fieldName] = isset($class->associationMappings[$fieldName]) && $class->associationMappings[$fieldName]->isToOneOwningSide()
-                    ? $data[$class->associationMappings[$fieldName]->joinColumns[0]->name]
-                    : $data[$fieldName];
-            }
-        } else {
-            $fieldName = $class->identifier[0];
-            $id        = [
-                $fieldName => isset($class->associationMappings[$fieldName]) && $class->associationMappings[$fieldName]->isToOneOwningSide()
-                    ? $data[$class->associationMappings[$fieldName]->joinColumns[0]->name]
-                    : $data[$fieldName],
-            ];
-        }
-
-        $this->em->getUnitOfWork()->registerManaged($entity, $id, $data);
+        $this->em->getUnitOfWork()->registerManaged(
+            $entity,
+            $this->identifierFlattener->flattenIdentifier($class, $data),
+            $data,
+        );
     }
 
     /**
