@@ -275,6 +275,19 @@ class SchemaToolTest extends OrmTestCase
         self::assertSame($primaryKey, current($indexes), 'index should be primary');
     }
 
+    public function testScalarUniqueIdentifierProducesOnlyPrimaryKey(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(UniqueScalarIdEntity::class)]);
+
+        $indexes = $schema->getTable('unique_scalar_id')->getIndexes();
+
+        self::assertCount(1, $indexes, 'there should be only one index');
+        self::assertTrue($schema->getTable('unique_scalar_id')->hasIndex('primary'));
+    }
+
     public function testSetDiscriminatorColumnWithoutLength(): void
     {
         $em         = $this->getTestEntityManager();
@@ -1737,4 +1750,13 @@ class FulltextSpatialFlagIndex
 
     #[Column(length: 255)]
     public string $title = '';
+}
+
+#[Entity]
+#[Table(name: 'unique_scalar_id')]
+class UniqueScalarIdEntity
+{
+    #[Id]
+    #[Column(unique: true)]
+    public int $id = 0;
 }

@@ -9,6 +9,8 @@ use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
+use Doctrine\DBAL\Schema\Index;
+use Doctrine\DBAL\Schema\Index\IndexType;
 use Doctrine\DBAL\Schema\Name\Identifier;
 use Doctrine\DBAL\Schema\Name\UnqualifiedName;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
@@ -280,11 +282,21 @@ class DatabaseDriverTest extends DatabaseDriverTestCase
             ],
         );
 
-        $table->addIndex(['column_index1', 'column_index2'], 'index1');
-        $table->addUniqueIndex(['column_unique_index1', 'column_unique_index2'], 'unique_index1');
-
         if (class_exists(TableEditor::class)) {
             $table = $table->edit()
+                ->addIndex(
+                    Index::editor()
+                        ->setUnquotedName('index1')
+                        ->setUnquotedColumnNames('column_index1', 'column_index2')
+                        ->create(),
+                )
+                ->addIndex(
+                    Index::editor()
+                        ->setUnquotedName('unique_index1')
+                        ->setType(IndexType::UNIQUE)
+                        ->setUnquotedColumnNames('column_unique_index1', 'column_unique_index2')
+                        ->create(),
+                )
                 ->addPrimaryKeyConstraint(new PrimaryKeyConstraint(
                     null,
                     [new UnqualifiedName(Identifier::unquoted('id'))],
@@ -292,6 +304,8 @@ class DatabaseDriverTest extends DatabaseDriverTestCase
                 ))
                 ->create();
         } else {
+            $table->addIndex(['column_index1', 'column_index2'], 'index1');
+            $table->addUniqueIndex(['column_unique_index1', 'column_unique_index2'], 'unique_index1');
             $table->setPrimaryKey(['id']);
         }
 

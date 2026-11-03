@@ -24,6 +24,7 @@ use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaConfig;
+use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\Types;
@@ -50,10 +51,7 @@ use function array_diff_key;
 use function array_filter;
 use function array_flip;
 use function array_intersect_key;
-use function array_map;
-use function array_values;
 use function assert;
-use function class_exists;
 use function count;
 use function current;
 use function implode;
@@ -64,7 +62,11 @@ use function is_numeric;
 use function sprintf;
 use function strtolower;
 
-/** @internal */
+/**
+ * @internal
+ *
+ * @phpstan-import-type IndexMapping from ClassMetadata
+ */
 final class ExperimentalSchemaTool
 {
     private const KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
@@ -72,6 +74,15 @@ final class ExperimentalSchemaTool
     private readonly AbstractPlatform $platform;
     private readonly QuoteStrategy $quoteStrategy;
     private readonly AbstractSchemaManager $schemaManager;
+
+    /**
+     * Table currently being built and the unique indexes declared on it through unique constraints.
+     * Ordinary indexes made redundant by those are not created in the first place.
+     */
+    private TableEditor|null $uniqueConstraintsTable = null;
+
+    /** @var list<Index> */
+    private array $tableUniqueIndexes = [];
 
     public function __construct(private readonly EntityManagerInterface $em)
     {
@@ -99,9 +110,9 @@ final class ExperimentalSchemaTool
     /**
      * Resolves fields in index mapping to column names
      *
-     * @param mixed[] $indexData index or unique constraint data
+     * @param IndexMapping $indexData index or unique constraint data
      *
-     * @return list<string> Column names from combined fields and columns mappings
+     * @return non-empty-list<string> Column names from combined fields and columns mappings
      */
     private function getIndexColumns(ClassMetadata $class, array $indexData): array
     {
@@ -138,6 +149,13 @@ final class ExperimentalSchemaTool
             }
         }
 
+        if ($columns === []) {
+            throw MappingException::invalidIndexConfiguration(
+                (string) $class,
+                $indexData['name'] ?? 'unnamed',
+            );
+        }
+
         return $columns;
     }
 
@@ -172,6 +190,13 @@ final class ExperimentalSchemaTool
                 ->setName(NameParser::parseOptionallyQualifiedName($tableName))
                 ->setConfiguration($metadataSchemaConfig->toTableConfiguration())
                 ->setOptions($metadataSchemaConfig->getDefaultTableOptions());
+
+            $this->uniqueConstraintsTable = $table;
+            $this->tableUniqueIndexes     = [];
+
+            foreach ($class->table['uniqueConstraints'] ?? [] as $indexName => $indexData) {
+                $this->tableUniqueIndexes[] = new Index('tmp__' . $indexName, $this->getIndexColumns($class, $indexData), true, false, [], $indexData['options'] ?? []);
+            }
 
             if ($class->isInheritanceTypeSingleTable()) {
                 $joinTablesToAdd = [];
@@ -330,94 +355,55 @@ final class ExperimentalSchemaTool
                 );
             }
 
-            $pkColumns = [];
+            $pkColumns = $this->getPrimaryKeyColumnNames($class);
 
-            foreach ($class->identifier as $identifierField) {
-                if (isset($class->fieldMappings[$identifierField])) {
-                    $pkColumns[] = $this->quoteStrategy->getColumnName($identifierField, $class, $this->platform);
-                } elseif (isset($class->associationMappings[$identifierField])) {
-                    $assoc = $class->associationMappings[$identifierField];
-                    assert($assoc->isToOneOwningSide());
-
-                    foreach ($assoc->joinColumns as $joinColumn) {
-                        $pkColumns[] = $this->quoteStrategy->getJoinColumnName($joinColumn, $class, $this->platform);
-                    }
-                }
-            }
-
-            $table = $table->create();
-
-            if (! $table->hasIndex('primary')) {
+            if (! $table->create()->hasIndex('primary')) {
                 self::addPrimaryKeyConstraint($table, $pkColumns);
-            }
-
-            // there can be unique indexes automatically created for join column
-            // if join column is also primary key we should keep only primary key on this column
-            // so, remove indexes overruled by primary key
-            $primaryKey = $table->getIndex('primary');
-
-            foreach ($table->getIndexes() as $idxKey => $existingIndex) {
-                if ($existingIndex !== $primaryKey && $primaryKey->spansColumns(self::getIndexedColumns($existingIndex))) {
-                    /** @phpstan-ignore method.deprecated (todo) */
-                    $table->dropIndex($idxKey);
-                }
             }
 
             if (isset($class->table['indexes'])) {
                 foreach ($class->table['indexes'] as $indexName => $indexData) {
-                    if (! isset($indexData['flags'])) {
-                        $indexData['flags'] = [];
+                    $candidate = $this->createTableIndexEditor($class, $indexData)
+                        ->setName(NameParser::parseUnqualifiedName('tmp'))
+                        ->create();
+
+                    if ($this->isRedundantForTableUniqueIndexes($table, $candidate)) {
+                        continue;
                     }
 
-                    $indexEditor = Index::editor();
-
-                    foreach ($this->getIndexColumns($class, $indexData) as $columnName) {
-                        $indexEditor->addColumn(new IndexedColumn(
-                            NameParser::parseUnqualifiedName($columnName),
-                            null,
-                        ));
-                    }
-
-                    self::applyIndexFlags($indexEditor, (array) $indexData['flags']);
-
-                    if (isset($indexData['options']['where'])) {
-                        $indexEditor->setPredicate($indexData['options']['where']);
-                    }
+                    $indexEditor = $this->createTableIndexEditor($class, $indexData);
 
                     if (! is_numeric($indexName)) {
                         $indexEditor->setName(NameParser::parseUnqualifiedName($indexName));
                     }
 
-                    $indexEditor->addToTable($table);
+                    $table->addIndex($indexEditor);
                 }
             }
 
-            if (isset($class->table['uniqueConstraints'])) {
-                foreach ($class->table['uniqueConstraints'] as $indexName => $indexData) {
-                    $flagNames = self::normalizeIndexFlags((array) ($indexData['flags'] ?? []));
+            // the unique constraints themselves must not be skipped as redundant
+            $this->uniqueConstraintsTable = null;
 
-                    if (isset($flagNames['fulltext']) || isset($flagNames['spatial'])) {
-                        throw new InvalidArgumentException('A unique index cannot be fulltext or spatial.');
-                    }
+            foreach ($class->table['uniqueConstraints'] ?? [] as $indexName => $indexData) {
+                $flagNames = self::normalizeIndexFlags((array) ($indexData['flags'] ?? []));
 
-                    $uniqIndex = new Index('tmp__' . $indexName, $this->getIndexColumns($class, $indexData), true, false, [], $indexData['options'] ?? []);
-
-                    foreach ($table->getIndexes() as $tableIndexName => $tableIndex) {
-                        if (self::isIndexRedundantForUniqueConstraint($tableIndex, $uniqIndex)) {
-                            /** @phpstan-ignore method.deprecated (todo) */
-                            $table->dropIndex($tableIndexName);
-                            break;
-                        }
-                    }
-
-                    /** @phpstan-ignore method.deprecated (todo), argument.type (todo) */
-                    $table->addUniqueIndex(self::getIndexedColumns($uniqIndex), is_numeric($indexName) ? null : $indexName, $indexData['options'] ?? []);
+                if (isset($flagNames['fulltext']) || isset($flagNames['spatial'])) {
+                    throw new InvalidArgumentException('A unique index cannot be fulltext or spatial.');
                 }
+
+                $this->addUniqueIndex(
+                    $table,
+                    $this->getIndexColumns($class, $indexData),
+                    is_numeric($indexName) ? null : $indexName,
+                    $indexData['options'] ?? [],
+                );
             }
 
             if (isset($class->table['options'])) {
-                $table = $table->edit()->setOptions($class->table['options'])->create();
+                $table = $table->setOptions($class->table['options']);
             }
+
+            $table = $table->create();
 
             $processedClasses[$class->name] = true;
 
@@ -437,12 +423,15 @@ final class ExperimentalSchemaTool
                 $seqDef     = $class->sequenceGeneratorDefinition;
                 $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
                 if (! $schema->hasSequence($quotedName)) {
-                    /** @phpstan-ignore method.deprecated (todo) */
-                    $schema->createSequence(
-                        $quotedName,
-                        (int) $seqDef['allocationSize'],
-                        (int) $seqDef['initialValue'],
-                    );
+                    $schema = $schema->edit()
+                        ->addSequence(
+                            Sequence::editor()
+                                ->setName(NameParser::parseOptionallyQualifiedName($quotedName))
+                                ->setAllocationSize((int) $seqDef['allocationSize'])
+                                ->setInitialValue((int) $seqDef['initialValue'])
+                                ->create(),
+                        )
+                        ->create();
                 }
             }
 
@@ -673,7 +662,7 @@ final class ExperimentalSchemaTool
         }
 
         $isUnique = $mapping->unique ?? false;
-        if ($isUnique) {
+        if ($isUnique && $this->getPrimaryKeyColumnNames($class) !== [$columnName]) {
             $this->addUniqueIndex($table, [$columnName]);
         }
 
@@ -684,44 +673,132 @@ final class ExperimentalSchemaTool
     }
 
     /**
-     * @param list<string>         $columnNames
-     * @param array<string, mixed> $indexOptions
+     * @param ClassMetadata<object> $class
+     * @param IndexMapping          $indexData
      */
-    private function addIndex(TableEditor $table, array $columnNames, string|null $indexName = null, array $indexOptions = []): void
+    private function createTableIndexEditor(ClassMetadata $class, array $indexData): IndexEditor
     {
-        $editor = Index::editor();
-        if ($indexName !== null) {
-            $editor->setName(NameParser::parseUnqualifiedName($indexName));
+        $indexEditor = Index::editor();
+
+        foreach ($this->getIndexColumns($class, $indexData) as $columnName) {
+            $indexEditor->addColumn(new IndexedColumn(
+                NameParser::parseUnqualifiedName($columnName),
+                null,
+            ));
         }
+
+        self::applyIndexFlags($indexEditor, (array) ($indexData['flags'] ?? []));
+
+        if (isset($indexData['options']['where'])) {
+            $indexEditor->setPredicate($indexData['options']['where']);
+        }
+
+        return $indexEditor;
+    }
+
+    /**
+     * Whether an index on the table being built is made redundant by one of the table's unique constraints.
+     */
+    private function isRedundantForTableUniqueIndexes(TableEditor $table, Index $candidate): bool
+    {
+        if ($table !== $this->uniqueConstraintsTable) {
+            return false;
+        }
+
+        foreach ($this->tableUniqueIndexes as $uniqueIndex) {
+            if (self::isIndexRedundantForUniqueConstraint($candidate, $uniqueIndex)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param ClassMetadata<object> $class
+     *
+     * @return list<string>
+     */
+    private function getPrimaryKeyColumnNames(ClassMetadata $class): array
+    {
+        $pkColumns = [];
+
+        foreach ($class->identifier as $identifierField) {
+            if (isset($class->fieldMappings[$identifierField])) {
+                $pkColumns[] = $this->quoteStrategy->getColumnName($identifierField, $class, $this->platform);
+            } elseif (isset($class->associationMappings[$identifierField])) {
+                $assoc = $class->associationMappings[$identifierField];
+                assert($assoc->isToOneOwningSide());
+
+                foreach ($assoc->joinColumns as $joinColumn) {
+                    $pkColumns[] = $this->quoteStrategy->getJoinColumnName($joinColumn, $class, $this->platform);
+                }
+            }
+        }
+
+        return $pkColumns;
+    }
+
+    /**
+     * Whether the given join column of a to-one association is the whole primary key of its table,
+     * in which case a unique index on it would be redundant.
+     */
+    private function isSoleToOnePrimaryKeyColumn(AssociationMapping $mapping, string $quotedColumnName): bool
+    {
+        if (! $mapping->isToOneOwningSide()) {
+            return false;
+        }
+
+        $sourceClass = $this->em->getClassMetadata($mapping->sourceEntity);
+
+        return $this->getPrimaryKeyColumnNames($sourceClass) === [$quotedColumnName];
+    }
+
+    /** @param non-empty-list<string> $columnNames */
+    private function addIndex(TableEditor $table, array $columnNames): void
+    {
+        if ($this->isRedundantForTableUniqueIndexes($table, new Index('tmp', $columnNames, false, false))) {
+            return;
+        }
+
+        $editor = Index::editor();
 
         foreach ($columnNames as $columnName) {
             $editor->addColumn(new IndexedColumn(NameParser::parseUnqualifiedName($columnName), null));
-        }
-
-        if (isset($indexOptions['flags']['clustered'])) {
-            $editor->setIsClustered($indexOptions['flags']['clustered']);
-        }
-
-        if (isset($indexOptions['options']['where'])) {
-            $editor->setPredicate($indexOptions['options']['where']);
         }
 
         $table->addIndex($editor);
     }
 
     /**
-     * @param list<string>         $columnNames
-     * @param array<string, mixed> $indexOptions
+     * @param non-empty-list<string>                                            $columnNames
+     * @param array{lengths?: list<int<1, max>|null>, where?: non-empty-string} $indexOptions
      */
     private function addUniqueIndex(TableEditor $table, array $columnNames, string|null $indexName = null, array $indexOptions = []): void
     {
+        // A unique constraint declared on the table replaces simple unique indexes on the same columns
+        // (e.g. from "unique: true" on a column). Constraints themselves are added through this method too.
+        if (
+            $indexName === null
+            && $this->isRedundantForTableUniqueIndexes($table, new Index('tmp', $columnNames, true, false, [], $indexOptions))
+        ) {
+            return;
+        }
+
         $editor = Index::editor()->setType(IndexType::UNIQUE);
         if ($indexName !== null) {
             $editor->setName(NameParser::parseUnqualifiedName($indexName));
         }
 
-        foreach ($columnNames as $columnName) {
-            $editor->addColumn(new IndexedColumn(NameParser::parseUnqualifiedName($columnName), null));
+        foreach ($columnNames as $position => $columnName) {
+            $editor->addColumn(new IndexedColumn(
+                NameParser::parseUnqualifiedName($columnName),
+                $indexOptions['lengths'][$position] ?? null,
+            ));
+        }
+
+        if (isset($indexOptions['where'])) {
+            $editor->setPredicate($indexOptions['where']);
         }
 
         $table->addIndex($editor);
@@ -748,7 +825,7 @@ final class ExperimentalSchemaTool
                     SQLServerPlatform::OPTION_DEFAULT_CONSTRAINT_NAME,
                 ], true)
             ) {
-                /** @phpstan-ignore method.deprecated (todo: handle via column editor setters) */
+                /** @phpstan-ignore method.deprecated (ColumnEditor has no setter for remaining platform options such as jsonb or custom ones) */
                 $column->setPlatformOption($key, $value);
             }
         }
@@ -808,12 +885,6 @@ final class ExperimentalSchemaTool
     /** @param array<string, mixed> $options */
     private function modifyColumn(TableEditor $table, string $columnName, array $options): void
     {
-        if ($table instanceof Table) {
-            $table->modifyColumn($columnName, $options);
-
-            return;
-        }
-
         $table->modifyColumn(NameParser::parseUnqualifiedName($columnName), static function (ColumnEditor $column) use ($options): void {
             self::setColumnOptions($column, $options);
         });
@@ -1050,7 +1121,7 @@ final class ExperimentalSchemaTool
                 $columnNames[$quotedColumnName] = true;
             }
 
-            if (isset($joinColumn->unique) && $joinColumn->unique === true) {
+            if (isset($joinColumn->unique) && $joinColumn->unique === true && ! $this->isSoleToOnePrimaryKeyColumn($mapping, $quotedColumnName)) {
                 $uniqueConstraints[] = ['columns' => [$quotedColumnName]];
             }
 
@@ -1122,7 +1193,9 @@ final class ExperimentalSchemaTool
             if (! isset($blacklistedFks[$compositeName])) {
                 // Add an index for the local columns since we won't be adding a FK
                 // (FKs normally create implicit indexes).
-                $this->addIndex($theJoinTable, $localColumns);
+                if ($localColumns !== []) {
+                    $this->addIndex($theJoinTable, $localColumns);
+                }
             }
 
             $blacklistedFks[$compositeName] = true;
@@ -1184,27 +1257,14 @@ final class ExperimentalSchemaTool
     }
 
     /** @param non-empty-array<non-empty-string> $primaryKeyColumns */
-    private function addPrimaryKeyConstraint(Table|TableEditor $table, array $primaryKeyColumns): void
+    private function addPrimaryKeyConstraint(TableEditor $table, array $primaryKeyColumns): void
     {
-        if ($table instanceof Table && ! class_exists(PrimaryKeyConstraint::class)) {
-            $table->setPrimaryKey(array_values($primaryKeyColumns));
-
-            return;
-        }
-
         $primaryKeyColumnNames = [];
         foreach ($primaryKeyColumns as $primaryKeyColumn) {
             $primaryKeyColumnNames[] = NameParser::parseUnqualifiedName($primaryKeyColumn);
         }
 
-        /** @phpstan-ignore method.deprecated (todo) */
         $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, $primaryKeyColumnNames, true));
-    }
-
-    /** @return string[] */
-    private static function getIndexedColumns(Index $index): array
-    {
-        return array_map(static fn (IndexedColumn $indexedColumn) => $indexedColumn->getColumnName()->toString(), $index->getIndexedColumns());
     }
 
     /**

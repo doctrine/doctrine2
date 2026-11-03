@@ -973,12 +973,6 @@ parameters:
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\:\:\$table type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Mapping/ClassMetadata.php
-
-		-
 			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\<T of object\>\:\:\$customRepositoryClassName \(class\-string\<Doctrine\\ORM\\EntityRepository\>\|null\) does not accept class\-string\.$#'
 			identifier: assign.propertyType
 			count: 1
@@ -1389,12 +1383,6 @@ parameters:
 		-
 			message: '#^Parameter \#1 \$repositoryClassName of method Doctrine\\ORM\\Mapping\\ClassMetadata\<T of object\>\:\:setCustomRepositoryClass\(\) expects class\-string\<Doctrine\\ORM\\EntityRepository\>\|null, string\|null given\.$#'
 			identifier: argument.type
-			count: 1
-			path: src/Mapping/Driver/XmlDriver.php
-
-		-
-			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\<T of object\>\:\:\$table \(array\{name\: string, schema\?\: string, indexes\?\: array, uniqueConstraints\?\: array, options\?\: array\<string, mixed\>, quoted\?\: bool\}\) does not accept array\{name\: string, schema\?\: string, indexes\?\: array, uniqueConstraints\?\: array, options\: array\<int\|string, array\<int\|string, mixed\>\|bool\|object\|string\>, quoted\?\: bool\}\.$#'
-			identifier: assign.propertyType
 			count: 1
 			path: src/Mapping/Driver/XmlDriver.php
 
@@ -2700,23 +2688,8 @@ parameters:
 			path: src/Tools/ExperimentalSchemaTool.php
 
 		-
-			message: '''
-				#^Call to deprecated method setPrimaryKey\(\) of class Doctrine\\DBAL\\Schema\\Table\:
-				Use \{@see addPrimaryKeyConstraint\(\)\} instead\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: src/Tools/ExperimentalSchemaTool.php
-
-		-
 			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Tools/ExperimentalSchemaTool.php
-
-		-
-			message: '#^Instanceof between Doctrine\\DBAL\\Schema\\TableEditor and Doctrine\\DBAL\\Schema\\Table will always evaluate to false\.$#'
-			identifier: instanceof.alwaysFalse
 			count: 1
 			path: src/Tools/ExperimentalSchemaTool.php
 
@@ -2788,12 +2761,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/ExperimentalSchemaTool.php
-
-		-
-			message: '#^Parameter \#2 \$columns of class Doctrine\\DBAL\\Schema\\Index constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Tools/ExperimentalSchemaTool.php
