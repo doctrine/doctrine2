@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests;
 
 use Doctrine\Common\EventManager;
+use Doctrine\DBAL\Configuration as DBALConfiguration;
 use Doctrine\DBAL\Exception\DatabaseObjectNotFoundException;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\OraclePlatform;
@@ -14,6 +15,7 @@ use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Cache\DefaultCacheFactory;
 use Doctrine\ORM\Cache\Logging\StatisticsCacheLogger;
@@ -1040,6 +1042,22 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
      */
     protected function setUpDBALTypes(): void
     {
+        // Configuration::getTypeProvider() only exists on DBAL >= 4.6, where the static
+        // methods of Type are deprecated. A default Configuration resolves types through
+        // the global registry, so the type is registered where the ORM looks it up.
+        if (method_exists(DBALConfiguration::class, 'getTypeProvider')) {
+            $typeRegistry = (new DBALConfiguration())->getTypeProvider();
+            assert($typeRegistry instanceof TypeRegistry);
+
+            if ($typeRegistry->has('rot13')) {
+                $typeRegistry->override('rot13', Rot13Type::class);
+            } else {
+                $typeRegistry->register('rot13', Rot13Type::class);
+            }
+
+            return;
+        }
+
         if (Type::hasType('rot13')) {
             Type::overrideType('rot13', Rot13Type::class);
         } else {
