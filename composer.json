@@ -51,7 +51,7 @@
         "doctrine/coding-standard": "^14.0",
         "phpbench/phpbench": "^1.0",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "2.2.14",
+        "phpstan/phpstan": "2.3.5",
         "phpstan/phpstan-deprecation-rules": "^2",
         "phpunit/phpunit": "^10.5.0 || ^11.5",
         "psr/log": "^1 || ^2 || ^3",
