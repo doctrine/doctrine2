@@ -2,6 +2,14 @@
 
 Please **do not report security vulnerabilities through public GitHub issues, pull requests or discussions.** A public report exposes every user of the library before a fix is available.
 
+## How Doctrine approaches security
+
+Doctrine operates very close to your database and, as such, needs to make assumptions about SQL injection. It is vital that you understand how Doctrine approaches security, because we cannot protect you from SQL injection. Please read the security chapters of the documentation to understand the assumptions we make:
+
+- [DBAL Security page](https://www.doctrine-project.org/projects/doctrine-dbal/en/stable/reference/security.html)
+- [ORM Security page](https://www.doctrine-project.org/projects/doctrine-orm/en/stable/reference/security.html)
+- [security.rst in this repository](docs/en/reference/security.rst)
+
 ## Reporting a vulnerability
 
 **Preferred: GitHub private vulnerability reporting**
@@ -14,7 +22,7 @@ Your report is visible only to the maintainers. It lets us discuss the issue wit
 
 **Fallback: email**
 
-Only if you cannot use GitHub, send your report to security@doctrine-project.org. Emails sent to this address are forwarded to the Doctrine core team's private mailing list.
+Only if you cannot use GitHub, send your report to security@doctrine-project.org. Emails sent to this address are forwarded to the Doctrine core team's private mailing list. See also the [Doctrine security reporting guidelines](https://www.doctrine-project.org/policies/security.html#reporting).
 
 Whichever way you report, the following details help us a lot:
 
@@ -25,7 +33,7 @@ Whichever way you report, the following details help us a lot:
 
 ## What is a security issue?
 
-A security issue is a flaw in the ORM itself that lets an attacker compromise the confidentiality, integrity or availability of an application, **even though that application uses the ORM as documented**. Examples:
+A security issue is a flaw in the ORM itself that lets an attacker compromise the confidentiality, integrity or availability of an application, **even though that application uses the ORM as documented**, including the assumptions described in the security documentation above. Examples:
 
 - **Injection:** user-controlled input is interpreted as DQL or SQL (for example through the query builder, criteria, pagination or identifier handling) where the ORM treats it as a plain value or parameter.
 - **Silently weakened protection:** a bug that causes a security-relevant configuration, such as an SQL filter or a locking mode, to be dropped or ignored, so that the application's intended restriction no longer applies.
@@ -36,7 +44,7 @@ A security issue is a flaw in the ORM itself that lets an attacker compromise th
 The following are usually **not** security issues:
 
 - Ordinary bugs with no security consequence. Please use the [issue tracker](https://github.com/doctrine/orm/issues) for these.
-- An application passing unvalidated input to an API that is documented to accept raw DQL or SQL, such as native queries or string-built DQL.
+- An application passing unvalidated input to an API that is documented to accept raw DQL or SQL, such as native queries or string-built DQL. This is the SQL injection responsibility described in the security documentation.
 - Vulnerabilities in the database server, the database driver, `doctrine/dbal` or other dependencies. Please report those to the respective projects; for DBAL, see its [security policy](https://github.com/doctrine/dbal/security/policy).
 - Insecure database deployment, such as missing authentication or an exposed port.
 
