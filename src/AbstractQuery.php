@@ -419,21 +419,11 @@ abstract class AbstractQuery
      */
     private function processArrayParameterValue(array $value): array
     {
-        // Subclasses may override the public processing hook for scalar values.
-        if ($this::class === Query::class || $this::class === NativeQuery::class) {
-            foreach ($value as $key => $paramValue) {
-                if (is_scalar($paramValue) || $paramValue === null) {
-                    continue;
-                }
-
-                $paramValue  = $this->processParameterValue($paramValue);
-                $value[$key] = is_array($paramValue) ? reset($paramValue) : $paramValue;
+        foreach ($value as $key => $paramValue) {
+            if (is_scalar($paramValue) || $paramValue === null) {
+                continue;
             }
 
-            return $value;
-        }
-
-        foreach ($value as $key => $paramValue) {
             $paramValue  = $this->processParameterValue($paramValue);
             $value[$key] = is_array($paramValue) ? reset($paramValue) : $paramValue;
         }

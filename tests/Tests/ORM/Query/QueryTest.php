@@ -349,6 +349,21 @@ class QueryTest extends OrmTestCase
         self::assertSame([2], $query->processParameterValue([AccessLevel::User]));
     }
 
+    public function testProcessParameterValueMixedArray(): void
+    {
+        $query     = $this->entityManager->createQuery();
+        $group     = new CmsGroup();
+        $group->id = 42;
+        $values    = [7 => 12, 'null' => null, 'enum' => UserStatus::Active, 'entity' => $group, 'nested' => [9, 10]];
+
+        self::assertSame(
+            [7 => 12, 'null' => null, 'enum' => 'active', 'entity' => 42, 'nested' => 9],
+            $query->processParameterValue($values),
+        );
+        self::assertSame($group, $values['entity']);
+        self::assertSame(UserStatus::Active, $values['enum']);
+    }
+
     public function testDefaultQueryHints(): void
     {
         $config       = $this->entityManager->getConfiguration();
