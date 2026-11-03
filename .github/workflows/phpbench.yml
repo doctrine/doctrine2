@@ -21,6 +21,10 @@ on:
       - phpbench.json
       - tests/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 env:
   fail-fast: true
 
