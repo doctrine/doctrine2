@@ -8,6 +8,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryWalker;
 use Doctrine\ORM\Tools\Pagination\PaginatorInterface;
 use PHPUnit\Framework\Attributes\Group;
+use RuntimeException;
 
 #[Group('DDC-1613')]
 class LimitSubqueryWalkerTest extends PaginationTestCase
@@ -64,9 +65,32 @@ class LimitSubqueryWalkerTest extends PaginationTestCase
         $limitQuery->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [LimitSubqueryWalker::class]);
 
         self::assertSame(
-            'SELECT DISTINCT m0_.id AS id_0 FROM MyBlogPost m0_ INNER JOIN Category c1_ ON m0_.category_id = c1_.id GROUP BY m0_.id ORDER BY COUNT(c1_.id) ASC',
+            'SELECT DISTINCT m0_.id AS id_0, COUNT(c1_.id) AS sclr_1 FROM MyBlogPost m0_ INNER JOIN Category c1_ ON m0_.category_id = c1_.id GROUP BY m0_.id ORDER BY COUNT(c1_.id) ASC',
             $limitQuery->getSQL(),
         );
+    }
+
+    public function testLimitSubqueryRejectsExpressionReferencingToManyAssociation(): void
+    {
+        $dql   = 'SELECT u, g FROM Doctrine\Tests\ORM\Tools\Pagination\User u JOIN u.groups g ORDER BY LENGTH(g.id)';
+        $query = $this->entityManager->createQuery($dql);
+        $query->setMaxResults(10);
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [LimitSubqueryWalker::class]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Cannot select distinct identifiers from query with LIMIT and ORDER BY on an expression referencing a fetch joined to-many association. Use output walkers.');
+
+        $query->getSQL();
+    }
+
+    public function testLimitSubqueryAllowsExpressionReferencingRootWithToManyJoin(): void
+    {
+        $dql   = 'SELECT u, g FROM Doctrine\Tests\ORM\Tools\Pagination\User u JOIN u.groups g ORDER BY LENGTH(u.id)';
+        $query = $this->entityManager->createQuery($dql);
+        $query->setMaxResults(10);
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [LimitSubqueryWalker::class]);
+
+        self::assertStringContainsString('LENGTH(', $query->getSQL());
     }
 
     public function testCountQueryMixedResultsWithName(): void

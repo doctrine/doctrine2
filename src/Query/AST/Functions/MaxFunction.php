@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST\Functions;
 
 use Doctrine\ORM\Query\AST\AggregateExpression;
+use Doctrine\ORM\Query\AST\AggregateNode;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 
 /**
  * "MAX" "(" ["DISTINCT"] StringPrimary ")"
  */
-final class MaxFunction extends FunctionNode
+final class MaxFunction extends FunctionNode implements AggregateNode
 {
     private AggregateExpression $aggregateExpression;
 

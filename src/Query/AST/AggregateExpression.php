@@ -6,7 +6,7 @@ namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
 
-class AggregateExpression extends Node
+class AggregateExpression extends Node implements AggregateNode
 {
     /** @param bool $isDistinct Some aggregate expressions support distinct, eg COUNT. */
     public function __construct(

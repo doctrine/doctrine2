@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Query\AST\Functions;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Query\AST\AggregateExpression;
+use Doctrine\ORM\Query\AST\AggregateNode;
 use Doctrine\ORM\Query\AST\ExpressionWithReturnType;
 use Doctrine\ORM\Query\AST\TypedExpression;
 use Doctrine\ORM\Query\Parser;
@@ -17,7 +18,7 @@ use Doctrine\ORM\Query\SqlWalker;
  *
  * @phpstan-ignore class.implementsDeprecatedInterface
  */
-final class CountFunction extends FunctionNode implements ExpressionWithReturnType, TypedExpression
+final class CountFunction extends FunctionNode implements AggregateNode, ExpressionWithReturnType, TypedExpression
 {
     private AggregateExpression $aggregateExpression;
 
