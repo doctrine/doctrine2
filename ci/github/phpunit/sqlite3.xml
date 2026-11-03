@@ -10,6 +10,7 @@
          failOnWarning="true"
          failOnRisky="true"
          cacheDirectory=".phpunit.cache"
+         bootstrap="./ignore-dbal-type-deprecations.php"
 >
     <php>
         <ini name="error_reporting" value="-1" />
