@@ -65,10 +65,3 @@ parameters:
         -
             message: '#Expression on left side of \?\? is not nullable.#'
             path: src/Mapping/Driver/AttributeDriver.php
-
-        # Methods used by excluded compatibility shim traits
-        -
-            message: '#^Method .* is unused\.$#'
-            paths:
-                - src/PersistentCollection.php
-                - src/Persisters/SqlValueVisitor.php
