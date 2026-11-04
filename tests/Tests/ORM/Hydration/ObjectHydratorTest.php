@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Hydration;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Internal\Hydration\HydrationException;
 use Doctrine\ORM\Internal\Hydration\ObjectHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -29,6 +30,7 @@ use Doctrine\Tests\Models\Hydration\EntityWithArrayDefaultArrayValueM2M;
 use Doctrine\Tests\Models\Hydration\SimpleEntity;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 
 use function count;
@@ -37,6 +39,8 @@ use function sys_get_temp_dir;
 
 class ObjectHydratorTest extends HydrationTestCase
 {
+    use VerifyDeprecations;
+
     /** @phpstan-return list<array{mixed}> */
     public static function provideDataForUserEntityResult(): array
     {
@@ -103,6 +107,33 @@ class ObjectHydratorTest extends HydrationTestCase
 
         self::assertEquals(2, $result[1]->id);
         self::assertEquals('jwage', $result[1]->name);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     */
+    #[IgnoreDeprecations]
+    public function testLegacyHydrateRowDataOverrideGetsResultAfterEachRow(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12728');
+
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+
+        $resultSet = [
+            ['u__id' => '1', 'u__name' => 'romanb'],
+            ['u__id' => '2', 'u__name' => 'jwage'],
+        ];
+
+        $hydrator = new LegacyHydrateRowDataObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(2, $result);
+        self::assertSame(['romanb', 'jwage'], [$result[0]->name, $result[1]->name]);
+        self::assertSame([1, 2], $hydrator->resultCountAfterRow);
     }
 
     /**
@@ -1983,5 +2014,25 @@ class ObjectHydratorTest extends HydrationTestCase
         self::assertInstanceOf(PersistentCollection::class, $result[0]->collection);
         self::assertCount(1, $result[0]->collection);
         self::assertInstanceOf(SimpleEntity::class, $result[0]->collection[0]);
+    }
+}
+
+/**
+ * Overrides the deprecated by-reference method and inspects the result after each row.
+ */
+class LegacyHydrateRowDataObjectHydrator extends ObjectHydrator
+{
+    /** @var list<int> */
+    public array $resultCountAfterRow = [];
+
+    /**
+     * @param mixed[] $row
+     * @param mixed[] $result
+     */
+    protected function hydrateRowData(array $row, array &$result): void
+    {
+        parent::hydrateRowData($row, $result);
+
+        $this->resultCountAfterRow[] = count($result);
     }
 }

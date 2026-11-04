@@ -29,7 +29,7 @@ class SingleScalarHydrator extends AbstractHydrator
             throw new NonUniqueResultException('The query returned multiple rows. Change the query or use a different result function like getScalarResult().');
         }
 
-        $result = $this->gatherScalarRowData($data[key($data)]);
+        $result = $this->gatherScalarRow($data[key($data)]);
 
         if (count($result) > 1) {
             throw new NonUniqueResultException('The query returned a row containing multiple columns. Change the query or use a different result function like getScalarResult().');
