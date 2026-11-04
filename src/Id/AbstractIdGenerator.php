@@ -6,6 +6,9 @@ namespace Doctrine\ORM\Id;
 
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Generates the identifier of an entity, before or after it is inserted.
+ */
 abstract class AbstractIdGenerator
 {
     /**

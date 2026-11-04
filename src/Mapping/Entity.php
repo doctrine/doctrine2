@@ -7,7 +7,11 @@ namespace Doctrine\ORM\Mapping;
 use Attribute;
 use Doctrine\ORM\EntityRepository;
 
-/** @template T of object */
+/**
+ * Marks a class as an entity, whose objects are stored in a database table.
+ *
+ * @template T of object
+ */
 #[Attribute(Attribute::TARGET_CLASS)]
 final class Entity implements MappingAttribute
 {

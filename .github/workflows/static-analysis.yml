@@ -20,10 +20,14 @@ on:
       - phpstan*
       - tests/StaticAnalysis/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   static-analysis-phpstan:
     name: Static Analysis with PHPStan
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
