@@ -27,7 +27,7 @@ concurrency:
 jobs:
   static-analysis-phpstan:
     name: "Static Analysis with PHPStan"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
 
     strategy:
       fail-fast: false

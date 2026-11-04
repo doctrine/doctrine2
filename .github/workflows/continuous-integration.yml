@@ -32,14 +32,14 @@ env:
 jobs:
   phpunit-smoke-check:
     name: >
-      SQLite - 
+      SQLite -
       ${{ format('PHP {0} - DBAL {1} - ext. {2} - proxy {3}',
         matrix.php-version || 'Ø',
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø',
         matrix.proxy || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
 
     strategy:
       matrix:
@@ -125,7 +125,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -207,7 +207,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -286,7 +286,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -366,12 +366,12 @@ jobs:
 
   phpunit-lower-php-versions:
     name: >
-      SQLite - 
+      SQLite -
       ${{ format('PHP {0} - deps {1}',
         matrix.php-version || 'Ø',
         matrix.deps || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
 
     strategy:
       matrix:
@@ -404,7 +404,7 @@ jobs:
 
   upload_coverage:
     name: "Upload coverage to Codecov"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     # Only run on PRs from forks
     if: "github.event.pull_request.head.repo.full_name != github.repository"
     needs:
