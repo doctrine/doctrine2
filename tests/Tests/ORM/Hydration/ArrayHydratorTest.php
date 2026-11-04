@@ -1271,6 +1271,100 @@ class ArrayHydratorTest extends HydrationTestCase
     }
 
     /**
+     * SELECT PARTIAL u.{id, name}, PARTIAL p.{phonenumber}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u INDEX BY u.name
+     *   JOIN u.phonenumbers p
+     */
+    public function testFetchJoinWithRepeatedRootIndexByValue(): void
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+        $rsm->addFieldResult('p', 'p__phonenumber', 'phonenumber');
+        $rsm->addIndexBy('u', 'name');
+
+        $resultSet = [
+            ['u__id' => '1', 'u__name' => 'A', 'p__phonenumber' => '1'],
+            ['u__id' => '2', 'u__name' => 'B', 'p__phonenumber' => '2'],
+            ['u__id' => '3', 'u__name' => 'A', 'p__phonenumber' => '3'],
+        ];
+
+        $hydrator = new ArrayHydrator($this->entityManager);
+
+        self::assertSame([
+            'A' => ['id' => 3, 'name' => 'A', 'phonenumbers' => [['phonenumber' => '3']]],
+            'B' => ['id' => 2, 'name' => 'B', 'phonenumbers' => [['phonenumber' => '2']]],
+        ], $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm));
+    }
+
+    /**
+     * SELECT PARTIAL u.{id}, PARTIAL a1.{id}, PARTIAL c.{id}, PARTIAL a2.{id}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.articles a1
+     *   JOIN a1.comments c
+     *   JOIN u.articles a2
+     */
+    public function testFetchJoinOfSameCollectionThroughTwoAliases(): void
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsArticle::class, 'a1', 'u', 'articles');
+        $rsm->addJoinedEntityResult(CmsComment::class, 'c', 'a1', 'comments');
+        $rsm->addJoinedEntityResult(CmsArticle::class, 'a2', 'u', 'articles');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('a1', 'a1__id', 'id');
+        $rsm->addFieldResult('c', 'c__id', 'id');
+        $rsm->addFieldResult('a2', 'a2__id', 'id');
+
+        $resultSet = [
+            ['u__id' => '1', 'a1__id' => '1', 'c__id' => '1', 'a2__id' => '2'],
+        ];
+
+        $hydrator = new ArrayHydrator($this->entityManager);
+
+        self::assertSame([
+            [
+                'id' => 1,
+                'articles' => [
+                    ['id' => 1, 'comments' => [['id' => 1]]],
+                    ['id' => 2],
+                ],
+            ],
+        ], $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm));
+    }
+
+    /**
+     * SELECT PARTIAL u.{id}, PARTIAL ad1.{id}, PARTIAL ad2.{id, city}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.address ad1
+     *   JOIN u.address ad2
+     */
+    public function testResultIterationWithSameToOneThroughTwoAliases(): void
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsAddress::class, 'ad1', 'u', 'address');
+        $rsm->addJoinedEntityResult(CmsAddress::class, 'ad2', 'u', 'address');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('ad1', 'ad1__id', 'id');
+        $rsm->addFieldResult('ad2', 'ad2__id', 'id');
+        $rsm->addFieldResult('ad2', 'ad2__city', 'city');
+
+        $resultSet = [
+            ['u__id' => '1', 'ad1__id' => '5', 'ad2__id' => '5', 'ad2__city' => 'Berlin'],
+        ];
+
+        $expected = [['id' => 1, 'address' => ['id' => 5]]];
+
+        $hydrator = new ArrayHydrator($this->entityManager);
+
+        self::assertSame($expected, iterator_to_array($hydrator->toIterable($this->createResultMock($resultSet), $rsm), false));
+        self::assertSame($expected, $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm));
+    }
+
+    /**
      * SELECT PARTIAL u.{id, status}
      *   FROM Doctrine\Tests\Models\CMS\CmsUser u
      */

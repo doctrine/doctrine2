@@ -83,6 +83,13 @@ class ArrayHydrator extends AbstractHydrator
                 $this->nodeRelations[$parent][$resultSetMapping->relationMap[$dqlAlias]] = true;
             }
         }
+
+        // All DQL aliases that are joined into a relation holding node ids must be stored as nodes as well.
+        foreach ($resultSetMapping->parentAliasMap as $dqlAlias => $parent) {
+            if (isset($this->nodeRelations[$parent][$resultSetMapping->relationMap[$dqlAlias]])) {
+                $this->nodeAliases[$dqlAlias] = true;
+            }
+        }
     }
 
     protected function cleanup(): void
@@ -249,7 +256,7 @@ class ArrayHydrator extends AbstractHydrator
                         if ($node !== null) {
                             $this->resultPointers[$dqlAlias] = $node;
                             $this->rootNodes[]               = [
-                                array_key_last($this->hydrationResult),
+                                $resultKey,
                                 $this->resultSetMapping()->isMixed ? $entityKey : null,
                                 $node,
                             ];
@@ -584,7 +591,7 @@ class ArrayHydrator extends AbstractHydrator
             $parent        = $resultSetMapping->parentAliasMap[$dqlAlias];
             $relationAlias = $resultSetMapping->relationMap[$dqlAlias];
 
-            if (! is_array($elements[$parent][$relationAlias])) {
+            if ($this->metadataCache[$resultSetMapping->aliasMap[$parent]]->associationMappings[$relationAlias]->isToOne()) {
                 $elements[$parent][$relationAlias] = $elements[$dqlAlias];
             } elseif (isset($resultSetMapping->indexByMap[$dqlAlias])) {
                 $elements[$parent][$relationAlias][$row[$resultSetMapping->indexByMap[$dqlAlias]]] = $elements[$dqlAlias];
