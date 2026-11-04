@@ -26,6 +26,7 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Repository\RepositoryFactory;
+use Doctrine\ORM\Utility\IdentifierFlattener;
 
 use function array_keys;
 use function is_array;
@@ -70,6 +71,11 @@ class EntityManager implements EntityManagerInterface
      * The UnitOfWork used to coordinate object-level transactions.
      */
     private UnitOfWork $unitOfWork;
+
+    /**
+     * Flattens identifiers that contain entities, to look them up in the identity map.
+     */
+    private IdentifierFlattener $identifierFlattener;
 
     /**
      * The event manager that is the central point of the event system.
@@ -134,8 +140,9 @@ class EntityManager implements EntityManagerInterface
 
         $this->configureMetadataCache();
 
-        $this->repositoryFactory = $config->getRepositoryFactory();
-        $this->unitOfWork        = new UnitOfWork($this);
+        $this->repositoryFactory   = $config->getRepositoryFactory();
+        $this->unitOfWork          = new UnitOfWork($this);
+        $this->identifierFlattener = new IdentifierFlattener($this->unitOfWork, $this->metadataFactory);
         if ($config->isNativeLazyObjectsEnabled()) {
             $this->proxyFactory = new ProxyFactory($this);
         } else {
@@ -400,7 +407,12 @@ class EntityManager implements EntityManagerInterface
             throw UnrecognizedIdentifierFields::fromClassAndFieldNames($class->name, array_keys($id));
         }
 
-        $entity = $this->unitOfWork->tryGetById($sortedId, $class->rootEntityName);
+        // The identity map is keyed by flat identifiers, while the proxy gets the associated entities
+        $flatId = $class->containsForeignIdentifier
+            ? $this->identifierFlattener->flattenIdentifier($class, $sortedId)
+            : $sortedId;
+
+        $entity = $this->unitOfWork->tryGetById($flatId, $class->rootEntityName);
 
         // Check identity map first, if its already in there just return it.
         if ($entity !== false) {
@@ -411,9 +423,16 @@ class EntityManager implements EntityManagerInterface
             return $this->find($entityName, $sortedId);
         }
 
+        // The proxy needs the associated entities themselves, which the identifier may only hold as identifiers
+        foreach ($sortedId as $field => $value) {
+            if (isset($class->associationMappings[$field]) && ! $value instanceof $class->associationMappings[$field]->targetEntity) {
+                $sortedId[$field] = $this->getReference($class->associationMappings[$field]->targetEntity, $value);
+            }
+        }
+
         $entity = $this->proxyFactory->getProxy($class->name, $sortedId);
 
-        $this->unitOfWork->registerManagedProxy($entity, $sortedId);
+        $this->unitOfWork->registerManagedProxy($entity, $flatId);
 
         return $entity;
     }

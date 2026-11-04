@@ -3040,7 +3040,17 @@ class UnitOfWork implements PropertyChangedListener
             ? $this->getEntityIdentifier($entity)
             : $class->getIdentifierValues($entity);
 
-        return $values[$class->identifier[0]] ?? null;
+        $value = $values[$class->identifier[0]] ?? null;
+
+        // With a derived identity, the identifier can still be the associated entity: use its own identifier.
+        if (
+            isset($class->associationMappings[$class->identifier[0]])
+            && $value instanceof $class->associationMappings[$class->identifier[0]]->targetEntity
+        ) {
+            return $this->getSingleIdentifierValue($value);
+        }
+
+        return $value;
     }
 
     /**
@@ -3493,16 +3503,11 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            $targetIdMetadata = $this->em->getClassMetadata($targetClass->getAssociationTargetClass($name));
-
-            // Note: the ORM prevents using an entity with a composite identifier as an identifier association
-            //       therefore, reset($targetIdMetadata->identifier) is always correct
+            // Note: the ORM prevents using an entity with a composite identifier as an identifier association,
+            //       and getReference() resolves the identifier of the associated entity at any depth
             $normalizedAssociatedId[$name] = $this->em->getReference(
-                $targetIdMetadata->getName(),
-                $this->normalizeIdentifier(
-                    $targetIdMetadata,
-                    [(string) reset($targetIdMetadata->identifier) => $flatIdentifier[$name]],
-                ),
+                $targetClass->getAssociationTargetClass($name),
+                $flatIdentifier[$name],
             );
         }
 

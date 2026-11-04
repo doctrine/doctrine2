@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Persistence\Mapping\ClassMetadataFactory;
 
+use function array_key_exists;
 use function assert;
 use function implode;
 use function is_a;
@@ -62,10 +63,19 @@ final class IdentifierFlattener
 
                 $flatId[$field] = implode(' ', $associatedId);
             } elseif (isset($class->associationMappings[$field])) {
-                assert($class->associationMappings[$field]->isToOneOwningSide());
+                $assoc = $class->associationMappings[$field];
+                assert($assoc->isToOneOwningSide());
+
+                if (array_key_exists($field, $id) && ! array_key_exists($assoc->joinColumns[0]->name, $id)) {
+                    // Already flat and keyed by field name, like the identifiers kept by the UnitOfWork
+                    $flatId[$field] = $id[$field] instanceof BackedEnum ? $id[$field]->value : $id[$field];
+
+                    continue;
+                }
+
                 $associatedId = [];
 
-                foreach ($class->associationMappings[$field]->joinColumns as $joinColumn) {
+                foreach ($assoc->joinColumns as $joinColumn) {
                     $associatedId[] = $id[$joinColumn->name];
                 }
 
