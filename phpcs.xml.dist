@@ -242,7 +242,6 @@
         <exclude-pattern>src/Tools/Export/Driver/PhpExporter.php</exclude-pattern>
         <!-- extending a class from another package -->
         <exclude-pattern>tests/Tests/Mocks/DatabasePlatformMock.php</exclude-pattern>
-        <exclude-pattern>tests/Tests/Mocks/SchemaManagerMock.php</exclude-pattern>
         <exclude-pattern>tests/Tests/ORM/AbstractQueryTest.php</exclude-pattern>
         <exclude-pattern>tests/Tests/ORM/Functional/Ticket/DDC3634Test.php</exclude-pattern>
     </rule>

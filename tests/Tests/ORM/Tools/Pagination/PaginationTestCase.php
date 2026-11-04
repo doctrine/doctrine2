@@ -54,26 +54,6 @@ class MyBlogPost
     public $title;
 }
 
-#[Entity]
-class MyAuthor
-{
-    /** @var int */
-    #[Id]
-    #[Column(type: 'integer')]
-    #[GeneratedValue]
-    public $id;
-}
-
-#[Entity]
-class MyCategory
-{
-    /** @var int */
-    #[Id]
-    #[Column(type: 'integer')]
-    #[GeneratedValue]
-    public $id;
-}
-
 
 #[Entity]
 class BlogPost
