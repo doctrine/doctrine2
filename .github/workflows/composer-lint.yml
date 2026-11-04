@@ -14,7 +14,11 @@ on:
       - ".github/workflows/composer-lint.yml"
       - "composer.json"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   composer-lint:
     name: "Composer Lint"
-    uses: "doctrine/.github/.github/workflows/composer-lint.yml@15.1.0"
+    uses: "doctrine/.github/.github/workflows/composer-lint.yml@16.0.0"
