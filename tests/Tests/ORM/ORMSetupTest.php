@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM;
 
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Configuration;
-use Doctrine\ORM\Mapping as MappingNamespace;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Doctrine\ORM\ORMSetup;
@@ -133,13 +132,5 @@ class ORMSetupTest extends TestCase
         self::assertSame($cache, $config->getResultCache());
         self::assertSame($cache, $config->getQueryCache());
         self::assertSame($cache, $config->getMetadataCache());
-    }
-}
-
-class AnnotatedDummy
-{
-    #[MappingNamespace\PrePersist]
-    public function namespacedAttributeMethod(): void
-    {
     }
 }
