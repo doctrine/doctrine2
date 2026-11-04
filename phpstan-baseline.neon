@@ -697,7 +697,7 @@ parameters:
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) should return array\{data\: array\<array\>, newObjects\?\: array\<array\{class\: ReflectionClass, args\: array, obj\: object\}\>, scalars\?\: array\} but returns array\{data\: array\<mixed\>, newObjects\: array\<array\{class\?\: ReflectionClass\<object\>, args\: array, obj\: object\}\>, scalars\?\: non\-empty\-array\}\.$#'
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) should return array\{data\: array\<array\>, newObjects\?\: array\<array\{class\: ReflectionClass, args\: array, obj\: object\}\>, scalars\?\: array\} but returns array\{data\: array\<string, mixed\>, newObjects\: array\<array\{class\?\: ReflectionClass\<object\>, args\: array, obj\: object\}\>, scalars\?\: non\-empty\-array\}\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
