@@ -29,16 +29,10 @@
             "maintained": false
         },
         {
-            "name": "2.21",
-            "branchName": "2.21.x",
-            "slug": "2.21",
-            "upcoming": true
-        },
-        {
             "name": "2.20",
             "branchName": "2.20.x",
             "slug": "2.20",
-            "maintained": true
+            "lifeSupport": true
         },
         {
             "name": "2.19",
