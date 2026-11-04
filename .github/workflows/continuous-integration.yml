@@ -37,7 +37,7 @@ jobs:
         matrix.extension || 'Ø',
         matrix.native_lazy || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
 
     strategy:
       matrix:
@@ -170,7 +170,7 @@ jobs:
 
   phpunit-deprecations:
     name: "PHPUnit (fail on deprecations)"
-    runs-on: "ubuntu-24.04"
+    runs-on: "ubuntu-latest"
 
     steps:
       -   name: "Checkout"
@@ -211,7 +211,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -295,7 +295,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -372,7 +372,7 @@ jobs:
         matrix.dbal-version || 'Ø',
         matrix.extension || 'Ø'
       ) }}
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     needs: "phpunit-smoke-check"
 
     strategy:
@@ -472,7 +472,7 @@ jobs:
 
   upload_coverage:
     name: "Upload coverage to Codecov"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-latest"
     # Only run on PRs from forks
     if: "github.event.pull_request.head.repo.full_name != github.repository"
     needs:
