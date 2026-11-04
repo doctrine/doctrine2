@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Performance\Hydration;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\Performance\EntityManagerFactory;
 use Doctrine\Tests\Models\Company\CompanyAuction;
@@ -23,6 +24,8 @@ use PhpBench\Benchmark\Metadata\Annotations\BeforeMethods;
 /** @BeforeMethods({"init"}) */
 final class SingleTableInheritanceHydrationPerformanceBench
 {
+    private EntityManagerInterface|null $entityManager = null;
+
     private EntityRepository|null $contractsRepository = null;
 
     private EntityRepository|null $fixContractsRepository = null;
@@ -45,6 +48,7 @@ final class SingleTableInheritanceHydrationPerformanceBench
             CompanyContract::class,
         ]);
 
+        $this->entityManager           = $entityManager;
         $this->contractsRepository     = $entityManager->getRepository(CompanyContract::class);
         $this->fixContractsRepository  = $entityManager->getRepository(CompanyFixContract::class);
         $this->flexContractRepository  = $entityManager->getRepository(CompanyFlexContract::class);
@@ -87,20 +91,28 @@ final class SingleTableInheritanceHydrationPerformanceBench
     public function benchHydrateFixContracts(): void
     {
         $this->fixContractsRepository->findAll();
+
+        $this->entityManager->clear();
     }
 
     public function benchHydrateFlexContracts(): void
     {
         $this->flexContractRepository->findAll();
+
+        $this->entityManager->clear();
     }
 
     public function benchHydrateUltraContracts(): void
     {
         $this->ultraContractRepository->findAll();
+
+        $this->entityManager->clear();
     }
 
     public function benchHydrateAllContracts(): void
     {
         $this->contractsRepository->findAll();
+
+        $this->entityManager->clear();
     }
 }

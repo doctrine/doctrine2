@@ -55,5 +55,7 @@ final class SimpleHydrationBench
     public function benchHydration(): void
     {
         $this->repository->findAll();
+
+        $this->entityManager->clear();
     }
 }
