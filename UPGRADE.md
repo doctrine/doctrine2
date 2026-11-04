@@ -59,6 +59,59 @@ The same applies when you destructure the result with `list()` or pass it to a
 parameter typed as a list. When you use `iterator_to_array()`, pass `false` as
 the second argument to reindex the keys.
 
+## Deprecated by-reference row methods of `AbstractHydrator`
+
+Row state is now kept on the hydrator instance instead of being passed by
+reference. Each by-reference method has a replacement:
+
+- `hydrateRowData(array $row, array &$result)`: use `hydrateRow(array $row)`.
+- `gatherRowData(array $data, array &$id, array &$nonemptyComponents)`: use
+  `gatherRow(array $data)`.
+- `gatherScalarRowData(array &$data)`: use `gatherScalarRow(array $data)`.
+
+Hydrators that override a deprecated method keep working: the ORM detects the
+override, calls it instead of the replacement and triggers a deprecation.
+To migrate a custom hydrator:
+
+- Fill the `$hydrationResult` property in `hydrateRow()` instead of `$result`.
+- Loop over the rows with `hydrateAllRows()` in `hydrateAllData()` and return
+  `takeResult()`, which also resets the property.
+- After `gatherRow()`, read the identifier hashes from `$gatheredRowId` and the
+  non-empty DQL aliases from `$gatheredNonemptyComponents`. `gatherRow()` starts
+  from the `$rowIdTemplate` property, which you fill in `prepare()`.
+
+```diff
+ protected function hydrateAllData(): array
+ {
+-    $result = [];
+-
+-    while ($row = $this->statement()->fetchAssociative()) {
+-        $this->hydrateRowData($row, $result);
+-    }
+-
+-    return $result;
++    $this->hydrateAllRows();
++
++    return $this->takeResult();
+ }
+
+-protected function hydrateRowData(array $row, array &$result): void
++protected function hydrateRow(array $row): void
+ {
+-    $result[] = $this->gatherScalarRowData($row);
++    $this->hydrationResult[] = $this->gatherScalarRow($row);
+ }
+```
+
+## `ArrayHydrator::toIterable()` hydrates each row on its own
+
+When iterating an array hydrated query with fetch joins through `toIterable()`,
+each yielded row now contains the root entity and its joined entities of that
+row only, like with object hydration. Previously, a root entity that was already
+seen in an earlier row was yielded as an incomplete array without its own fields.
+Subclasses of `ArrayHydrator` that override the deprecated `hydrateRowData()`
+keep the previous behavior.
+
 # Upgrade to 3.7
 
 ## Deprecated `Doctrine\ORM\Mapping\JoinColumns` attribute

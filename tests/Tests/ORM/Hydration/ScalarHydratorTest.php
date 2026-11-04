@@ -4,13 +4,33 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Hydration;
 
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Internal\Hydration\ScalarHydrator;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 
 class ScalarHydratorTest extends HydrationTestCase
 {
+    use VerifyDeprecations;
+
+    #[IgnoreDeprecations]
+    public function testLegacyGatherScalarRowDataOverrideIsUsed(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12728');
+
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+
+        $hydrator = new LegacyGatherScalarRowDataScalarHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock([['u__id' => '1', 'u__name' => 'romanb']]), $rsm);
+
+        self::assertSame([['u_id' => 1, 'u_name' => 'romanb', 'legacy' => true]], $result);
+    }
+
     /**
      * Select u.id, u.name from CmsUser u
      */
@@ -94,5 +114,21 @@ class ScalarHydratorTest extends HydrationTestCase
         $hydrator = new ScalarHydrator($this->entityManager);
 
         self::assertCount(1, $hydrator->hydrateAll($stmt, $rsm));
+    }
+}
+
+/**
+ * Overrides the deprecated by-reference method to change the gathered data.
+ */
+class LegacyGatherScalarRowDataScalarHydrator extends ScalarHydrator
+{
+    /**
+     * @param mixed[] $data
+     *
+     * @return mixed[]
+     */
+    protected function gatherScalarRowData(array &$data): array
+    {
+        return parent::gatherScalarRowData($data) + ['legacy' => true];
     }
 }
