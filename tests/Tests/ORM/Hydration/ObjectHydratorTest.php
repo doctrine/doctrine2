@@ -2015,6 +2015,102 @@ class ObjectHydratorTest extends HydrationTestCase
         self::assertCount(1, $result[0]->collection);
         self::assertInstanceOf(SimpleEntity::class, $result[0]->collection[0]);
     }
+
+    /**
+     * SELECT u, p1, p2
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p1
+     *   JOIN u.phonenumbers p2
+     */
+    public function testFetchJoinSameCollectionTwiceAddsEachElementOnce(): void
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p1', 'u', 'phonenumbers');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p2', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('p1', 'p1__phonenumber', 'phonenumber');
+        $rsm->addFieldResult('p2', 'p2__phonenumber', 'phonenumber');
+
+        $resultSet = [
+            ['u__id' => '1', 'p1__phonenumber' => '42', 'p2__phonenumber' => '42'],
+            ['u__id' => '1', 'p1__phonenumber' => '43', 'p2__phonenumber' => '42'],
+            ['u__id' => '1', 'p1__phonenumber' => '43', 'p2__phonenumber' => '44'],
+        ];
+
+        $hydrator = new ObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(1, $result);
+        self::assertSame(
+            [0 => 42, 1 => 43, 2 => 44],
+            $result[0]->phonenumbers->map(static fn (CmsPhonenumber $phonenumber) => (int) $phonenumber->phonenumber)->toArray(),
+        );
+    }
+
+    /**
+     * SELECT u, p
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    public function testFetchJoinKeepsElementsOfManagedEntityCollection(): void
+    {
+        $phonenumber              = new CmsPhonenumber();
+        $phonenumber->phonenumber = '42';
+
+        $user     = new CmsUser();
+        $user->id = 1;
+        $user->addPhonenumber($phonenumber);
+
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+        $unitOfWork->registerManaged($user, ['id' => 1], ['id' => 1]);
+        $unitOfWork->registerManaged($phonenumber, ['phonenumber' => '42'], ['phonenumber' => '42']);
+
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('p', 'p__phonenumber', 'phonenumber');
+
+        $resultSet = [
+            ['u__id' => '1', 'p__phonenumber' => '43'],
+            ['u__id' => '1', 'p__phonenumber' => '42'],
+        ];
+
+        $hydrator = new ObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(1, $result);
+        self::assertSame($user, $result[0]);
+        self::assertInstanceOf(PersistentCollection::class, $user->phonenumbers);
+        self::assertCount(2, $user->phonenumbers);
+        self::assertSame($phonenumber, $user->phonenumbers[0]);
+        self::assertSame('43', $user->phonenumbers[1]->phonenumber);
+    }
+
+    public function testHydratorInstanceCanBeReusedWithDifferentResultSetMapping(): void
+    {
+        $hydrator = new ObjectHydrator($this->entityManager);
+
+        $userRsm = new ResultSetMapping();
+        $userRsm->addEntityResult(CmsUser::class, 'u');
+        $userRsm->addFieldResult('u', 'u__id', 'id');
+        $userRsm->addFieldResult('u', 'u__name', 'name');
+
+        $users = $hydrator->hydrateAll($this->createResultMock([['u__id' => '1', 'u__name' => 'romanb']]), $userRsm);
+
+        $articleRsm = new ResultSetMapping();
+        $articleRsm->addEntityResult(CmsArticle::class, 'a');
+        $articleRsm->addFieldResult('a', 'a__id', 'id');
+        $articleRsm->addFieldResult('a', 'a__topic', 'topic');
+
+        $articles = $hydrator->hydrateAll($this->createResultMock([['a__id' => '1', 'a__topic' => 'Cool things.']]), $articleRsm);
+
+        self::assertInstanceOf(CmsUser::class, $users[0]);
+        self::assertSame('romanb', $users[0]->name);
+        self::assertInstanceOf(CmsArticle::class, $articles[0]);
+        self::assertSame('Cool things.', $articles[0]->topic);
+    }
 }
 
 /**
