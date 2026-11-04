@@ -121,7 +121,9 @@ class ObjectHydrator extends AbstractHydrator
         $this->initializedCollections        =
         $this->initializedCollectionElements =
         $this->uninitializedCollections      =
-        $this->existingCollections           = [];
+        $this->existingCollections           =
+        $this->rootAliases                   = [];
+        $this->resultCounter                 = 0;
 
         if ($eagerLoad) {
             $this->uow->triggerEagerLoads();
