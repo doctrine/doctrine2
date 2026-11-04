@@ -2695,6 +2695,12 @@ parameters:
 			path: src/Tools/Pagination/Paginator.php
 
 		-
+			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\Window\:\:getPageNumber\(\) should return int\<1, max\> but returns int\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Tools/Pagination/Window.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\ResolveTargetEntityListener\:\:remapAssociation\(\) has parameter \$classMetadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
