@@ -228,9 +228,7 @@
         <exclude-pattern>src/Query/AST/Node.php</exclude-pattern>
     </rule>
 
-    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.NoAssignment">
-        <exclude-pattern>tests/Tests/ORM/Mapping/php/Doctrine.Tests*</exclude-pattern>
-    </rule>
+    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.NoAssignment"/>
 
     <rule ref="PSR2.Methods.MethodDeclaration.Underscore">
         <exclude-pattern>src/AbstractQuery.php</exclude-pattern>
