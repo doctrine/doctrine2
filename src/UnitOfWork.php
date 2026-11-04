@@ -12,6 +12,7 @@ use Doctrine\Common\EventDispatcher;
 use Doctrine\DBAL;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
 use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnClearEventArgs;
@@ -308,7 +309,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * Used during lazy init to determine precisely which fields must not be
      * overwritten from the full load, and by computeChangeSet() as the source
-     * of truth for which fields to diff — trusted over inferring the same
+     * of truth for which fields to diff - trusted over inferring the same
      * thing from the shape of originalEntityData, which can be legitimately
      * empty for other reasons.
      *
@@ -1265,9 +1266,18 @@ class UnitOfWork implements PropertyChangedListener
             // is obtained by a new entity because the old one went out of scope.
             //$this->entityStates[$oid] = self::STATE_NEW;
             if (
+                $this->em->getConfiguration()->isOnRemoveEntitySetIdentifierNull() &&
                 ! $class->isIdentifierNatural() &&
                 ! $class->propertyAccessors[$class->identifier[0]] instanceof ReadonlyAccessor
             ) {
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/pull/12578',
+                    'Not disabling the "onRemoveEntitySetIdentifierNull" configuration option is deprecated.'
+                    . ' Call Configuration::setOnRemoveEntitySetIdentifierNull(false) to opt into the new behavior,'
+                    . ' which will become the default (and only) behavior in ORM 4.0.',
+                );
+
                 $class->propertyAccessors[$class->identifier[0]]->setValue($entity, null);
             }
 

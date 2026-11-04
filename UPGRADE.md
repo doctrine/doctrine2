@@ -87,6 +87,24 @@ Since `LockMode::NONE` is now a no-op, passing `null` as lock mode to
 is deprecated as it is equivalent to passing `LockMode::NONE`. Omit the argument
 or pass `LockMode::NONE` instead.
 
+## Deprecated setting entity identifiers to `null` after `remove()`
+
+Leaving `Configuration::isOnRemoveEntitySetIdentifierNull()` at its default of
+`true` is deprecated. When a removed entity is flushed, `UnitOfWork` currently
+sets that entity's identifier property back to `null` as a convention for
+"this entity object no longer represents a persisted row."
+
+This convention conflicts with PHP 8.4+ `readonly` properties and property
+hooks, which often cannot be reassigned after construction. In ORM 4.0, the
+identifier will never be nulled after removal.
+
+To opt into the new behavior now:
+
+    $configuration->setOnRemoveEntitySetIdentifierNull(false);
+
+Entities with `readonly` identifier properties are already exempt from the
+nulling behavior regardless of this flag.
+
 ## Deprecated `Doctrine\ORM\Tools\Pagination\Paginator`
 
 Use `Doctrine\ORM\Tools\Pagination\OffsetPaginator` instead. The first result and

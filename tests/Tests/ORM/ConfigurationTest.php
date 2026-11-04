@@ -229,4 +229,13 @@ class ConfigurationTest extends TestCase
 
         $this->configuration->enableNativeLazyObjects(false);
     }
+
+    public function testSetGetOnRemoveEntitySetIdentifierNull(): void
+    {
+        self::assertTrue($this->configuration->isOnRemoveEntitySetIdentifierNull());
+
+        $this->configuration->setOnRemoveEntitySetIdentifierNull(false);
+
+        self::assertFalse($this->configuration->isOnRemoveEntitySetIdentifierNull());
+    }
 }

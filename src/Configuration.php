@@ -694,6 +694,16 @@ class Configuration extends \Doctrine\DBAL\Configuration
         $this->attributes['nativeLazyObjects'] = $nativeLazyObjects;
     }
 
+    public function isOnRemoveEntitySetIdentifierNull(): bool
+    {
+        return $this->attributes['onRemoveEntitySetIdentifierNull'] ?? true;
+    }
+
+    public function setOnRemoveEntitySetIdentifierNull(bool $flag): void
+    {
+        $this->attributes['onRemoveEntitySetIdentifierNull'] = $flag;
+    }
+
     /**
      * @deprecated lazy ghost objects are always enabled
      *
