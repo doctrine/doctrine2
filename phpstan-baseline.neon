@@ -663,13 +663,13 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 3
+			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 3
+			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
