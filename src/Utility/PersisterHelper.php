@@ -238,7 +238,9 @@ class PersisterHelper
             $newValue = [];
 
             foreach ($value as $itemValue) {
-                $newValue = array_merge($newValue, self::convertToParameterValue($itemValue, $em));
+                foreach (self::convertToParameterValue($itemValue, $em) as $convertedValue) {
+                    $newValue[] = $convertedValue;
+                }
             }
 
             return [$newValue];
@@ -270,7 +272,9 @@ class PersisterHelper
             $newValue = [];
 
             foreach ($class->getIdentifierValues($value) as $innerValue) {
-                $newValue = array_merge($newValue, self::convertToParameterValue($innerValue, $em));
+                foreach (self::convertToParameterValue($innerValue, $em) as $convertedValue) {
+                    $newValue[] = $convertedValue;
+                }
             }
 
             return $newValue;
