@@ -45,7 +45,6 @@ class SecondLevelCacheConcurrentTest extends SecondLevelCacheFunctionalTestCase
         $this->cache = $this->_em->getCache();
 
         $metadataFactory = $this->_em->getMetadataFactory();
-        assert($metadataFactory instanceof OverridableMetadataFactory);
         $metadataFactory->setMetadataFor(Country::class, $countryMetadata);
     }
 

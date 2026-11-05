@@ -9,7 +9,6 @@ use Doctrine\Tests\Models\Company\CompanyEmployee;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
-use function assert;
 use function ksort;
 
 class DDC168Test extends OrmFunctionalTestCase
@@ -26,7 +25,6 @@ class DDC168Test extends OrmFunctionalTestCase
         $this->_em = $this->getEntityManager(metadataFactoryClassName: OverridableMetadataFactory::class);
 
         $metadataFactory = $this->_em->getMetadataFactory();
-        assert($metadataFactory instanceof OverridableMetadataFactory);
         $metadataFactory->setMetadataFor(CompanyEmployee::class, $metadata);
     }
 
