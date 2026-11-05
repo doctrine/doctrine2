@@ -258,3 +258,10 @@ parameters:
         -
             message: '~^Call to an undefined method .*Schema.*edit~'
             path: src/Tools/SchemaTool.php
+
+        # That file is not intended for use with DBAL 3
+        -
+            message: '~.*~'
+            paths:
+                - src/Tools/ExperimentalSchemaTool.php
+                - src/Internal/Name/NameParser.php

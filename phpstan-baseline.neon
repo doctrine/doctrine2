@@ -2689,6 +2689,146 @@ parameters:
 			path: src/Tools/Event/GenerateSchemaTableEventArgs.php
 
 		-
+			message: '''
+				#^Call to deprecated method getName\(\) of class Doctrine\\DBAL\\Schema\\AbstractAsset\:
+				Use \{@see NamedObject\:\:getObjectName\(\)\} or \{@see OptionallyQualifiedName\:\:getObjectName\(\)\} instead\.
+				            In SQL context, convert the resulting \{@see Name\} to SQL using \{@see Name\:\:toSQL\(\)\}\. In other
+				            contexts, convert the resulting name to string using \{@see Name\:\:toString\(\)\}\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method setPrimaryKey\(\) of class Doctrine\\DBAL\\Schema\\Table\:
+				Use \{@see addPrimaryKeyConstraint\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Instanceof between Doctrine\\DBAL\\Schema\\TableEditor and Doctrine\\DBAL\\Schema\\Table will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addDiscriminatorColumnDefinition\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherColumn\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherRelationJoinColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherRelationsSql\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getAssetName\(\) has parameter \$asset with generic class Doctrine\\DBAL\\Schema\\AbstractAsset but does not specify its types\: N$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getDefiningClass\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getDefiningClass\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getIndexColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getSchemaFromMetadata\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:processingNotRequired\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$columns of class Doctrine\\DBAL\\Schema\\Index constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \$foreignColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \$localColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Property Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:\$schemaManager with generic class Doctrine\\DBAL\\Schema\\AbstractSchemaManager does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\LimitSubqueryOutputWalker\:\:walkSelectStatement\(\) should return string but returns list\<string\>\|string\.$#'
 			identifier: return.type
 			count: 1
@@ -2765,12 +2905,6 @@ parameters:
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:dropSchema\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:experimentalGetSchemaFromMetadata\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/SchemaTool.php
@@ -2860,12 +2994,6 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
-			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
 			message: '#^Parameter \#1 \$columnNames of method Doctrine\\DBAL\\Schema\\Table\:\:addUniqueIndex\(\) expects non\-empty\-list\<string\>, array\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2874,7 +3002,7 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$columns of class Doctrine\\DBAL\\Schema\\Index constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 1
 			path: src/Tools/SchemaTool.php
 
 		-
@@ -2884,37 +3012,19 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
-			message: '#^Parameter \#2 \$modification of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects callable\(Doctrine\\DBAL\\Schema\\ColumnEditor\)\: void, Closure\(Doctrine\\DBAL\\Schema\\ColumnEditor\)\: Doctrine\\DBAL\\Schema\\ColumnEditor given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
 			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
 			identifier: argument.type
 			count: 2
 			path: src/Tools/SchemaTool.php
 
 		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
 			message: '#^Parameter \#3 \$foreignColumnNames of method Doctrine\\DBAL\\Schema\\Table\:\:addForeignKeyConstraint\(\) expects non\-empty\-list\<string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \$foreignColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \$localColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Tools/SchemaTool.php

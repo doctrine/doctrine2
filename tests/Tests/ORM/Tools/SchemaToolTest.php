@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Tools;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint\ReferentialAction;
 use Doctrine\DBAL\Schema\ForeignKeyConstraintEditor;
 use Doctrine\DBAL\Schema\Index as DbalIndex;
@@ -61,6 +64,7 @@ use Doctrine\Tests\Models\Forum\ForumUser;
 use Doctrine\Tests\Models\GH10288\GH10288People;
 use Doctrine\Tests\Models\NullDefault\NullDefaultColumn;
 use Doctrine\Tests\OrmTestCase;
+use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RequiresMethod;
@@ -685,6 +689,40 @@ class SchemaToolTest extends OrmTestCase
         self::assertSame(['field', 'anotherField'], self::getIndexedColumns($tableIndex));
     }
 
+    #[DataProvider('platformsProvider')]
+    public function testQuotedIdentifiersOnPlatform(AbstractPlatform $platform): void
+    {
+        $em = $this->createTestEntityManagerWithPlatform($platform);
+
+        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
+            self::markTestSkipped('Requires the DBAL editor API.');
+        }
+
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(QuotedEntity::class)]);
+
+        $table = $schema->getTable('quoted-table');
+
+        $objectName = $table->getObjectName();
+        self::assertTrue($objectName->getUnqualifiedName()->isQuoted());
+        self::assertSame('quoted-table', $objectName->getUnqualifiedName()->getValue());
+
+        $primaryKey = $table->getPrimaryKeyConstraint();
+        self::assertNotNull($primaryKey);
+
+        [$pkColumn] = $primaryKey->getColumnNames();
+        self::assertTrue($pkColumn->getIdentifier()->isQuoted());
+        self::assertSame('quoted-id', $pkColumn->getIdentifier()->getValue());
+    }
+
+    /** @return iterable<string, array{AbstractPlatform}> */
+    public static function platformsProvider(): iterable
+    {
+        yield 'MySQL (backticks)' => [new MySQLPlatform()];
+        yield 'SQL Server (square brackets)' => [new SQLServerPlatform()];
+    }
+
     public function testQuotedIdentifiers(): void
     {
         $em         = $this->getTestEntityManager();
@@ -892,6 +930,50 @@ class SchemaToolTest extends OrmTestCase
         self::assertSame('name IS NOT NULL', self::getIndexPredicate($table->getIndex('idx_partial')));
         self::assertSame('code IS NOT NULL', self::getIndexPredicate($table->getIndex('uniq_code')));
         self::assertNull(self::getIndexPredicate($table->getIndex('uniq_name')));
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    public function testConflictingIndexTypeFlagsThrow(): void
+    {
+        if (! $this->getTestEntityManager()->getConfiguration()->getUseDbalEditorApi()) {
+            self::markTestSkipped('Requires the DBAL editor API.');
+        }
+
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('An index cannot be both fulltext and spatial.');
+
+        $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(FulltextSpatialFlagIndex::class)]);
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[DataProvider('provideNonUniqueIndexFlags')]
+    public function testUniqueConstraintWithIncompatibleFlagThrows(string $flag): void
+    {
+        $em = $this->getTestEntityManager();
+
+        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
+            self::markTestSkipped('Requires the DBAL editor API.');
+        }
+
+        $metadata = $em->getClassMetadata(FulltextSpatialFlagIndex::class);
+
+        $metadata->table['indexes']           = [];
+        $metadata->table['uniqueConstraints'] = ['uniq_title' => ['columns' => ['title'], 'flags' => [$flag]]];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A unique index cannot be fulltext or spatial.');
+
+        (new SchemaTool($em))->getSchemaFromMetadata([$metadata]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideNonUniqueIndexFlags(): iterable
+    {
+        yield 'fulltext' => ['fulltext'];
+        yield 'spatial' => ['spatial'];
     }
 
     #[RequiresMethod(Schema::class, 'edit')]
@@ -1642,4 +1724,17 @@ class QuotedEntity
 
     #[Column(name: '`quoted-name`')]
     public string $name = '';
+}
+
+#[Entity]
+#[Table(name: 'fulltext_spatial_flag_index')]
+#[Index(name: 'bad_idx', columns: ['title'], flags: ['fulltext', 'spatial'])]
+class FulltextSpatialFlagIndex
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $title = '';
 }
