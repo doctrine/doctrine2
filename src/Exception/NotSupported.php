@@ -29,6 +29,19 @@ EXCEPTION
         ));
     }
 
+    public static function createForDbal5(string $context): self
+    {
+        return new self(sprintf(
+            <<<'EXCEPTION'
+Context: %s
+Problem: Feature was deprecated in doctrine/dbal 4.x and is not supported by installed doctrine/dbal:5.x
+Solution: See the doctrine/deprecations logs for new alternative approaches.
+EXCEPTION
+            ,
+            $context,
+        ));
+    }
+
     public static function createForPersistence3(string $context): self
     {
         return new self(sprintf(

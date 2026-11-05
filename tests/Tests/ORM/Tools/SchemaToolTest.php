@@ -24,6 +24,7 @@ use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\EnumType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
@@ -67,6 +68,7 @@ use Doctrine\Tests\OrmTestCase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RequiresMethod;
 
 use function array_map;
@@ -103,9 +105,21 @@ class SchemaToolTest extends OrmTestCase
         self::assertTrue(self::columnIsIndexed($schema->getTable('cms_users'), 'username'), 'username column should be indexed.');
     }
 
+    /** Only the schema generation based on the DBAL editor API deprecates custom platform options. */
+    private function expectEditorApiDeprecation(EntityManagerInterface $em): void
+    {
+        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
+            return;
+        }
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12733');
+    }
+
+    #[IgnoreDeprecations]
     public function testAttributeOptionsArgument(): void
     {
-        $em         = $this->getTestEntityManager();
+        $em = $this->getTestEntityManager();
+        $this->expectEditorApiDeprecation($em);
         $schemaTool = new SchemaTool($em);
 
         $schema = $schemaTool->getSchemaFromMetadata(
@@ -144,9 +158,11 @@ class SchemaToolTest extends OrmTestCase
     }
 
     #[Group('6830')]
+    #[IgnoreDeprecations]
     public function testPassColumnOptionsToJoinColumn(): void
     {
-        $em       = $this->getTestEntityManager();
+        $em = $this->getTestEntityManager();
+        $this->expectEditorApiDeprecation($em);
         $category = $em->getClassMetadata(GH6830Category::class);
         $board    = $em->getClassMetadata(GH6830Board::class);
 
@@ -273,6 +289,19 @@ class SchemaToolTest extends OrmTestCase
 
         self::assertCount(1, $indexes, 'there should be only one index');
         self::assertSame($primaryKey, current($indexes), 'index should be primary');
+    }
+
+    public function testScalarUniqueIdentifierProducesOnlyPrimaryKey(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(UniqueScalarIdEntity::class)]);
+
+        $indexes = $schema->getTable('unique_scalar_id')->getIndexes();
+
+        self::assertCount(1, $indexes, 'there should be only one index');
+        self::assertTrue($schema->getTable('unique_scalar_id')->hasIndex('primary'));
     }
 
     public function testSetDiscriminatorColumnWithoutLength(): void
@@ -1737,4 +1766,13 @@ class FulltextSpatialFlagIndex
 
     #[Column(length: 255)]
     public string $title = '';
+}
+
+#[Entity]
+#[Table(name: 'unique_scalar_id')]
+class UniqueScalarIdEntity
+{
+    #[Id]
+    #[Column(unique: true)]
+    public int $id = 0;
 }
