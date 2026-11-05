@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Persistence\Mapping\ClassMetadataFactory;
 
-use function array_key_exists;
 use function assert;
 use function implode;
 use function is_a;
@@ -46,6 +45,33 @@ final class IdentifierFlattener
      */
     public function flattenIdentifier(ClassMetadata $class, array $id): array
     {
+        return $this->flatten($class, $id, false);
+    }
+
+    /**
+     * Like flattenIdentifier(), for an identifier keyed by field name, like the ones the UnitOfWork keeps
+     * or the ones given to EntityManager::getReference(): an association value that is not an entity is
+     * taken as already flat, instead of being read from the join columns.
+     *
+     * @param ClassMetadata<object> $class
+     * @param mixed[]               $id
+     *
+     * @return mixed[]
+     * @phpstan-return array<string, mixed>
+     */
+    public function flattenFieldIdentifier(ClassMetadata $class, array $id): array
+    {
+        return $this->flatten($class, $id, true);
+    }
+
+    /**
+     * @param ClassMetadata<object> $class
+     * @param mixed[]               $id
+     *
+     * @return array<string, mixed>
+     */
+    private function flatten(ClassMetadata $class, array $id, bool $keyedByField): array
+    {
         $flatId = [];
 
         foreach ($class->identifier as $field) {
@@ -56,9 +82,9 @@ final class IdentifierFlattener
                 assert($targetClassMetadata instanceof ClassMetadata);
 
                 if ($this->unitOfWork->isInIdentityMap($id[$field])) {
-                    $associatedId = $this->flattenIdentifier($targetClassMetadata, $this->unitOfWork->getEntityIdentifier($id[$field]));
+                    $associatedId = $this->flatten($targetClassMetadata, $this->unitOfWork->getEntityIdentifier($id[$field]), true);
                 } else {
-                    $associatedId = $this->flattenIdentifier($targetClassMetadata, $targetClassMetadata->getIdentifierValues($id[$field]));
+                    $associatedId = $this->flatten($targetClassMetadata, $targetClassMetadata->getIdentifierValues($id[$field]), true);
                 }
 
                 $flatId[$field] = implode(' ', $associatedId);
@@ -66,8 +92,8 @@ final class IdentifierFlattener
                 $assoc = $class->associationMappings[$field];
                 assert($assoc->isToOneOwningSide());
 
-                if (array_key_exists($field, $id) && ! array_key_exists($assoc->joinColumns[0]->name, $id)) {
-                    // Already flat and keyed by field name, like the identifiers kept by the UnitOfWork
+                if ($keyedByField) {
+                    // Already flat, like the identifiers kept by the UnitOfWork
                     $flatId[$field] = $id[$field] instanceof BackedEnum ? $id[$field]->value : $id[$field];
 
                     continue;

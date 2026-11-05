@@ -29,12 +29,22 @@ class GH10514Test extends OrmFunctionalTestCase
             GH10514Level1::class,
             GH10514Level2::class,
             GH10514Item::class,
+            GH10514Parent::class,
+            GH10514Child::class,
+            GH10514Owner::class,
+            GH10514Versioned::class,
+            GH10514VersionedChild::class,
         );
     }
 
     protected function tearDown(): void
     {
         $conn = static::$sharedConn;
+        $conn->executeStatement('DELETE FROM GH10514VersionedChild');
+        $conn->executeStatement('DELETE FROM GH10514Versioned');
+        $conn->executeStatement('DELETE FROM GH10514Owner');
+        $conn->executeStatement('DELETE FROM GH10514Child');
+        $conn->executeStatement('DELETE FROM GH10514Parent');
         $conn->executeStatement('DELETE FROM GH10514Item');
         $conn->executeStatement('DELETE FROM GH10514Level2');
         $conn->executeStatement('DELETE FROM GH10514Level1');
@@ -135,6 +145,36 @@ class GH10514Test extends OrmFunctionalTestCase
         );
     }
 
+    public function testGetReferenceDoesNotReadAFieldAsTheJoinColumnOfTheSameName(): void
+    {
+        // The identifier field "id" is stored in "local_id", and the join column of "parent" is named "id"
+        $parent7  = new GH10514Parent(7);
+        $parent42 = new GH10514Parent(42);
+        $child7   = new GH10514Child(7, $parent7);
+        $child42  = new GH10514Child(7, $parent42);
+        $this->_em->persist($parent7);
+        $this->_em->persist($parent42);
+        $this->_em->persist($child7);
+        $this->_em->persist($child42);
+        $this->_em->flush();
+
+        self::assertSame($child42, $this->_em->getReference(GH10514Child::class, ['id' => 7, 'parent' => 42]));
+    }
+
+    public function testUpdateOfAVersionedJoinedEntityWithADerivedIdentity(): void
+    {
+        $owner = new GH10514Owner(1);
+        $child = new GH10514VersionedChild($owner, 'a');
+        $this->_em->persist($owner);
+        $this->_em->persist($child);
+        $this->_em->flush();
+
+        $child->name = 'b';
+        $this->_em->flush();
+
+        self::assertSame(2, $child->version);
+    }
+
     private function insertChain(): void
     {
         $conn = $this->_em->getConnection();
@@ -223,5 +263,73 @@ class GH10514Item
         #[ORM\JoinColumn(name: 'level2_id', referencedColumnName: 'level2_id')]
         public GH10514Level2 $level2,
     ) {
+    }
+}
+
+#[ORM\Entity]
+class GH10514Parent
+{
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\Column]
+        public int $id,
+    ) {
+    }
+}
+
+#[ORM\Entity]
+class GH10514Child
+{
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\Column(name: 'local_id')]
+        public int $id,
+        #[ORM\Id]
+        #[ORM\ManyToOne(targetEntity: GH10514Parent::class)]
+        #[ORM\JoinColumn(name: 'id', referencedColumnName: 'id')]
+        public GH10514Parent $parent,
+    ) {
+    }
+}
+
+#[ORM\Entity]
+class GH10514Owner
+{
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\Column]
+        public int $id,
+    ) {
+    }
+}
+
+#[ORM\Entity]
+#[ORM\InheritanceType('JOINED')]
+#[ORM\DiscriminatorColumn(name: 'type', type: 'string')]
+#[ORM\DiscriminatorMap(['child' => GH10514VersionedChild::class])]
+abstract class GH10514Versioned
+{
+    #[ORM\Version]
+    #[ORM\Column(type: 'integer')]
+    public int $version;
+
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\OneToOne(targetEntity: GH10514Owner::class)]
+        #[ORM\JoinColumn(name: 'owner_id', referencedColumnName: 'id')]
+        public GH10514Owner $owner,
+    ) {
+    }
+}
+
+#[ORM\Entity]
+class GH10514VersionedChild extends GH10514Versioned
+{
+    public function __construct(
+        GH10514Owner $owner,
+        #[ORM\Column]
+        public string $name,
+    ) {
+        parent::__construct($owner);
     }
 }

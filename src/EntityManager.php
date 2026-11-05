@@ -409,7 +409,7 @@ class EntityManager implements EntityManagerInterface
 
         // The identity map is keyed by flat identifiers, while the proxy gets the associated entities
         $flatId = $class->containsForeignIdentifier
-            ? $this->identifierFlattener->flattenIdentifier($class, $sortedId)
+            ? $this->identifierFlattener->flattenFieldIdentifier($class, $sortedId)
             : $sortedId;
 
         $entity = $this->unitOfWork->tryGetById($flatId, $class->rootEntityName);

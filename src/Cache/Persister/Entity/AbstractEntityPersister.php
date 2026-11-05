@@ -156,7 +156,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     private function flattenIdentifier(array $identifier): array
     {
         return $this->class->containsForeignIdentifier
-            ? $this->identifierFlattener->flattenIdentifier($this->class, $identifier)
+            ? $this->identifierFlattener->flattenFieldIdentifier($this->class, $identifier)
             : $identifier;
     }
 

@@ -551,7 +551,7 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
             . $joinSql
             . ' WHERE ' . implode(' = ? AND ', $identifier) . ' = ?';
 
-        $flatId = $this->identifierFlattener->flattenIdentifier($versionedClass, $id);
+        $flatId = $this->identifierFlattener->flattenFieldIdentifier($versionedClass, $id);
         $values = $this->conn->fetchNumeric(
             $sql,
             array_values($flatId),

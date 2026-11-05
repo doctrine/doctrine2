@@ -1754,7 +1754,7 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         if ($class->containsForeignIdentifier || $class->containsEnumIdentifier) {
-            $id = $this->identifierFlattener->flattenIdentifier($class, $id);
+            $id = $this->identifierFlattener->flattenFieldIdentifier($class, $id);
         }
 
         switch (true) {
@@ -2892,7 +2892,7 @@ class UnitOfWork implements PropertyChangedListener
                         $id[] = $data[$joinColumn->name];
                     }
                 } else {
-                    $id = $this->identifierFlattener->flattenIdentifier($class, $class->getIdentifierValues($sourceEntity));
+                    $id = $this->identifierFlattener->flattenFieldIdentifier($class, $class->getIdentifierValues($sourceEntity));
                 }
 
                 $idHash = implode(' ', $id);
@@ -2954,7 +2954,7 @@ class UnitOfWork implements PropertyChangedListener
         $owner = $collection->getOwner();
         assert($owner !== null);
 
-        $id     = $this->identifierFlattener->flattenIdentifier(
+        $id     = $this->identifierFlattener->flattenFieldIdentifier(
             $sourceClass,
             $sourceClass->getIdentifierValues($owner),
         );
@@ -3441,8 +3441,8 @@ class UnitOfWork implements PropertyChangedListener
         $oid1 = spl_object_id($entity1);
         $oid2 = spl_object_id($entity2);
 
-        $id1 = $this->entityIdentifiers[$oid1] ?? $this->identifierFlattener->flattenIdentifier($class, $class->getIdentifierValues($entity1));
-        $id2 = $this->entityIdentifiers[$oid2] ?? $this->identifierFlattener->flattenIdentifier($class, $class->getIdentifierValues($entity2));
+        $id1 = $this->entityIdentifiers[$oid1] ?? $this->identifierFlattener->flattenFieldIdentifier($class, $class->getIdentifierValues($entity1));
+        $id2 = $this->entityIdentifiers[$oid2] ?? $this->identifierFlattener->flattenFieldIdentifier($class, $class->getIdentifierValues($entity2));
 
         return $id1 === $id2 || self::getIdHashByIdentifier($id1) === self::getIdHashByIdentifier($id2);
     }
