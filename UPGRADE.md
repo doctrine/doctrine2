@@ -29,6 +29,17 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## BC BREAK: Second level cache requires `doctrine/orm-plugin-second-level-cache`
+
+To use the second level cache, you must now install an additional package:
+
+```bash
+composer require doctrine/orm-plugin-second-level-cache
+```
+
+Without this package, calling `Configuration::setSecondLevelCacheEnabled(true)`
+throws a `LogicException`.
+
 ## No update query when the database value of a date or object does not change
 
 Replacing a date or a value object with another instance that maps to the same
