@@ -12,6 +12,9 @@ use Doctrine\Common\EventDispatcher;
 use Doctrine\DBAL;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Types\TypeProvider;
+use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
 use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnClearEventArgs;
@@ -31,6 +34,7 @@ use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Internal\HydrationCompleteHandler;
 use Doctrine\ORM\Internal\StronglyConnectedComponents;
 use Doctrine\ORM\Internal\TopologicalSort;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Internal\UnitOfWork\InsertBatch;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -332,6 +336,16 @@ class UnitOfWork implements PropertyChangedListener
      * Helper for handling completion of hydration
      */
     private readonly HydrationCompleteHandler $hydrationCompleteHandler;
+
+    /**
+     * Resolved on the first comparison of object values.
+     */
+    private AbstractPlatform|null $platform = null;
+
+    /**
+     * Resolved on the first comparison of object values.
+     */
+    private TypeProvider|TypeRegistry|null $typeProvider = null;
 
     /**
      * Initializes a new UnitOfWork instance, bound to the given EntityManager.
@@ -725,6 +739,10 @@ class UnitOfWork implements PropertyChangedListener
 
                 // if regular field
                 if (! isset($class->associationMappings[$propName])) {
+                    if ($this->isSameConvertedDatabaseValue($class, $propName, $orgValue, $actualValue)) {
+                        continue;
+                    }
+
                     $changeSet[$propName] = [$orgValue, $actualValue];
 
                     continue;
@@ -1103,9 +1121,15 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
-            if ($orgValue !== $actualValue) {
-                $changeSet[$propName] = [$orgValue, $actualValue];
+            if ($orgValue === $actualValue) {
+                continue;
             }
+
+            if ($this->isSameConvertedDatabaseValue($class, $propName, $orgValue, $actualValue)) {
+                continue;
+            }
+
+            $changeSet[$propName] = [$orgValue, $actualValue];
         }
 
         if ($changeSet) {
@@ -1118,6 +1142,42 @@ class UnitOfWork implements PropertyChangedListener
 
             $this->originalEntityData[$oid] = $actualData;
         }
+    }
+
+    /**
+     * Tells whether two object values share the same database representation.
+     *
+     * Object values are not comparable by identity when they represent the same
+     * database value, for instance when the time of a date mapped as "date"
+     * changes, or when a value object is replaced by an equal one. Comparing
+     * the database representation avoids a useless update.
+     *
+     * Only object values are compared, scalars are already compared by value.
+     * Associations and embedded objects have no field mapping of their own.
+     *
+     * @param ClassMetadata<object> $class
+     */
+    private function isSameConvertedDatabaseValue(
+        ClassMetadata $class,
+        string $propName,
+        mixed $orgValue,
+        mixed $actualValue,
+    ): bool {
+        if (
+            ! is_object($orgValue)
+            || ! is_object($actualValue)
+            || ! isset($class->fieldMappings[$propName])
+        ) {
+            return false;
+        }
+
+        $this->platform     ??= $this->em->getConnection()->getDatabasePlatform();
+        $this->typeProvider ??= TypeProviderLocator::fromConnection($this->em->getConnection());
+
+        $fieldType = $this->typeProvider->get($class->fieldMappings[$propName]->type);
+
+        return $fieldType->convertToDatabaseValue($orgValue, $this->platform)
+            === $fieldType->convertToDatabaseValue($actualValue, $this->platform);
     }
 
     /**

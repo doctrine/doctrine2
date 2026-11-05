@@ -29,6 +29,15 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## No update query when the database value of a date or object does not change
+
+Replacing a date or a value object with another instance that maps to the same
+database value no longer produces an `UPDATE`. The change set computation now
+compares the database representation of object values instead of their identity.
+This covers the built-in date and time types and custom value object types. For
+example, changing only the time of a date mapped as `date` no longer triggers an
+update.
+
 ## Custom ID generators imply the `CUSTOM` strategy
 
 When you declare a custom ID generator without an explicit strategy, Doctrine now uses `CUSTOM` instead of `NONE`.
