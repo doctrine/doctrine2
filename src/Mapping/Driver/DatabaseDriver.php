@@ -599,7 +599,7 @@ class DatabaseDriver implements MappingDriver
         return $foreignKey->getForeignColumns();
     }
 
-    /** @return string[] */
+    /** @return list<string> */
     private static function getIndexedColumns(Index $index): array
     {
         if (method_exists(Index::class, 'getIndexedColumns')) {

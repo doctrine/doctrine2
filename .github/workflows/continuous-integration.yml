@@ -198,7 +198,7 @@ jobs:
       -   name: "Run PHPUnit"
           run: "vendor/bin/phpunit -c ci/github/phpunit/sqlite3.xml --fail-on-deprecation"
           env:
-            ENABLE_DBAL_EDITOR_API: 0
+            ENABLE_DBAL_EDITOR_API: 1
             ENABLE_SECOND_LEVEL_CACHE: 0
             ENABLE_NATIVE_LAZY_OBJECTS: 1
 

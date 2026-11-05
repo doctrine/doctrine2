@@ -80,6 +80,13 @@ use function usort;
  *    get the whole class name, namespace inclusive, prepended to every property in
  *    the serialized representation).
  *
+ * @phpstan-type IndexMapping = array{
+ *     name?: string,
+ *     columns?: list<string>,
+ *     fields?: non-empty-list<string>,
+ *     flags?: array<array-key, mixed>,
+ *     options?: array<array-key, mixed>,
+ * }
  * @phpstan-type ConcreteAssociationMapping = OneToOneOwningSideMapping|OneToOneInverseSideMapping|ManyToOneAssociationMapping|OneToManyAssociationMapping|ManyToManyOwningSideMapping|ManyToManyInverseSideMapping
  * @template-covariant T of object
  * @template-implements PersistenceClassMetadata<T>
@@ -421,9 +428,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      * @phpstan-var array{
      *               name: string,
      *               schema?: string,
-     *               indexes?: array,
-     *               uniqueConstraints?: array,
-     *               options?: array<string, mixed>,
+     *               indexes?: array<array-key, IndexMapping>,
+     *               uniqueConstraints?: array<array-key, IndexMapping>,
+     *               options?: array<array-key, mixed>,
      *               quoted?: bool
      *           }
      */
