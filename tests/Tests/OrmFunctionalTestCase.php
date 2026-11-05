@@ -902,6 +902,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
     protected function getEntityManager(
         Connection|null $connection = null,
         MappingDriver|null $mappingDriver = null,
+        string|null $metadataFactoryClassName = null,
     ): EntityManagerInterface {
         // NOTE: Functional tests use their own shared metadata cache, because
         // the actual database platform used during execution has effect on some
@@ -920,6 +921,10 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
         TestUtil::configureProxies($config);
         $config->setMetadataCache(self::$metadataCache);
         $config->setQueryCache(self::$queryCache);
+
+        if ($metadataFactoryClassName !== null) {
+            $config->setClassMetadataFactoryName($metadataFactoryClassName);
+        }
 
         $config->setUseDbalEditorApi(method_exists(Schema::class, 'edit')
             && $this->getEnv('ENABLE_DBAL_EDITOR_API', true));

@@ -11,6 +11,7 @@ use Doctrine\ORM\Cache\Lock;
 use Doctrine\ORM\Cache\Region\DefaultRegion;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\Mocks\ConcurrentRegionMock;
+use Doctrine\Tests\Mocks\OverridableMetadataFactory;
 use Doctrine\Tests\Mocks\TimestampRegionMock;
 use Doctrine\Tests\Models\Cache\Country;
 use Doctrine\Tests\Models\Cache\State;
@@ -23,7 +24,6 @@ use function assert;
 class SecondLevelCacheConcurrentTest extends SecondLevelCacheFunctionalTestCase
 {
     private CacheFactorySecondLevelCacheConcurrentTest $cacheFactory;
-    private ClassMetadata $countryMetadata;
 
     protected function setUp(): void
     {
@@ -31,25 +31,22 @@ class SecondLevelCacheConcurrentTest extends SecondLevelCacheFunctionalTestCase
 
         parent::setUp();
 
+        $countryMetadata                 = clone $this->_em->getClassMetadata(Country::class);
+        $countryMetadata->cache['usage'] = ClassMetadata::CACHE_USAGE_NONSTRICT_READ_WRITE;
+
+        $this->_em = $this->getEntityManager(metadataFactoryClassName: OverridableMetadataFactory::class);
+
         $this->cacheFactory = new CacheFactorySecondLevelCacheConcurrentTest($this->getSharedSecondLevelCache());
 
         $this->_em->getConfiguration()
             ->getSecondLevelCacheConfiguration()
             ->setCacheFactory($this->cacheFactory);
 
-        $this->countryMetadata = $this->_em->getClassMetadata(Country::class);
-        $countryMetadata       = clone $this->countryMetadata;
+        $this->cache = $this->_em->getCache();
 
-        $countryMetadata->cache['usage'] = ClassMetadata::CACHE_USAGE_NONSTRICT_READ_WRITE;
-
-        $this->_em->getMetadataFactory()->setMetadataFor(Country::class, $countryMetadata);
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        $this->_em->getMetadataFactory()->setMetadataFor(Country::class, $this->countryMetadata);
+        $metadataFactory = $this->_em->getMetadataFactory();
+        assert($metadataFactory instanceof OverridableMetadataFactory);
+        $metadataFactory->setMetadataFor(Country::class, $countryMetadata);
     }
 
     public function testBasicConcurrentEntityReadLock(): void
