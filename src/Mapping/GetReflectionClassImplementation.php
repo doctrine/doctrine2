@@ -25,7 +25,7 @@ if (! class_exists(StaticReflectionService::class)) {
          *
          * Can return null when using static reflection, in violation of the LSP
          */
-        public function getReflectionClass(): ReflectionClass|null
+        public function getReflectionClass(): ReflectionClass
         {
             return $this->reflClass;
         }
