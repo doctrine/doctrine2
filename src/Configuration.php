@@ -8,6 +8,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Cache\CacheConfiguration;
+use Doctrine\ORM\Cache\SecondLevelCachePlugin;
 use Doctrine\ORM\Exception\InvalidEntityRepository;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -592,6 +593,10 @@ class Configuration extends \Doctrine\DBAL\Configuration
 
     public function setSecondLevelCacheEnabled(bool $flag = true): void
     {
+        if ($flag && ! class_exists(SecondLevelCachePlugin::class)) {
+            throw new LogicException('Using the second level cache requires installing an additional package. Install with composer require doctrine/orm-plugin-second-level-cache');
+        }
+
         $this->attributes['isSecondLevelCacheEnabled'] = $flag;
     }
 

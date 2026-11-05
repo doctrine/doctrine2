@@ -161,6 +161,18 @@ Configuration
 -------------
 Doctrine allows you to specify configurations and some points of extension for the second-level-cache
 
+Installation
+~~~~~~~~~~~~
+
+Starting with ORM 3.8, the second-level-cache requires the additional package
+``doctrine/orm-plugin-second-level-cache``. Install it with Composer:
+
+.. code-block:: console
+
+    $ composer require doctrine/orm-plugin-second-level-cache
+
+Without this package, ``Doctrine\ORM\Configuration::setSecondLevelCacheEnabled()``
+throws a ``LogicException``.
 
 Enable Second Level Cache
 ~~~~~~~~~~~~~~~~~~~~~~~~~
