@@ -330,7 +330,9 @@ Example:
 #[CustomIdGenerator]
 ~~~~~~~~~~~~~~~~~~~~
 
-This attribute allows you to specify a user-provided class to generate identifiers. This attribute only works when both :ref:`#[Id] <attrref_id>` and :ref:`#[GeneratedValue(strategy: "CUSTOM")] <attrref_generatedvalue>` are specified.
+This attribute allows you to specify a user-provided class to generate identifiers. Use it together with :ref:`#[Id] <attrref_id>`.
+
+If you omit :ref:`#[GeneratedValue] <attrref_generatedvalue>`, the strategy defaults to ``CUSTOM``. An explicit ``#[GeneratedValue]`` takes precedence, including ``strategy: 'NONE'`` for identifiers you assign yourself.
 
 Required parameters:
 
@@ -343,13 +345,11 @@ Example:
     <?php
     use Doctrine\ORM\Mapping\Id;
     use Doctrine\ORM\Mapping\Column;
-    use Doctrine\ORM\Mapping\GeneratedValue;
     use Doctrine\ORM\Mapping\CustomIdGenerator;
     use App\Doctrine\MyIdGenerator;
 
     #[Id]
     #[Column(type: "integer")]
-    #[GeneratedValue(strategy: "CUSTOM")]
     #[CustomIdGenerator(class: MyIdGenerator::class)]
     public $id;
 
@@ -490,8 +490,7 @@ instance variable which is annotated by :ref:`#[Id] <attrref_id>`. This
 attribute is optional and only has meaning when used in
 conjunction with #[Id].
 
-If this attribute is not specified with ``#[Id]`` the ``NONE`` strategy is
-used as default.
+If you omit this attribute, the strategy defaults to ``NONE``. With :ref:`#[CustomIdGenerator] <attrref_customidgenerator>`, the default is ``CUSTOM``.
 
 Optional parameters:
 

@@ -590,10 +590,10 @@ Here is the list of possible generation strategies:
    SQL Anywhere.
 -  ``NONE``: Tells Doctrine that the identifiers are assigned (and
    thus generated) by your code. The assignment must take place before
-   a new entity is passed to ``EntityManager#persist``. NONE is the
-   same as leaving off the ``#[GeneratedValue]`` entirely.
+   a new entity is passed to ``EntityManager#persist``. This is the default when you omit both ``#[GeneratedValue]`` and ``#[CustomIdGenerator]``.
 -  ``CUSTOM``: With this option, you can use the ``#[CustomIdGenerator]`` attribute.
    It will allow you to pass a :ref:`class of your own to generate the identifiers. <attrref_customidgenerator>`
+   This is the default when you use ``#[CustomIdGenerator]`` without ``#[GeneratedValue]``.
 
 Sequence Generator
 ^^^^^^^^^^^^^^^^^^

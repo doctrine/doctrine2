@@ -349,6 +349,10 @@ class AttributeDriver implements MappingDriver
                         ],
                     );
                 } elseif ($customGeneratorAttribute !== null) {
+                    if ($generatedValueAttribute === null) {
+                        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_CUSTOM);
+                    }
+
                     $metadata->setCustomGeneratorDefinition(
                         [
                             'class' => $customGeneratorAttribute->class,

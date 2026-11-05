@@ -9,6 +9,7 @@ use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Builder\ClassMetadataBuilder;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Column;
@@ -68,6 +69,7 @@ use Doctrine\Tests\ORM\Mapping\NamingStrategy\CustomPascalNamingStrategy;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\TestWith;
 use SortDirection;
 use stdClass;
 
@@ -228,6 +230,17 @@ abstract class MappingDriverTestCase extends OrmTestCase
             $class->customGeneratorDefinition,
             'Custom Generator Definition',
         );
+    }
+
+    #[TestWith([CustomGeneratorWithoutStrategy::class, ClassMetadata::GENERATOR_TYPE_CUSTOM])]
+    #[TestWith([CustomGeneratorWithAssignedStrategy::class, ClassMetadata::GENERATOR_TYPE_NONE])]
+    #[TestWith([CustomGeneratorWithAutomaticStrategy::class, ClassMetadata::GENERATOR_TYPE_AUTO])]
+    public function testCustomGeneratorStrategy(string $entityClass, int $expectedStrategy): void
+    {
+        $class = $this->createClassMetadata($entityClass);
+
+        self::assertSame($expectedStrategy, $class->generatorType);
+        self::assertSame(['class' => stdClass::class], $class->customGeneratorDefinition);
     }
 
     #[Depends('testEntityTableNameAndInheritance')]
@@ -1334,6 +1347,64 @@ abstract class Animal
     {
         $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_CUSTOM);
         $metadata->setCustomGeneratorDefinition(['class' => stdClass::class]);
+    }
+}
+
+#[ORM\Entity]
+class CustomGeneratorWithoutStrategy
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\CustomIdGenerator(stdClass::class)]
+    public int|null $id = null;
+
+    public static function loadMetadata(ClassMetadata $metadata): void
+    {
+        (new ClassMetadataBuilder($metadata))
+            ->createField('id', 'integer')
+            ->makePrimaryKey()
+            ->setCustomIdGenerator(stdClass::class)
+            ->build();
+    }
+}
+
+#[ORM\Entity]
+class CustomGeneratorWithAssignedStrategy
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue(strategy: 'NONE')]
+    #[ORM\CustomIdGenerator(stdClass::class)]
+    public int|null $id = null;
+
+    public static function loadMetadata(ClassMetadata $metadata): void
+    {
+        (new ClassMetadataBuilder($metadata))
+            ->createField('id', 'integer')
+            ->makePrimaryKey()
+            ->generatedValue('NONE')
+            ->setCustomIdGenerator(stdClass::class)
+            ->build();
+    }
+}
+
+#[ORM\Entity]
+class CustomGeneratorWithAutomaticStrategy
+{
+    #[ORM\Id]
+    #[ORM\Column(type: 'integer')]
+    #[ORM\GeneratedValue]
+    #[ORM\CustomIdGenerator(stdClass::class)]
+    public int|null $id = null;
+
+    public static function loadMetadata(ClassMetadata $metadata): void
+    {
+        (new ClassMetadataBuilder($metadata))
+            ->createField('id', 'integer')
+            ->makePrimaryKey()
+            ->generatedValue('AUTO')
+            ->setCustomIdGenerator(stdClass::class)
+            ->build();
     }
 }
 

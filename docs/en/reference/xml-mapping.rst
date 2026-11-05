@@ -331,10 +331,8 @@ manually set the identifier before calling
 ``EntityManager#persist($entity)``. This is the so called
 ``NONE`` strategy.
 
-If you want to switch the identifier generation strategy you have
-to nest a ``<generator />`` element inside the id-element. This of
-course only works for surrogate keys. For composite keys you always
-have to use the ``NONE`` strategy.
+You can choose an identifier generation strategy with a ``<generator />`` element inside the ``<id />`` element.
+For composite identifiers, you must use ``NONE``.
 
 .. code-block:: xml
 
@@ -355,6 +353,20 @@ attribute:
 -  SEQUENCE - Use of a database sequence to retrieve the
    entity-ids. This is possible before the INSERT statement is
    executed.
+-  CUSTOM - Use the class configured by ``<custom-id-generator />``.
+-  NONE - Assign the identifier yourself before calling ``EntityManager#persist()``.
+
+You can use a custom ID generator by adding a ``<custom-id-generator />`` element:
+
+.. code-block:: xml
+
+    <entity name="MyProject\User">
+        <id name="id" type="integer" column="user_id">
+            <custom-id-generator class="MyProject\MyIdGenerator" />
+        </id>
+    </entity>
+
+If you omit ``<generator />``, the strategy defaults to ``CUSTOM``. An explicit ``<generator />`` takes precedence, including ``strategy="NONE"`` for identifiers you assign yourself.
 
 If you are using the SEQUENCE strategy you can define an additional
 element to describe the sequence:

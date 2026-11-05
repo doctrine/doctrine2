@@ -320,6 +320,10 @@ class XmlDriver extends FileDriver
                     ],
                 );
             } elseif (isset($idElement->{'custom-id-generator'})) {
+                if (! isset($idElement->generator)) {
+                    $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_CUSTOM);
+                }
+
                 $customGenerator = $idElement->{'custom-id-generator'};
                 $metadata->setCustomGeneratorDefinition(
                     [

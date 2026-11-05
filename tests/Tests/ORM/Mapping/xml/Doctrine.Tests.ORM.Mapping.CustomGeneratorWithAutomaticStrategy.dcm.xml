@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping">
+    <entity name="Doctrine\Tests\ORM\Mapping\CustomGeneratorWithAutomaticStrategy">
+        <id name="id" type="integer">
+            <generator />
+            <custom-id-generator class="stdClass" />
+        </id>
+    </entity>
+</doctrine-mapping>

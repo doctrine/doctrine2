@@ -29,6 +29,23 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## Custom ID generators imply the `CUSTOM` strategy
+
+When you declare a custom ID generator without an explicit strategy, Doctrine now uses `CUSTOM` instead of `NONE`.
+This applies to `#[CustomIdGenerator]`, XML `<custom-id-generator>` and `FieldBuilder::setCustomIdGenerator()`.
+
+If you want to keep assigning identifiers yourself, specify `NONE` explicitly:
+
+```php
+#[Id]
+#[Column(type: 'integer')]
+#[GeneratedValue(strategy: 'NONE')]
+#[CustomIdGenerator(MyIdGenerator::class)]
+public int|null $id = null;
+```
+
+For XML, use `<generator strategy="NONE" />`. For the PHP mapping builder, use `generatedValue('NONE')`.
+
 ## `OffsetPaginator` now preserves the result keys of DQL `INDEX BY`
 
 `WindowPage::getItems()` and the iteration of a `WindowPage` used to apply
