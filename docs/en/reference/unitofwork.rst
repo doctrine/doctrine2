@@ -120,6 +120,10 @@ values with the values that are currently set on the object. If changes are
 detected then the object is queued for a SQL UPDATE operation. Only the fields
 that actually changed are updated.
 
+Date, time and other object values are compared by their database
+representation. Replacing such a value with another instance that maps to the
+same database value does not queue an update.
+
 This process has an obvious performance impact. The larger the size of the
 UnitOfWork is, the longer this computation takes. There are several ways to
 optimize the performance of the Flush Operation:

@@ -489,9 +489,10 @@ you are using.
 
 .. note::
 
-    DateTime and Object types are compared by reference, not by value. Doctrine
-    updates this values if the reference changes and therefore behaves as if
-    these objects are immutable value objects.
+    Date, time and object values are compared by their database
+    representation. Replacing a value with another instance that maps to the
+    same database value does not trigger an update. In-place modifications are
+    not detected, so these objects behave as if they were immutable.
 
 .. warning::
 

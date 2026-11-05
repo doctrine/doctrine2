@@ -192,7 +192,7 @@ requiring timezoned datetimes:
         }
     }
 
-This snippet makes use of the previously discussed "changeset by reference only" property of
-objects. That means a new DateTime will only be used during updating if the reference
-changes between retrieval and flush operation. This means we can easily go and modify
-the instance by setting the previous local timezone.
+This snippet makes use of the fact that in-place modifications of a date object
+are not detected by the change set computation: the UnitOfWork keeps the same
+instance as the original value. This means we can modify the instance by setting
+the previous local timezone without triggering an update.
