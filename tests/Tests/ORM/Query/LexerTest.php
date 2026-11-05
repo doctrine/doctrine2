@@ -127,6 +127,15 @@ class LexerTest extends OrmTestCase
         self::assertEquals("abc'defg'", $token->value);
     }
 
+    public function testScannerDoesNotRecognizeDoubleQuotedString(): void
+    {
+        $lexer = new Lexer('" "');
+        $lexer->moveNext();
+        $token = $lexer->lookahead;
+        self::assertNotEquals(TokenType::T_STRING, $token->type);
+        self::assertSame('"', $token->value);
+    }
+
     public function testScannerRecognizesInputParameter(): void
     {
         $lexer = new Lexer('?1');

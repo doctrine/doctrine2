@@ -1587,7 +1587,9 @@ Terminals
 
 -  identifier (name, email, ...) must match ``[a-z_][a-z0-9_]*``
 -  fully_qualified_name (Doctrine\Tests\Models\CMS\CmsUser) matches PHP's fully qualified class names
--  string ('foo', 'bar''s house', '%ninja%', ...)
+-  string ('foo', 'bar''s house', '%ninja%', ...) must be enclosed in single quotes;
+   a single quote inside a string is escaped by doubling it. Double quotes
+   are not supported as string delimiters.
 -  char ('/', '\\', ' ', ...)
 -  integer (-1, 0, 1, 34, ...)
 -  float (-0.23, 0.007, 1.245342E+8, ...)
