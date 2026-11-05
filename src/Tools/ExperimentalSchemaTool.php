@@ -30,6 +30,7 @@ use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Exception\NotSupported as NotSupportedException;
 use Doctrine\ORM\Internal\Name\NameParser;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -59,6 +60,7 @@ use function in_array;
 use function interface_exists;
 use function is_int;
 use function is_numeric;
+use function method_exists;
 use function sprintf;
 use function strtolower;
 
@@ -825,7 +827,23 @@ final class ExperimentalSchemaTool
                     SQLServerPlatform::OPTION_DEFAULT_CONSTRAINT_NAME,
                 ], true)
             ) {
-                /** @phpstan-ignore method.deprecated (ColumnEditor has no setter for remaining platform options such as jsonb or custom ones) */
+                Deprecation::trigger(
+                    'doctrine/orm',
+                    'https://github.com/doctrine/orm/pull/12733',
+                    'Passing the custom platform option "%s" through the "options" of a mapping is deprecated'
+                    . ' and will not be supported with DBAL 5, which removes column platform options.',
+                    $key,
+                );
+
+                /** @phpstan-ignore function.alreadyNarrowedType (the method is removed in DBAL 5) */
+                if (! method_exists($column, 'setPlatformOption')) {
+                    /** @phpstan-ignore staticMethod.deprecatedClass (this exception is meant for such cases) */
+                    throw NotSupportedException::createForDbal5(
+                        sprintf('Setting the custom column platform option "%s" on column "%s"', $key, $name),
+                    );
+                }
+
+                /** @phpstan-ignore method.deprecated (ColumnEditor has no setter for custom platform options) */
                 $column->setPlatformOption($key, $value);
             }
         }

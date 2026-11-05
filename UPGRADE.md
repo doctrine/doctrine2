@@ -29,6 +29,14 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## Deprecate custom column platform options in mapping `options`
+
+Any key of the `options` of a field, join column or discriminator column mapping
+that is not one of `comment`, `unsigned`, `fixed`, `default` or `values` is passed
+to DBAL as a column platform option. DBAL 5 removes column platform options and
+`ColumnEditor` has no setter for custom ones, so relying on this is deprecated.
+With DBAL 5, it throws a `Doctrine\ORM\Exception\NotSupported` exception.
+
 ## No update query when the database value of a date or object does not change
 
 Replacing a date or a value object with another instance that maps to the same
