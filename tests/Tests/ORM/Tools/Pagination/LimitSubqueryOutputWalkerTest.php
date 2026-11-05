@@ -241,6 +241,21 @@ final class LimitSubqueryOutputWalkerTest extends PaginationTestCase
     }
 
     /**
+     * Path expressions of a subselect that follow a nested subselect must not be
+     * added to the SELECT clause as if they were ORDER BY items of the main query.
+     */
+    #[Group('GH12697')]
+    public function testLimitSubqueryWithOrderByAndNestedSubSelectInWhereClauseMySql(): void
+    {
+        $this->entityManager = $this->createTestEntityManagerWithPlatform(new MySQLPlatform());
+
+        $this->assertQuerySql(
+            'SELECT DISTINCT id_0 FROM (SELECT DISTINCT id_0, name_2 FROM (SELECT b0_.id AS id_0, a1_.id AS id_1, a1_.name AS name_2, b0_.author_id AS author_id_3, b0_.category_id AS category_id_4 FROM BlogPost b0_ INNER JOIN Author a1_ ON b0_.author_id = a1_.id WHERE b0_.id IN (SELECT b2_.id FROM BlogPost b2_ INNER JOIN Author a3_ ON b2_.author_id = a3_.id WHERE NOT EXISTS (SELECT 1 AS sclr_5 FROM BlogPost b4_ WHERE b4_.author_id = a3_.id AND b4_.id > b2_.id) AND a3_.name = ?)) dctrn_result_inner ORDER BY name_2 ASC) dctrn_result',
+            'SELECT b FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost b JOIN b.author a WHERE b IN (SELECT b2 FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost b2 JOIN b2.author a2 WHERE NOT EXISTS (SELECT 1 FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost b3 WHERE b3.author = a2 AND b3.id > b2.id) AND a2.name = :name) ORDER BY a.name ASC',
+        );
+    }
+
+    /**
      * This tests ordering by property that has the 'declared' field.
      */
     public function testLimitSubqueryOrderByFieldFromMappedSuperclass(): void

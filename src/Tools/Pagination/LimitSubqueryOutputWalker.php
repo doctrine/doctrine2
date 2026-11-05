@@ -571,8 +571,8 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
 
     public function walkSubSelect(Subselect $subselect): string
     {
-        $wasInSubSelect = $this->inSubSelect;
-		$this->inSubSelect = true;
+        $wasInSubSelect    = $this->inSubSelect;
+        $this->inSubSelect = true;
 
         $sql = parent::walkSubselect($subselect);
 
