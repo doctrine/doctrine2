@@ -2677,17 +2677,6 @@ parameters:
 			path: src/Tools/Event/GenerateSchemaTableEventArgs.php
 
 		-
-			message: '''
-				#^Call to deprecated method getName\(\) of class Doctrine\\DBAL\\Schema\\AbstractAsset\:
-				Use \{@see NamedObject\:\:getObjectName\(\)\} or \{@see OptionallyQualifiedName\:\:getObjectName\(\)\} instead\.
-				            In SQL context, convert the resulting \{@see Name\} to SQL using \{@see Name\:\:toSQL\(\)\}\. In other
-				            contexts, convert the resulting name to string using \{@see Name\:\:toString\(\)\}\.$#
-			'''
-			identifier: method.deprecated
-			count: 1
-			path: src/Tools/ExperimentalSchemaTool.php
-
-		-
 			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
@@ -2719,12 +2708,6 @@ parameters:
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherRelationsSql\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Tools/ExperimentalSchemaTool.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getAssetName\(\) has parameter \$asset with generic class Doctrine\\DBAL\\Schema\\AbstractAsset but does not specify its types\: N$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/ExperimentalSchemaTool.php

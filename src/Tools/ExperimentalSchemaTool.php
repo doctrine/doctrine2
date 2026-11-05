@@ -7,7 +7,6 @@ namespace Doctrine\ORM\Tools;
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\SQLServerPlatform;
-use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\ColumnEditor;
@@ -20,7 +19,6 @@ use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Index\IndexedColumn;
 use Doctrine\DBAL\Schema\Index\IndexType;
 use Doctrine\DBAL\Schema\IndexEditor;
-use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaConfig;
@@ -181,7 +179,8 @@ final class ExperimentalSchemaTool
         $blacklistedFks = [];
 
         foreach ($classes as $class) {
-            $columnNames = [];
+            $columnNames   = [];
+            $hasPrimaryKey = false;
             if ($this->processingNotRequired($class, $processedClasses)) {
                 continue;
             }
@@ -207,6 +206,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationsSql(
                     $class,
                     $table,
+                    $tableName,
                     $columnNames,
                     $schema,
                     $addedFks,
@@ -230,6 +230,7 @@ final class ExperimentalSchemaTool
                     $this->gatherRelationsSql(
                         $subClass,
                         $table,
+                        $tableName,
                         $columnNames,
                         $schema,
                         $addedFks,
@@ -252,6 +253,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationsSql(
                     $class,
                     $table,
+                    $tableName,
                     $columnNames,
                     $schema,
                     $addedFks,
@@ -322,7 +324,7 @@ final class ExperimentalSchemaTool
                     if ($inheritedKeyColumns !== []) {
                         // A FK collected on the same columns (e.g. for an inherited identifier association)
                         // would get the same generated name and replace the FK to the root table.
-                        unset($addedFks[$this->getAssetName($table) . '.' . implode('', $inheritedKeyColumns)]);
+                        unset($addedFks[self::getTableKey($tableName) . '.' . implode('', $inheritedKeyColumns)]);
 
                         // Add a FK constraint on the ID column
                         $this->addForeignKeyConstraint(
@@ -339,6 +341,7 @@ final class ExperimentalSchemaTool
 
                     if ($pkColumns !== []) {
                         self::addPrimaryKeyConstraint($table, $pkColumns);
+                        $hasPrimaryKey = true;
                     }
                 }
             } else {
@@ -348,6 +351,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationsSql(
                     $class,
                     $table,
+                    $tableName,
                     $columnNames,
                     $schema,
                     $addedFks,
@@ -359,7 +363,7 @@ final class ExperimentalSchemaTool
 
             $pkColumns = $this->getPrimaryKeyColumnNames($class);
 
-            if (! $table->create()->hasIndex('primary')) {
+            if (! $hasPrimaryKey) {
                 self::addPrimaryKeyConstraint($table, $pkColumns);
             }
 
@@ -419,23 +423,21 @@ final class ExperimentalSchemaTool
                 $schemaEditor->addTable($joinTable);
             }
 
-            $schema = $schemaEditor->create();
-
             if ($class->isIdGeneratorSequence() && $class->name === $class->rootEntityName) {
                 $seqDef     = $class->sequenceGeneratorDefinition;
                 $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
                 if (! $schema->hasSequence($quotedName)) {
-                    $schema = $schema->edit()
-                        ->addSequence(
-                            Sequence::editor()
-                                ->setName(NameParser::parseOptionallyQualifiedName($quotedName))
-                                ->setAllocationSize((int) $seqDef['allocationSize'])
-                                ->setInitialValue((int) $seqDef['initialValue'])
-                                ->create(),
-                        )
-                        ->create();
+                    $schemaEditor->addSequence(
+                        Sequence::editor()
+                            ->setName(NameParser::parseOptionallyQualifiedName($quotedName))
+                            ->setAllocationSize((int) $seqDef['allocationSize'])
+                            ->setInitialValue((int) $seqDef['initialValue'])
+                            ->create(),
+                    );
                 }
             }
+
+            $schema = $schemaEditor->create();
 
             $tableEventArgs = new GenerateSchemaTableEventArgs($class, $schema, $table);
             $eventManager->dispatchEvent(
@@ -462,6 +464,8 @@ final class ExperimentalSchemaTool
 
         // After all classes have been processed and all FK metadata collected,
         // apply the non-conflicting FK constraints to their respective tables
+        $schemaEditor = $schema->edit();
+
         foreach ($addedFks as $compositeName => $fkData) {
             // Skip if this composite key was blacklisted due to conflicts
             if (isset($blacklistedFks[$compositeName])) {
@@ -470,7 +474,7 @@ final class ExperimentalSchemaTool
 
             // the table might have been dropped by a listener, so we ignore this error
             if ($schema->hasTable($fkData['tableName'])) {
-                $schema = $schema->edit()->modifyTable(
+                $schemaEditor->modifyTable(
                     NameParser::parseOptionallyQualifiedName($fkData['tableName']),
                     static function (TableEditor $tableEditor) use ($fkData): void {
                         $tableEditor->addForeignKeyConstraint(new ForeignKeyConstraint(
@@ -481,9 +485,11 @@ final class ExperimentalSchemaTool
                             name: $fkData['name'] ?? '',
                         ));
                     },
-                )->create();
+                );
             }
         }
+
+        $schema = $schemaEditor->create();
 
         $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema);
         $eventManager->dispatchEvent(
@@ -930,6 +936,7 @@ final class ExperimentalSchemaTool
     private function gatherRelationsSql(
         ClassMetadata $class,
         TableEditor $table,
+        string $entityTableName,
         array &$columnNames,
         Schema &$schema,
         array &$addedFks,
@@ -950,6 +957,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationJoinColumns(
                     $mapping->joinColumns,
                     $table,
+                    $entityTableName,
                     $columnNames,
                     $foreignClass,
                     $mapping,
@@ -976,6 +984,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationJoinColumns(
                     $joinTable->joinColumns,
                     $theJoinTable,
+                    $tableName,
                     $joinColumnNames,
                     $class,
                     $mapping,
@@ -989,6 +998,7 @@ final class ExperimentalSchemaTool
                 $this->gatherRelationJoinColumns(
                     $joinTable->inverseJoinColumns,
                     $theJoinTable,
+                    $tableName,
                     $joinColumnNames,
                     $foreignClass,
                     $mapping,
@@ -1063,6 +1073,7 @@ final class ExperimentalSchemaTool
     private function gatherRelationJoinColumns(
         array $joinColumns,
         TableEditor $theJoinTable,
+        string $quotedTableName,
         array &$columnNames,
         ClassMetadata $class,
         AssociationMapping $mapping,
@@ -1182,7 +1193,7 @@ final class ExperimentalSchemaTool
         // Use parameter FK name (from JoinTable) if provided, otherwise use extracted from JoinColumns
         $finalForeignKeyName = $foreignKeyName ?? $extractedForeignKeyName;
 
-        $tableName     = $this->getAssetName($theJoinTable);
+        $tableName     = self::getTableKey($quotedTableName);
         $compositeName = $tableName . '.' . implode('', $localColumns);
 
         // Check if an FK constraint already exists for this composite key (table + columns)
@@ -1353,14 +1364,8 @@ final class ExperimentalSchemaTool
             && $existingIndex->getType() !== IndexType::SPATIAL;
     }
 
-    private function getAssetName(AbstractAsset|TableEditor $asset): string
+    private static function getTableKey(string $quotedTableName): string
     {
-        if ($asset instanceof TableEditor) {
-            return $this->getAssetName($asset->create());
-        }
-
-        return $asset instanceof NamedObject
-            ? $asset->getObjectName()->toString()
-            : $asset->getName();
+        return NameParser::parseOptionallyQualifiedName($quotedTableName)->toString();
     }
 }
