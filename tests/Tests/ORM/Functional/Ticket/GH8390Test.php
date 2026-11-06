@@ -8,7 +8,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Query;
 use Doctrine\Tests\OrmFunctionalTestCase;
