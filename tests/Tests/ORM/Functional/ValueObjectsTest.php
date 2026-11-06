@@ -219,6 +219,11 @@ class ValueObjectsTest extends OrmFunctionalTestCase
         self::assertTrue($uow->isUninitializedObject($person));
         self::assertTrue($uow->isUninitializedObject($person->address));
 
+        // Reading an embedded field through its property accessor does NOT trigger lazy init.
+        self::assertSame('Gosport', $this->_em->getClassMetadata(DDC93Person::class)->propertyAccessors['address.city']->getValue($person));
+        self::assertTrue($uow->isUninitializedObject($person));
+        self::assertTrue($uow->isUninitializedObject($person->address));
+
         // Accessing the pre-loaded field (city) does NOT trigger lazy init.
         self::assertEquals('Gosport', $person->address->city);
         self::assertTrue($uow->isUninitializedObject($person));
