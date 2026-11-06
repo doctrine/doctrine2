@@ -13,6 +13,7 @@ use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper;
 use Doctrine\Persistence\Mapping\ClassMetadataFactory;
 use Doctrine\Tests\Models\DDC3231\DDC3231EntityRepository;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -37,6 +38,7 @@ use const DIRECTORY_SEPARATOR;
 class GenerateRepositoriesCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     /** @var Application */
     private $application;
@@ -178,7 +180,7 @@ class GenerateRepositoriesCommandTest extends OrmFunctionalTestCase
             ]
         );
 
-        self::assertStringContainsString('Command orm:generate-repositories is deprecated and will be removed in Doctrine ORM 3.0.', $tester->getDisplay());
-        self::assertStringContainsString('[OK] No Metadata Classes to process.', $tester->getDisplay());
+        self::assertUnwrappedDisplayContainsString('Command orm:generate-repositories is deprecated and will be removed in Doctrine ORM 3.0.', $tester);
+        self::assertUnwrappedDisplayContainsString('[OK] No Metadata Classes to process.', $tester);
     }
 }

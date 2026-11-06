@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Tools\Console\Command\SchemaTool;
 
 use Doctrine\ORM\Tools\Console\Command\SchemaTool\UpdateCommand;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 
 class UpdateCommandTest extends CommandTestCase
 {
+    use CommandTesterAssertions;
+
     /** @doesNotPerformAssertions */
     public function testItPrintsTheSql(): void
     {
@@ -31,7 +34,7 @@ class UpdateCommandTest extends CommandTestCase
             ['capture_stderr_separately' => true]
         );
 
-        self::assertStringContainsString($expectedMessage, $tester->getErrorOutput());
+        self::assertUnwrappedErrorOutputContainsString($expectedMessage, $tester);
     }
 
     public static function getCasesForWarningMessageFromCompleteOption(): iterable

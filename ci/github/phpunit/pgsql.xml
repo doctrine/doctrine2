@@ -14,9 +14,6 @@
         <var name="db_user" value="postgres" />
         <var name="db_password" value="postgres" />
         <var name="db_dbname" value="doctrine_tests" />
-
-        <!-- necessary change for some CLI/console output test assertions -->
-        <env name="COLUMNS" value="120"/>
     </php>
 
     <testsuites>
