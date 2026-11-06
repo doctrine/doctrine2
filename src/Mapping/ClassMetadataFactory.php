@@ -23,6 +23,7 @@ use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
+use Doctrine\Persistence\Mapping\MappingException as PersistenceMappingException;
 use Doctrine\Persistence\Mapping\ReflectionService;
 use ReflectionClass;
 use ReflectionException;
@@ -49,9 +50,9 @@ use const PHP_VERSION_ID;
  * metadata mapping information of a class which describes how a class should be mapped
  * to a relational database.
  *
- * @extends AbstractClassMetadataFactory<ClassMetadata>
+ * @extends AbstractClassMetadataFactory<ClassMetadata<object>>
  */
-class ClassMetadataFactory extends AbstractClassMetadataFactory
+class ClassMetadataFactory extends AbstractClassMetadataFactory implements ClassMetadataFactoryInterface
 {
     private EntityManagerInterface|null $em       = null;
     private AbstractPlatform|null $targetPlatform = null;
@@ -60,6 +61,9 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
     /** @var mixed[] */
     private array $embeddablesActiveNesting = [];
+
+    /** @var array<class-string, bool> */
+    private array $mappedClasses = [];
 
     private const NON_IDENTITY_DEFAULT_STRATEGY = [
         Platforms\OraclePlatform::class => ClassMetadata::GENERATOR_TYPE_SEQUENCE,
@@ -72,6 +76,41 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
 
         $this->em = $em;
+    }
+
+    /**
+     * Whether this class is mapped by the ORM.
+     *
+     * In addition to non-transient classes (see {@see isTransient()}), this also includes
+     * embedded classes, which provide mapped fields as well.
+     *
+     * @param class-string $className
+     */
+    public function isMapped(string $className): bool
+    {
+        /*
+            With the current state of drivers, finding a reliable answer with regard to Embeddable classes would be to do a full,
+            expensive metadata loading attempt. So, try to shortcut this as much as possible by caching the result, referring to the
+            cache of already-loaded metadata and separating transient classes (a rather simple class attribute check in the best case)
+            before falling through to the load attempt as a last resort.
+        */
+
+        return $this->mappedClasses[$className]
+            ??= $this->hasMetadataFor($className)
+            || ! $this->isTransient($className)
+            || $this->canLoadMetadataFor($className);
+    }
+
+    /** @param class-string $className */
+    private function canLoadMetadataFor(string $className): bool
+    {
+        try {
+            $this->getMetadataFor($className);
+
+            return true;
+        } catch (PersistenceMappingException) {
+            return false;
+        }
     }
 
     /**

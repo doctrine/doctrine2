@@ -197,6 +197,21 @@ seen in an earlier row was yielded as an incomplete array without its own fields
 Subclasses of `ArrayHydrator` that override the deprecated `hydrateRowData()`
 keep the previous behavior.
 
+## New `Doctrine\ORM\Mapping\ClassMetadataFactoryInterface`
+
+`ClassMetadataFactory` now implements a new `ClassMetadataFactoryInterface`, the ORM-specific
+contract for a class metadata factory. `EntityManagerInterface::getMetadataFactory()` still
+declares a return type of the concrete `ClassMetadataFactory` class, but a future major version
+will widen it to `ClassMetadataFactoryInterface`. Code that calls `getMetadataFactory()` and
+type-hints the result can switch to `ClassMetadataFactoryInterface` now to prepare for that
+change.
+
+This also affects the (rare) case of custom persisters extending `AbstractEntityPersister` or
+`AbstractCollectionPersister`: their protected `$metadataFactory` property will widen to
+`ClassMetadataFactoryInterface` in a future major version. If you redeclare this property
+or pass its value on to other typed methods, you can switch to `ClassMetadataFactoryInterface`
+already now.
+
 # Upgrade to 3.7
 
 ## Deprecated `Doctrine\ORM\Mapping\JoinColumns` attribute

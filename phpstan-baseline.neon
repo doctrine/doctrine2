@@ -559,12 +559,6 @@ parameters:
 			path: src/EntityManager.php
 
 		-
-			message: '#^Parameter \#1 \$className of method Doctrine\\Persistence\\Mapping\\AbstractClassMetadataFactory\<Doctrine\\ORM\\Mapping\\ClassMetadata\>\:\:getMetadataFor\(\) expects class\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/EntityManager.php
-
-		-
 			message: '#^Property Doctrine\\ORM\\EntityManager\:\:\$metadataFactory \(Doctrine\\ORM\\Mapping\\ClassMetadataFactory\) does not accept object\.$#'
 			identifier: assign.propertyType
 			count: 1
@@ -1099,18 +1093,6 @@ parameters:
 			path: src/Mapping/ClassMetadataFactory.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:doLoadMetadata\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:doLoadMetadata\(\) has parameter \$parent with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:findAbstractEntityClassesNotListedInDiscriminatorMap\(\) has parameter \$rootEntityClass with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1129,30 +1111,6 @@ parameters:
 			path: src/Mapping/ClassMetadataFactory.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:initializeReflection\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:isEntity\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:newClassMetadataInstance\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:onNotFoundMetadata\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:validateRuntimeMetadata\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1160,12 +1118,6 @@ parameters:
 
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:validateRuntimeMetadata\(\) has parameter \$parent with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:wakeupReflection\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Mapping/ClassMetadataFactory.php
@@ -3116,12 +3068,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Utility/HierarchyDiscriminatorResolver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:__construct\(\) has parameter \$metadataFactory with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadataFactory but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Utility/IdentifierFlattener.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:flattenIdentifier\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'

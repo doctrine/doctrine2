@@ -3348,7 +3348,7 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            if (! $this->isMappedClass($obj::class)) {
+            if (! $this->em->getMetadataFactory()->isMapped($obj::class)) {
                 return;
             }
 
@@ -3361,7 +3361,7 @@ class UnitOfWork implements PropertyChangedListener
     public function isUninitializedObject(mixed $obj): bool
     {
         if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled() && ! ($obj instanceof Collection) && is_object($obj)) {
-            if (! $this->isMappedClass($obj::class)) {
+            if (! $this->em->getMetadataFactory()->isMapped($obj::class)) {
                 return false;
             }
 
@@ -3455,22 +3455,6 @@ class UnitOfWork implements PropertyChangedListener
     private function dispatchPostFlushEvent(): void
     {
         $this->eventDispatcher->dispatchEvent(Events::postFlush, new PostFlushEventArgs($this->em));
-    }
-
-    /**
-     * Whether this entity manager has, or can load, metadata for the class.
-     *
-     * isTransient() alone is not enough: by contract it is only false for entities and mapped
-     * superclasses, while embeddables also have metadata and can be lazy ghosts. Checking the
-     * already loaded metadata first covers those and keeps the common case an array lookup.
-     *
-     * @phpstan-param class-string $className
-     */
-    private function isMappedClass(string $className): bool
-    {
-        $metadataFactory = $this->em->getMetadataFactory();
-
-        return $metadataFactory->hasMetadataFor($className) || ! $metadataFactory->isTransient($className);
     }
 
     /**
