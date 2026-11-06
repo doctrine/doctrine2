@@ -44,13 +44,9 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "7.2"
-          - "7.3"
           - "7.4"
           - "8.0"
           - "8.1"
-          - "8.2"
-          - "8.3"
           - "8.4"
           - "8.5"
           - "8.6"
@@ -64,10 +60,10 @@ jobs:
           - php-version: "8.0"
             dbal-version: "2.13"
             extension: "pdo_sqlite"
-          - php-version: "8.2"
+          - php-version: "8.5"
             dbal-version: "3@dev"
             extension: "pdo_sqlite"
-          - php-version: "8.2"
+          - php-version: "8.5"
             dbal-version: "default"
             extension: "sqlite3"
           - php-version: "8.1"
@@ -131,25 +127,24 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.2"
-          - "8.3"
-          - "8.4"
           - "8.5"
-          - "8.6"
         dbal-version:
           - "default"
-          - "3@dev"
         postgres-version:
           - "17"
         extension:
           - pdo_pgsql
           - pgsql
         include:
+          - php-version: "8.5"
+            dbal-version: "3@dev"
+            postgres-version: "17"
+            extension: pdo_pgsql
           - php-version: "8.0"
             dbal-version: "2.13"
             postgres-version: "14"
             extension: pdo_pgsql
-          - php-version: "8.2"
+          - php-version: "8.5"
             dbal-version: "default"
             postgres-version: "9.6"
             extension: pdo_pgsql
@@ -190,7 +185,7 @@ jobs:
           composer-options: "--ignore-platform-req=php+"
 
       - name: "Run PHPUnit"
-        run: "vendor/bin/phpunit -c ci/github/phpunit/pdo_pgsql.xml --coverage-clover=coverage.xml"
+        run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage.xml"
 
       - name: "Upload coverage file"
         uses: "actions/upload-artifact@v7"
@@ -213,20 +208,19 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.2"
-          - "8.3"
-          - "8.4"
           - "8.5"
-          - "8.6"
         dbal-version:
           - "default"
-          - "3@dev"
         mariadb-version:
           - "11.4"
         extension:
           - "mysqli"
           - "pdo_mysql"
         include:
+          - php-version: "8.5"
+            dbal-version: "3@dev"
+            mariadb-version: "11.4"
+            extension: "pdo_mysql"
           - php-version: "8.0"
             dbal-version: "2.13"
             mariadb-version: "10.6"
@@ -292,21 +286,23 @@ jobs:
     strategy:
       matrix:
         php-version:
-          - "8.2"
-          - "8.3"
-          - "8.4"
           - "8.5"
-          - "8.6"
         dbal-version:
           - "default"
-          - "3@dev"
         mysql-version:
           - "5.7"
           - "8.0"
         extension:
-          - "mysqli"
           - "pdo_mysql"
         include:
+          - php-version: "8.5"
+            dbal-version: "default"
+            mysql-version: "8.0"
+            extension: "mysqli"
+          - php-version: "8.5"
+            dbal-version: "3@dev"
+            mysql-version: "8.0"
+            extension: "pdo_mysql"
           - php-version: "8.0"
             dbal-version: "2.13"
             mysql-version: "8.0"
@@ -351,11 +347,6 @@ jobs:
         run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage-no-cache.xml"
         env:
             ENABLE_SECOND_LEVEL_CACHE: 0
-
-      - name: "Run PHPUnit with Second Level Cache"
-        run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --exclude-group performance,non-cacheable,locking_functional --coverage-clover=coverage-no-cache.xml"
-        env:
-            ENABLE_SECOND_LEVEL_CACHE: 1
 
       - name: "Upload coverage files"
         uses: "actions/upload-artifact@v7"
