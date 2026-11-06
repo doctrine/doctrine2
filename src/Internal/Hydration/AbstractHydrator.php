@@ -142,9 +142,9 @@ abstract class AbstractHydrator
     private array|null $rowMapping = null;
 
     /**
-     * Per hydrator class and deprecated by-reference method, the class outside of the ORM that overrides it.
+     * Per hydrator class and row method, the class outside of the ORM that overrides it.
      *
-     * @var array<class-string, array{hydrateRowData: class-string|null, gatherRowData: class-string|null, gatherScalarRowData: class-string|null}>
+     * @var array<class-string, array{hydrateRowData: class-string|null, gatherRow: class-string|null, gatherRowData: class-string|null, gatherScalarRowData: class-string|null}>
      */
     private static array $legacyOverrides = [];
 
@@ -153,6 +153,8 @@ abstract class AbstractHydrator
     private bool $legacyGatherRowData = false;
 
     private bool $legacyGatherScalarRowData = false;
+
+    private bool $customGatherRow = false;
 
     /**
      * Initializes a new instance of a class derived from <tt>AbstractHydrator</tt>.
@@ -225,15 +227,16 @@ abstract class AbstractHydrator
     }
 
     /**
-     * Detects the deprecated by-reference methods that this hydrator overrides outside of the ORM,
+     * Detects the row methods that this hydrator overrides outside of the ORM,
      * so that they are still called during hydration.
      */
     private function detectLegacyOverrides(): void
     {
         self::$legacyOverrides[static::class] ??= [
-            'hydrateRowData' => $this->findLegacyOverride('hydrateRowData'),
-            'gatherRowData' => $this->findLegacyOverride('gatherRowData'),
-            'gatherScalarRowData' => $this->findLegacyOverride('gatherScalarRowData'),
+            'hydrateRowData' => $this->findOverride('hydrateRowData'),
+            'gatherRow' => $this->findOverride('gatherRow'),
+            'gatherRowData' => $this->findOverride('gatherRowData'),
+            'gatherScalarRowData' => $this->findOverride('gatherScalarRowData'),
         ];
 
         $overrides = self::$legacyOverrides[static::class];
@@ -241,6 +244,7 @@ abstract class AbstractHydrator
         $this->legacyHydrateRowData      = $overrides['hydrateRowData'] !== null;
         $this->legacyGatherRowData       = $overrides['gatherRowData'] !== null;
         $this->legacyGatherScalarRowData = $overrides['gatherScalarRowData'] !== null;
+        $this->customGatherRow           = $this->legacyGatherRowData || $overrides['gatherRow'] !== null;
 
         foreach (['hydrateRowData' => 'hydrateRow', 'gatherRowData' => 'gatherRow', 'gatherScalarRowData' => 'gatherScalarRow'] as $method => $replacement) {
             if ($overrides[$method] === null) {
@@ -260,7 +264,7 @@ abstract class AbstractHydrator
     }
 
     /** @return class-string|null The class outside of the ORM that overrides the method. */
-    private function findLegacyOverride(string $method): string|null
+    private function findOverride(string $method): string|null
     {
         $declaringClass = (new ReflectionMethod($this, $method))->getDeclaringClass()->name;
 
@@ -619,6 +623,9 @@ abstract class AbstractHydrator
      * Processes a row of the result set like {@see gatherRow()}, but leaves the entity data
      * of each DQL alias as null, to be gathered on demand with {@see gatherEntityRowData()}.
      *
+     * Hydrators that override {@see gatherRow()} or {@see gatherRowData()} expect the entity data
+     * in these methods, so it is gathered eagerly for them.
+     *
      * @internal
      *
      * @param mixed[] $data SQL Result Row.
@@ -636,6 +643,10 @@ abstract class AbstractHydrator
      */
     final protected function gatherRowWithLazyEntityData(array $data): array
     {
+        if ($this->customGatherRow) {
+            return $this->gatherRow($data);
+        }
+
         return $this->doGatherRow($data, true);
     }
 

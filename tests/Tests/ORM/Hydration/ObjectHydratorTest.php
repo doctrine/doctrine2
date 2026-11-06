@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
 
 use function count;
 use function property_exists;
+use function strtoupper;
 use function sys_get_temp_dir;
 
 class ObjectHydratorTest extends HydrationTestCase
@@ -134,6 +135,66 @@ class ObjectHydratorTest extends HydrationTestCase
         self::assertCount(2, $result);
         self::assertSame(['romanb', 'jwage'], [$result[0]->name, $result[1]->name]);
         self::assertSame([1, 2], $hydrator->resultCountAfterRow);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}, PARTIAL p.{phonenumber}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    public function testGatherRowOverrideChangesHydratedEntities(): void
+    {
+        $hydrator = new GatherRowObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll(
+            $this->createResultMock($this->createUserPhonenumberResultSet()),
+            $this->createUserPhonenumberResultSetMapping(),
+        );
+
+        self::assertCount(1, $result);
+        self::assertSame('ROMANB', $result[0]->name);
+        self::assertCount(2, $result[0]->phonenumbers);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}, PARTIAL p.{phonenumber}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    #[IgnoreDeprecations]
+    public function testLegacyGatherRowDataOverrideChangesHydratedEntities(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12728');
+
+        $hydrator = new LegacyGatherRowDataObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll(
+            $this->createResultMock($this->createUserPhonenumberResultSet()),
+            $this->createUserPhonenumberResultSetMapping(),
+        );
+
+        self::assertCount(1, $result);
+        self::assertSame('ROMANB', $result[0]->name);
+        self::assertCount(2, $result[0]->phonenumbers);
+    }
+
+    /** @return list<array<string, string>> */
+    private function createUserPhonenumberResultSet(): array
+    {
+        return [
+            ['u__id' => '1', 'u__name' => 'romanb', 'p__phonenumber' => '42'],
+            ['u__id' => '1', 'u__name' => 'romanb', 'p__phonenumber' => '43'],
+        ];
+    }
+
+    private function createUserPhonenumberResultSetMapping(): ResultSetMapping
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+        $rsm->addFieldResult('p', 'p__phonenumber', 'phonenumber');
+
+        return $rsm;
     }
 
     /**
@@ -2130,5 +2191,47 @@ class LegacyHydrateRowDataObjectHydrator extends ObjectHydrator
         parent::hydrateRowData($row, $result);
 
         $this->resultCountAfterRow[] = count($result);
+    }
+}
+
+/**
+ * Overrides the method that gathers the row data to change it.
+ */
+class GatherRowObjectHydrator extends ObjectHydrator
+{
+    /**
+     * @param mixed[] $data
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function gatherRow(array $data): array
+    {
+        $rowData = parent::gatherRow($data);
+
+        $rowData['data']['u']['name'] = strtoupper($rowData['data']['u']['name']);
+
+        return $rowData;
+    }
+}
+
+/**
+ * Overrides the deprecated by-reference method to change the gathered data.
+ */
+class LegacyGatherRowDataObjectHydrator extends ObjectHydrator
+{
+    /**
+     * @param mixed[]               $data
+     * @param array<string, string> $id
+     * @param array<string, bool>   $nonemptyComponents
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function gatherRowData(array $data, array &$id, array &$nonemptyComponents): array
+    {
+        $rowData = parent::gatherRowData($data, $id, $nonemptyComponents);
+
+        $rowData['data']['u']['name'] = strtoupper($rowData['data']['u']['name']);
+
+        return $rowData;
     }
 }
