@@ -498,16 +498,6 @@ abstract class SuperclassBase
     public $id;
 }
 
-#[MappedSuperclass]
-abstract class MediumSuperclassBase extends SuperclassBase
-{
-}
-
-#[Entity]
-class MediumSuperclassEntity extends MediumSuperclassBase
-{
-}
-
 #[Entity(repositoryClass: 'Doctrine\ORM\EntityRepository')]
 class SubclassWithRepository extends DDC869Payment
 {

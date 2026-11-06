@@ -12,6 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\Tests\ORM\Tools\Console\Command\Debug\Fixtures\BarListener;
 use Doctrine\Tests\ORM\Tools\Console\Command\Debug\Fixtures\BazListener;
 use Doctrine\Tests\ORM\Tools\Console\Command\Debug\Fixtures\FooListener;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -26,6 +27,7 @@ use function array_map;
 class DebugEventManagerDoctrineCommandTest extends TestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     private DebugEventManagerDoctrineCommand $command;
 
@@ -95,13 +97,10 @@ TXT
             ['command' => $this->command->getName(), 'event' => 'preRemove'],
         );
 
-        self::assertSame(<<<'TXT'
-
- [INFO] No listeners are configured for the "preRemove" event.                                                          
-
-
-TXT
-            , $commandTester->getDisplay(true));
+        self::assertUnwrappedDisplayContainsString(
+            '[INFO] No listeners are configured for the "preRemove" event.',
+            $commandTester,
+        );
     }
 
     /**

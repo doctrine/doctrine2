@@ -163,9 +163,7 @@
         <exclude-pattern>src/Tools/Pagination/PaginatorInterface.php</exclude-pattern>
     </rule>
 
-    <rule ref="SlevomatCodingStandard.Classes.SuperfluousTraitNaming.SuperfluousSuffix">
-        <exclude-pattern>tests/Tests/Models/DDC1872/DDC1872ExampleTrait.php</exclude-pattern>
-    </rule>
+    <rule ref="SlevomatCodingStandard.Classes.SuperfluousTraitNaming.SuperfluousSuffix"/>
 
     <rule name="SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingAnyTypeHint">
         <exclude-pattern>*/tests/*</exclude-pattern>
@@ -186,8 +184,6 @@
     <!-- intentionally without namespace -->
     <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
         <exclude-pattern>tests/Tests/Models/Global/GlobalNamespaceModel.php</exclude-pattern>
-        <exclude-pattern>tests/Tests/Models/DDC3231/DDC3231User1NoNamespace.php</exclude-pattern>
-        <exclude-pattern>tests/Tests/Models/DDC3231/DDC3231User2NoNamespace.php</exclude-pattern>
     </rule>
 
     <!-- file with multiple namespaces confuses the sniff -->
@@ -232,9 +228,7 @@
         <exclude-pattern>src/Query/AST/Node.php</exclude-pattern>
     </rule>
 
-    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.NoAssignment">
-        <exclude-pattern>tests/Tests/ORM/Mapping/php/Doctrine.Tests*</exclude-pattern>
-    </rule>
+    <rule ref="SlevomatCodingStandard.Commenting.InlineDocCommentDeclaration.NoAssignment"/>
 
     <rule ref="PSR2.Methods.MethodDeclaration.Underscore">
         <exclude-pattern>src/AbstractQuery.php</exclude-pattern>
@@ -246,7 +240,6 @@
         <exclude-pattern>src/Tools/Export/Driver/PhpExporter.php</exclude-pattern>
         <!-- extending a class from another package -->
         <exclude-pattern>tests/Tests/Mocks/DatabasePlatformMock.php</exclude-pattern>
-        <exclude-pattern>tests/Tests/Mocks/SchemaManagerMock.php</exclude-pattern>
         <exclude-pattern>tests/Tests/ORM/AbstractQueryTest.php</exclude-pattern>
         <exclude-pattern>tests/Tests/ORM/Functional/Ticket/DDC3634Test.php</exclude-pattern>
     </rule>

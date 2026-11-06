@@ -41,7 +41,6 @@ use PHPUnit\Framework\MockObject\Stub;
 use stdClass;
 
 use function enum_exists;
-use function random_int;
 use function uniqid;
 
 /**
@@ -754,23 +753,6 @@ class EntityWithCompositeStringIdentifier
     #[Id]
     #[Column(type: 'string', length: 255)]
     public string|null $id2 = null;
-}
-
-#[Entity]
-class EntityWithRandomlyGeneratedField
-{
-    #[Id]
-    #[Column(type: 'string', length: 255)]
-    public string $id;
-
-    #[Column(type: 'integer')]
-    public int $generatedField;
-
-    public function __construct()
-    {
-        $this->id             = uniqid('id', true);
-        $this->generatedField = random_int(0, 100000);
-    }
 }
 
 #[Entity]

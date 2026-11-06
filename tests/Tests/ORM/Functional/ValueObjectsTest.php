@@ -452,30 +452,6 @@ class DDC93Address
 }
 
 #[Entity]
-class DDC93Customer
-{
-    #[Id]
-    #[GeneratedValue]
-    #[Column(type: 'integer')]
-    private int $id;
-
-    #[Embedded(class: 'DDC93ContactInfo', columnPrefix: 'contact_info_')]
-    private DDC93ContactInfo $contactInfo;
-}
-
-#[Embeddable]
-class DDC93ContactInfo
-{
-    /** @var string */
-    #[Column(type: 'string', length: 255)]
-    public $email;
-
-    /** @var DDC93Address */
-    #[Embedded(class: 'DDC93Address')]
-    public $address;
-}
-
-#[Entity]
 class DDC3028PersonWithPrefix
 {
     public function __construct(

@@ -8,6 +8,7 @@ use Doctrine\ORM\Tools\Console\ApplicationCompatibility;
 use Doctrine\ORM\Tools\Console\Command\RunDqlCommand;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 use Doctrine\Tests\Models\Generic\DateTimeModel;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Application;
@@ -22,6 +23,7 @@ use function trim;
 class RunDqlCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     private Application $application;
 
@@ -63,7 +65,7 @@ class RunDqlCommandTest extends OrmFunctionalTestCase
             ),
         );
 
-        self::assertStringContainsString(DateTimeModel::class, $this->tester->getDisplay());
+        self::assertUnwrappedDisplayContainsString(DateTimeModel::class, $this->tester);
     }
 
     public function testWillShowQuery(): void

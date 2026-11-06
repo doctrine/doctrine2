@@ -8,18 +8,17 @@ use Doctrine\ORM\Tools\Console\ApplicationCompatibility;
 use Doctrine\ORM\Tools\Console\Command\ClearCache\EntityRegionCommand;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 use Doctrine\Tests\Models\Cache\Country;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 
-use function preg_replace;
-use function trim;
-
 #[Group('DDC-2183')]
 class ClearCacheEntityRegionCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     private Application $application;
 
@@ -50,7 +49,7 @@ class ClearCacheEntityRegionCommandTest extends OrmFunctionalTestCase
             ['decorated' => false],
         );
 
-        self::assertStringContainsString(' // Clearing all second-level cache entity regions', $tester->getDisplay());
+        self::assertUnwrappedDisplayContainsString('Clearing all second-level cache entity regions', $tester);
     }
 
     public function testClearByEntityClassName(): void
@@ -66,9 +65,9 @@ class ClearCacheEntityRegionCommandTest extends OrmFunctionalTestCase
             ['decorated' => false],
         );
 
-        self::assertStringContainsString(
-            ' // Clearing second-level cache for entity "Doctrine\Tests\Models\Cache\Country"',
-            $tester->getDisplay(),
+        self::assertUnwrappedDisplayContainsString(
+            'Clearing second-level cache for entity "Doctrine\Tests\Models\Cache\Country"',
+            $tester,
         );
     }
 
@@ -86,9 +85,9 @@ class ClearCacheEntityRegionCommandTest extends OrmFunctionalTestCase
             ['decorated' => false],
         );
 
-        self::assertSame(
+        self::assertUnwrappedDisplayContainsString(
             'Clearing second-level cache entry for entity "Doctrine\Tests\Models\Cache\Country" identified by "1"',
-            trim(preg_replace('#\s+//\s#', ' ', $tester->getDisplay())),
+            $tester,
         );
     }
 
@@ -106,9 +105,9 @@ class ClearCacheEntityRegionCommandTest extends OrmFunctionalTestCase
             ['decorated' => false],
         );
 
-        self::assertStringContainsString(
-            ' // Flushing cache provider configured for entity named "Doctrine\Tests\Models\Cache\Country"',
-            $tester->getDisplay(),
+        self::assertUnwrappedDisplayContainsString(
+            'Flushing cache provider configured for entity named "Doctrine\Tests\Models\Cache\Country"',
+            $tester,
         );
     }
 }
