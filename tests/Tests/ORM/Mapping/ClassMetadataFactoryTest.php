@@ -15,6 +15,7 @@ use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Id\AbstractIdGenerator;
+use Doctrine\ORM\Mapping\AbstractClassMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Column;
@@ -426,7 +427,7 @@ class ClassMetadataFactoryTest extends OrmTestCase
         $classMetadataFactory->setEntityManager($entityManager);
 
         // not really the cleanest way to check it, but we won't add a getter to the CMF just for the sake of testing.
-        $class    = new ReflectionClass(ClassMetadataFactory::class);
+        $class    = new ReflectionClass(AbstractClassMetadataFactory::class);
         $property = $class->getProperty('em');
         self::assertSame($entityManager, $property->getValue($classMetadataFactory));
     }
