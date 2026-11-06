@@ -28,10 +28,16 @@ jobs:
     name: "Label pull request"
     runs-on: "ubuntu-latest"
 
+    permissions:
+      contents: "read"
+      issues: "write"
+      pull-requests: "write"
+
     steps:
       - name: "Suggest and apply labels"
-        uses: "paulinevos/label-classifier@v1"
+        uses: "doctrine/.github/.github/workflows/label-pull-request.yml@494b9666ddb6ff811f235009239fd299f5356742"
         with:
           number: "${{ inputs.number }}"
-        env:
+          endpoint: "https://opencode.ai/inference/systemone/v1/systemone"
+        secrets:
           JEV_API_KEY: "${{ secrets.JEV_API_KEY }}"
