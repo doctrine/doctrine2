@@ -24,6 +24,7 @@ use ReflectionClass;
 use ReflectionEnum;
 use ReflectionMethod;
 
+use function array_flip;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
@@ -41,6 +42,12 @@ use function str_starts_with;
  * Base class for all hydrators. A hydrator is a class that provides some form
  * of transformation of an SQL result set into another structure.
  *
+ * @phpstan-type RowMapping = array{
+ *     identifiers: array<array-key, array<string, mixed>>,
+ *     entities: array<string, array<array-key, array<string, mixed>>>,
+ *     scalars: array<array-key, array<string, mixed>>,
+ *     newObjects: array<array-key, array<string, mixed>>
+ * }
  * @phpstan-consistent-constructor
  */
 abstract class AbstractHydrator
@@ -128,9 +135,16 @@ abstract class AbstractHydrator
     protected bool $iterating = false;
 
     /**
-     * Per hydrator class and deprecated by-reference method, the class outside of the ORM that overrides it.
+     * Columns of the current result grouped by how they are hydrated, computed once from the first row.
      *
-     * @var array<class-string, array{hydrateRowData: class-string|null, gatherRowData: class-string|null, gatherScalarRowData: class-string|null}>
+     * @var RowMapping|null
+     */
+    private array|null $rowMapping = null;
+
+    /**
+     * Per hydrator class and row method, the class outside of the ORM that overrides it.
+     *
+     * @var array<class-string, array{hydrateRowData: class-string|null, gatherRow: class-string|null, gatherRowData: class-string|null, gatherScalarRowData: class-string|null}>
      */
     private static array $legacyOverrides = [];
 
@@ -139,6 +153,8 @@ abstract class AbstractHydrator
     private bool $legacyGatherRowData = false;
 
     private bool $legacyGatherScalarRowData = false;
+
+    private bool $customGatherRow = false;
 
     /**
      * Initializes a new instance of a class derived from <tt>AbstractHydrator</tt>.
@@ -211,15 +227,16 @@ abstract class AbstractHydrator
     }
 
     /**
-     * Detects the deprecated by-reference methods that this hydrator overrides outside of the ORM,
+     * Detects the row methods that this hydrator overrides outside of the ORM,
      * so that they are still called during hydration.
      */
     private function detectLegacyOverrides(): void
     {
         self::$legacyOverrides[static::class] ??= [
-            'hydrateRowData' => $this->findLegacyOverride('hydrateRowData'),
-            'gatherRowData' => $this->findLegacyOverride('gatherRowData'),
-            'gatherScalarRowData' => $this->findLegacyOverride('gatherScalarRowData'),
+            'hydrateRowData' => $this->findOverride('hydrateRowData'),
+            'gatherRow' => $this->findOverride('gatherRow'),
+            'gatherRowData' => $this->findOverride('gatherRowData'),
+            'gatherScalarRowData' => $this->findOverride('gatherScalarRowData'),
         ];
 
         $overrides = self::$legacyOverrides[static::class];
@@ -227,6 +244,7 @@ abstract class AbstractHydrator
         $this->legacyHydrateRowData      = $overrides['hydrateRowData'] !== null;
         $this->legacyGatherRowData       = $overrides['gatherRowData'] !== null;
         $this->legacyGatherScalarRowData = $overrides['gatherScalarRowData'] !== null;
+        $this->customGatherRow           = $this->legacyGatherRowData || $overrides['gatherRow'] !== null;
 
         foreach (['hydrateRowData' => 'hydrateRow', 'gatherRowData' => 'gatherRow', 'gatherScalarRowData' => 'gatherScalarRow'] as $method => $replacement) {
             if ($overrides[$method] === null) {
@@ -246,7 +264,7 @@ abstract class AbstractHydrator
     }
 
     /** @return class-string|null The class outside of the ORM that overrides the method. */
-    private function findLegacyOverride(string $method): string|null
+    private function findOverride(string $method): string|null
     {
         $declaringClass = (new ReflectionMethod($this, $method))->getDeclaringClass()->name;
 
@@ -329,6 +347,7 @@ abstract class AbstractHydrator
         $this->gatheredRowId              = [];
         $this->gatheredNonemptyComponents = [];
         $this->iterating                  = false;
+        $this->rowMapping                 = null;
 
         $this
             ->em
@@ -521,11 +540,11 @@ abstract class AbstractHydrator
      *                   scalars?: array
      *               }
      */
-    private function doGatherRow(array $data): array
+    private function doGatherRow(array $data, bool $lazyEntityData = false): array
     {
-        $rowData            = ['data' => [], 'newObjects' => []];
-        $id                 = $this->rowIdTemplate;
-        $nonemptyComponents = [];
+        $this->rowMapping ??= $this->buildRowMapping($data);
+
+        $rowData = ['data' => [], 'newObjects' => []];
 
         foreach ($this->rsm->newObjectMappings as $mapping) {
             if (! array_key_exists($mapping['objIndex'], $this->rsm->newObject)) {
@@ -538,76 +557,30 @@ abstract class AbstractHydrator
             $rowData['newObjects'][$objIndex]['args']  = [];
         }
 
-        foreach ($data as $key => $value) {
-            $cacheKeyInfo = $this->hydrateColumnInfo($key);
-            if ($cacheKeyInfo === null) {
-                continue;
+        $this->gatherRowIdentifiers($data);
+
+        foreach ($this->rowMapping['newObjects'] as $column => $cacheKeyInfo) {
+            $value = $cacheKeyInfo['type']->convertToPHPValue($data[$column], $this->platform);
+
+            if ($value !== null && isset($cacheKeyInfo['enumType'])) {
+                $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
             }
 
-            $fieldName = $cacheKeyInfo['fieldName'];
+            $rowData['newObjects'][$cacheKeyInfo['objIndex']]['args'][$cacheKeyInfo['argIndex']] = $value;
+        }
 
-            switch (true) {
-                case isset($cacheKeyInfo['isNewObjectParameter']):
-                    $argIndex = $cacheKeyInfo['argIndex'];
-                    $objIndex = $cacheKeyInfo['objIndex'];
-                    $type     = $cacheKeyInfo['type'];
-                    $value    = $type->convertToPHPValue($value, $this->platform);
+        foreach ($this->rowMapping['scalars'] as $column => $cacheKeyInfo) {
+            $value = $cacheKeyInfo['type']->convertToPHPValue($data[$column], $this->platform);
 
-                    if ($value !== null && isset($cacheKeyInfo['enumType'])) {
-                        $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
-                    }
-
-                    $rowData['newObjects'][$objIndex]['args'][$argIndex] = $value;
-                    break;
-
-                case isset($cacheKeyInfo['isScalar']):
-                    $type  = $cacheKeyInfo['type'];
-                    $value = $type->convertToPHPValue($value, $this->platform);
-
-                    if ($value !== null && isset($cacheKeyInfo['enumType'])) {
-                        $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
-                    }
-
-                    $rowData['scalars'][$fieldName] = $value;
-
-                    break;
-
-                //case (isset($cacheKeyInfo['isMetaColumn'])):
-                default:
-                    $dqlAlias = $cacheKeyInfo['dqlAlias'];
-                    $type     = $cacheKeyInfo['type'];
-
-                    // If there are field name collisions in the child class, then we need
-                    // to only hydrate if we are looking at the correct discriminator value
-                    if (
-                        isset($cacheKeyInfo['discriminatorColumn'], $data[$cacheKeyInfo['discriminatorColumn']])
-                        && ! in_array((string) $data[$cacheKeyInfo['discriminatorColumn']], $cacheKeyInfo['discriminatorValues'], true)
-                    ) {
-                        break;
-                    }
-
-                    // in an inheritance hierarchy the same field could be defined several times.
-                    // We overwrite this value so long we don't have a non-null value, that value we keep.
-                    // Per definition it cannot be that a field is defined several times and has several values.
-                    if (isset($rowData['data'][$dqlAlias][$fieldName])) {
-                        break;
-                    }
-
-                    $rowData['data'][$dqlAlias][$fieldName] = $type
-                        ? $type->convertToPHPValue($value, $this->platform)
-                        : $value;
-
-                    if ($rowData['data'][$dqlAlias][$fieldName] !== null && isset($cacheKeyInfo['enumType'])) {
-                        $rowData['data'][$dqlAlias][$fieldName] = $this->buildEnum($rowData['data'][$dqlAlias][$fieldName], $cacheKeyInfo['enumType']);
-                    }
-
-                    if ($cacheKeyInfo['isIdentifier'] && $value !== null) {
-                        $id[$dqlAlias]                .= '|' . $value;
-                        $nonemptyComponents[$dqlAlias] = true;
-                    }
-
-                    break;
+            if ($value !== null && isset($cacheKeyInfo['enumType'])) {
+                $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
             }
+
+            $rowData['scalars'][$cacheKeyInfo['fieldName']] = $value;
+        }
+
+        foreach ($this->rowMapping['entities'] as $dqlAlias => $columns) {
+            $rowData['data'][$dqlAlias] = $lazyEntityData ? null : $this->gatherEntityRowData($data, $dqlAlias);
         }
 
         $nestedEntities = [];
@@ -620,7 +593,10 @@ abstract class AbstractHydrator
             } elseif (array_key_exists($argAlias, $rowData['data'])) {
                 if (! array_key_exists($argAlias, $nestedEntities)) {
                     $nestedEntities[$argAlias]  = '';
-                    $rowData['data'][$argAlias] = $this->hydrateNestedEntity($rowData['data'][$argAlias], $argAlias);
+                    $rowData['data'][$argAlias] = $this->hydrateNestedEntity(
+                        $rowData['data'][$argAlias] ?? $this->gatherEntityRowData($data, $argAlias),
+                        $argAlias,
+                    );
                 }
 
                 $rowData['newObjects'][$ownerIndex]['args'][$argIndex] = $rowData['data'][$argAlias];
@@ -640,10 +616,152 @@ abstract class AbstractHydrator
             $rowData['newObjects'][$objIndex]['obj'] = $obj;
         }
 
+        return $rowData;
+    }
+
+    /**
+     * Processes a row of the result set like {@see gatherRow()}, but leaves the entity data
+     * of each DQL alias as null, to be gathered on demand with {@see gatherEntityRowData()}.
+     *
+     * Hydrators that override {@see gatherRow()} or {@see gatherRowData()} expect the entity data
+     * in these methods, so it is gathered eagerly for them.
+     *
+     * @internal
+     *
+     * @param mixed[] $data SQL Result Row.
+     *
+     * @return array<string, array<array-key, mixed>>
+     * @phpstan-return array{
+     *                   data: array<array-key, array<string, mixed>|null>,
+     *                   newObjects?: array<array-key, array{
+     *                       class: ReflectionClass<object>,
+     *                       args: array<array-key, mixed>,
+     *                       obj: object
+     *                   }>,
+     *                   scalars?: array<string, mixed>
+     *               }
+     */
+    final protected function gatherRowWithLazyEntityData(array $data): array
+    {
+        if ($this->customGatherRow) {
+            return $this->gatherRow($data);
+        }
+
+        return $this->doGatherRow($data, true);
+    }
+
+    /**
+     * Gathers the fields (name => value) of the given DQL alias from a row of the result set.
+     *
+     * @internal
+     *
+     * @param mixed[] $data SQL Result Row.
+     *
+     * @return array<string, mixed>
+     */
+    final protected function gatherEntityRowData(array $data, string $dqlAlias): array
+    {
+        $entityData = [];
+
+        foreach ($this->rowMapping['entities'][$dqlAlias] as $column => $cacheKeyInfo) {
+            $fieldName = $cacheKeyInfo['fieldName'];
+
+            // If there are field name collisions in the child class, then we need
+            // to only hydrate if we are looking at the correct discriminator value
+            if (
+                isset($cacheKeyInfo['discriminatorColumn'], $data[$cacheKeyInfo['discriminatorColumn']])
+                && ! isset($cacheKeyInfo['discriminatorValueMap'][(string) $data[$cacheKeyInfo['discriminatorColumn']]])
+            ) {
+                continue;
+            }
+
+            // in an inheritance hierarchy the same field could be defined several times.
+            // We overwrite this value so long we don't have a non-null value, that value we keep.
+            // Per definition it cannot be that a field is defined several times and has several values.
+            if (isset($entityData[$fieldName])) {
+                continue;
+            }
+
+            $type  = $cacheKeyInfo['type'];
+            $value = $type
+                ? $type->convertToPHPValue($data[$column], $this->platform)
+                : $data[$column];
+
+            if ($value !== null && isset($cacheKeyInfo['enumType'])) {
+                $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
+            }
+
+            $entityData[$fieldName] = $value;
+        }
+
+        return $entityData;
+    }
+
+    /**
+     * Stores the identifier hashes of the row in {@see $gatheredRowId} and the DQL aliases
+     * with at least one non NULL identifier value in {@see $gatheredNonemptyComponents}.
+     *
+     * @param mixed[] $data SQL Result Row.
+     */
+    private function gatherRowIdentifiers(array $data): void
+    {
+        $id                 = $this->rowIdTemplate;
+        $nonemptyComponents = [];
+
+        foreach ($this->rowMapping['identifiers'] as $column => $cacheKeyInfo) {
+            $value = $data[$column];
+
+            if (
+                $value === null
+                || (
+                    isset($cacheKeyInfo['discriminatorColumn'], $data[$cacheKeyInfo['discriminatorColumn']])
+                    && ! isset($cacheKeyInfo['discriminatorValueMap'][(string) $data[$cacheKeyInfo['discriminatorColumn']]])
+                )
+            ) {
+                continue;
+            }
+
+            $dqlAlias                      = $cacheKeyInfo['dqlAlias'];
+            $id[$dqlAlias]                .= '|' . $value;
+            $nonemptyComponents[$dqlAlias] = true;
+        }
+
         $this->gatheredRowId              = $id;
         $this->gatheredNonemptyComponents = $nonemptyComponents;
+    }
 
-        return $rowData;
+    /**
+     * Groups the columns of a result row by how they are hydrated, so that the column
+     * information is looked up once per result instead of once per row.
+     *
+     * @param mixed[] $data SQL Result Row.
+     *
+     * @return RowMapping
+     */
+    private function buildRowMapping(array $data): array
+    {
+        $rowMapping = ['identifiers' => [], 'entities' => [], 'scalars' => [], 'newObjects' => []];
+
+        foreach (array_keys($data) as $column) {
+            $cacheKeyInfo = $this->hydrateColumnInfo((string) $column);
+            if ($cacheKeyInfo === null) {
+                continue;
+            }
+
+            if (isset($cacheKeyInfo['isNewObjectParameter'])) {
+                $rowMapping['newObjects'][$column] = $cacheKeyInfo;
+            } elseif (isset($cacheKeyInfo['isScalar'])) {
+                $rowMapping['scalars'][$column] = $cacheKeyInfo;
+            } else {
+                $rowMapping['entities'][$cacheKeyInfo['dqlAlias']][$column] = $cacheKeyInfo;
+
+                if ($cacheKeyInfo['isIdentifier'] ?? false) {
+                    $rowMapping['identifiers'][$column] = $cacheKeyInfo;
+                }
+            }
+        }
+
+        return $rowMapping;
     }
 
     /** @param mixed[] $data pre-hydrated SQL Result Row. */
@@ -758,12 +876,15 @@ abstract class AbstractHydrator
                 // the current discriminator value must be saved in order to disambiguate fields hydration,
                 // should there be field name collisions
                 if ($classMetadata->parentClasses && isset($this->rsm->discriminatorColumns[$ownerMap])) {
+                    $discriminatorValues = $this->getDiscriminatorValues($classMetadata);
+
                     return $this->cache[$key] = array_merge(
                         $columnInfo,
                         [
-                            'discriminatorColumn' => $this->rsm->discriminatorColumns[$ownerMap],
-                            'discriminatorValue'  => $classMetadata->discriminatorValue,
-                            'discriminatorValues' => $this->getDiscriminatorValues($classMetadata),
+                            'discriminatorColumn'   => $this->rsm->discriminatorColumns[$ownerMap],
+                            'discriminatorValue'    => $classMetadata->discriminatorValue,
+                            'discriminatorValues'   => $discriminatorValues,
+                            'discriminatorValueMap' => array_flip($discriminatorValues),
                         ],
                     );
                 }

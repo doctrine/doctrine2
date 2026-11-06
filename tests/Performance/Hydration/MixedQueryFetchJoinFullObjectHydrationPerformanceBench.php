@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Performance\Hydration;
 
-use Doctrine\DBAL\Result;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\Hydration\ObjectHydrator;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Performance\EntityManagerFactory;
@@ -17,11 +17,12 @@ use PhpBench\Benchmark\Metadata\Annotations\BeforeMethods;
 /** @BeforeMethods({"init"}) */
 final class MixedQueryFetchJoinFullObjectHydrationPerformanceBench
 {
-    private ObjectHydrator|null $hydrator = null;
+    private EntityManagerInterface|null $entityManager = null;
 
     private ResultSetMapping|null $rsm = null;
 
-    private Result|null $result = null;
+    /** @var list<array<string, mixed>> */
+    private array $resultSet = [];
 
     public function init(): void
     {
@@ -49,9 +50,9 @@ final class MixedQueryFetchJoinFullObjectHydrationPerformanceBench
             ];
         }
 
-        $this->result   = ArrayResultFactory::createWrapperResultFromArray($resultSet);
-        $this->hydrator = new ObjectHydrator(EntityManagerFactory::getEntityManager([]));
-        $this->rsm      = new ResultSetMapping();
+        $this->resultSet     = $resultSet;
+        $this->entityManager = EntityManagerFactory::getEntityManager([]);
+        $this->rsm           = new ResultSetMapping();
 
         $this->rsm->addEntityResult(CmsUser::class, 'u');
         $this->rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
@@ -67,6 +68,8 @@ final class MixedQueryFetchJoinFullObjectHydrationPerformanceBench
 
     public function benchHydration(): void
     {
-        $this->hydrator->hydrateAll($this->result, $this->rsm);
+        (new ObjectHydrator($this->entityManager))->hydrateAll(ArrayResultFactory::createWrapperResultFromArray($this->resultSet), $this->rsm);
+
+        $this->entityManager->clear();
     }
 }
