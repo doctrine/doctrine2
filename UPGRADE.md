@@ -29,6 +29,37 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.7
 
+## `postLoad` is deferred until the outermost hydration has finished
+
+Loading an entity can start further hydrations, for example for eagerly fetched
+associations or inverse one-to-one associations. Each of these used to fire the
+`postLoad` events of all entities hydrated so far, including entities that the
+outer hydration was still working on. `postLoad` now fires once the outermost
+hydration has finished, and the order of the events does not change.
+
+This has the following consequences:
+
+- Changes that a `postLoad` listener makes to a collection are no longer lost in
+  these cases. They are written to the database on the next flush, which includes
+  deleting entities from collections with `orphanRemoval`. Review listeners that
+  modify collections, as they may only have appeared to have no effect until now.
+- Eagerly batch loaded collections no longer end up with duplicate items when a
+  `postLoad` listener accesses them.
+- Code that runs during hydration, such as a custom hydrator or a custom DBAL type,
+  and loads an entity no longer sees the `postLoad` event of that entity fired when
+  the load returns. It fires at the end of the outermost hydration instead.
+- If a `postLoad` listener throws an exception, the remaining events of that
+  hydration are not fired. This is not new, but more events can be affected,
+  because they are no longer fired in several steps.
+- If the cleanup of a hydrator fails, `postLoad` events now fire right away instead
+  of with the next load.
+
+`Query::toIterable()` now fires `postLoad` at the end of each row instead of while the
+row is being hydrated, so fetch joined to-one associations are set by then. Associations
+that are not part of the row are still not guaranteed to be initialized. A custom hydrator
+that calls `UnitOfWork::hydrationComplete()` for each row when iterating over a
+`NativeQuery` now fires `postLoad` at the end of the iteration.
+
 ## Deprecated `Doctrine\ORM\Mapping\JoinColumns` attribute
 
 Using it has no effect, it should have been removed in 3.0.0. Instead, use the

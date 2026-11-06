@@ -3462,6 +3462,27 @@ class UnitOfWork implements PropertyChangedListener
         $this->hydrationCompleteHandler->hydrationComplete();
     }
 
+    /**
+     * Marks the start of a section in which entities are being hydrated. Until the outermost
+     * section has been left, {@see hydrationComplete()} does not fire deferred events.
+     *
+     * @internal should be called internally from object hydrators
+     */
+    public function enterHydration(): void
+    {
+        $this->hydrationCompleteHandler->enterHydration();
+    }
+
+    /**
+     * Marks the end of a section started with {@see enterHydration()}.
+     *
+     * @internal should be called internally from object hydrators
+     */
+    public function leaveHydration(): void
+    {
+        $this->hydrationCompleteHandler->leaveHydration();
+    }
+
     /** @throws MappingException if the entity has more than a single identifier. */
     private function convertSingleFieldIdentifierToPHPValue(ClassMetadata $class, mixed $identifierValue): mixed
     {
