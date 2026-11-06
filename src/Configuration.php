@@ -259,6 +259,16 @@ class Configuration extends \Doctrine\DBAL\Configuration
         $this->attributes['metadataCache'] = $cache;
     }
 
+    public function getMetadataCacheDir(): string|null
+    {
+        return $this->attributes['metadataCacheDir'] ?? null;
+    }
+
+    public function setMetadataCacheDir(string $dir): void
+    {
+        $this->attributes['metadataCacheDir'] = $dir;
+    }
+
     /**
      * Registers a custom DQL function that produces a string value.
      * Such a function can then be used in any DQL statement in any place where string
