@@ -9,6 +9,7 @@ use Doctrine\DBAL\Schema\SchemaDiff;
 use Doctrine\ORM\Tools\Console\ApplicationCompatibility;
 use Doctrine\ORM\Tools\Console\Command\ValidateSchemaCommand;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Application;
@@ -24,6 +25,7 @@ use function method_exists;
 class ValidateSchemaCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     private ValidateSchemaCommand $command;
 
@@ -56,10 +58,11 @@ class ValidateSchemaCommandTest extends OrmFunctionalTestCase
             ],
         );
 
-        $display = $this->tester->getDisplay();
-
-        self::assertStringContainsString('The database schema is not in sync with the current mapping file', $display);
-        self::assertStringNotContainsString('cache_login', $display);
+        self::assertUnwrappedDisplayContainsString(
+            'The database schema is not in sync with the current mapping file',
+            $this->tester,
+        );
+        self::assertStringNotContainsString('cache_login', $this->tester->getDisplay());
     }
 
     public function testNotInSyncVerbose(): void
@@ -78,8 +81,10 @@ class ValidateSchemaCommandTest extends OrmFunctionalTestCase
             ],
         );
 
-        $display = $this->tester->getDisplay();
-        self::assertStringContainsString('The database schema is not in sync with the current mapping file', $display);
-        self::assertStringContainsString('cache_login', $display);
+        self::assertUnwrappedDisplayContainsString(
+            'The database schema is not in sync with the current mapping file',
+            $this->tester,
+        );
+        self::assertUnwrappedDisplayContainsString('cache_login', $this->tester);
     }
 }

@@ -68,7 +68,6 @@
         <var name="privileged_db_dbname" value="doctrine_tests_tmp" />
         <var name="privileged_db_port" value="3306"/>
         -->
-        <env name="COLUMNS" value="120"/>
         <env name="DOCTRINE_DEPRECATIONS" value="trigger"/>
     </php>
 
