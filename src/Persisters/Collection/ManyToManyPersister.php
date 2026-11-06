@@ -9,8 +9,8 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Cache\Persister\CompatOrderings;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\InverseSideMapping;
@@ -58,7 +58,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         $ownerColumn = $joinTable . '.' . $this->quoteStrategy->getJoinColumnName($joinColumn, $sourceClass, $this->platform);
         $field       = $sourceClass->identifier[0];
         $typeName    = $sourceClass->fieldMappings[$field]->type;
-        $type        = Type::getType($typeName);
+        $type        = TypeProviderLocator::fromConnection($this->conn)->get($typeName);
         $ids         = [];
 
         foreach ($collections as $collection) {

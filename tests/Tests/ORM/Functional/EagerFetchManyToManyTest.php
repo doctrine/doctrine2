@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use DateTime;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ManyToManyOwningSideMapping;
@@ -12,6 +13,8 @@ use Doctrine\ORM\Query\Filter\SQLFilter;
 use Doctrine\Tests\Models\CMS\CmsGroup;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\ECommerce\ECommerceProduct;
+use Doctrine\Tests\Models\Routing\RoutingLeg;
+use Doctrine\Tests\Models\Routing\RoutingRoute;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -29,6 +32,7 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
     {
         $this->useModelSet('cms');
         $this->useModelSet('ecommerce');
+        $this->useModelSet('routing');
 
         parent::setUp();
     }
@@ -57,12 +61,9 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         $this->assertCollectionsLoaded($users, 'groups');
 
         self::assertSame(['admins', 'editors'], self::groupNames($users[0]->groups));
-        self::assertSame(['admins', 'editors'], self::groupNames($users[1]->groups));
+        self::assertSame(['admins', 'reviewers'], self::groupNames($users[1]->groups));
         self::assertCount(0, $users[2]->groups);
-
-        foreach ($users[0]->groups as $group) {
-            self::assertTrue($users[1]->groups->contains($group));
-        }
+        self::assertSame(self::groupNamed($users[0]->groups, 'admins'), self::groupNamed($users[1]->groups, 'admins'));
 
         $this->assertJoinTableQueryCount($expectedQueries);
 
@@ -84,16 +85,15 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         $groups = $query->getResult();
 
         $this->assertJoinTableQueryCount($expectedQueries);
-        self::assertCount(3, $groups);
+        self::assertCount(4, $groups);
         $this->assertCollectionsLoaded($groups, 'users');
 
         self::assertSame(['alice', 'bob'], self::usernames($groups[0]->users));
-        self::assertSame(['alice', 'bob'], self::usernames($groups[1]->users));
-        self::assertCount(0, $groups[2]->users);
-
-        foreach ($groups[0]->users as $user) {
-            self::assertTrue($groups[1]->users->contains($user));
-        }
+        self::assertSame(['alice'], self::usernames($groups[1]->users));
+        self::assertSame(['bob'], self::usernames($groups[2]->users));
+        self::assertCount(0, $groups[3]->users);
+        self::assertTrue($groups[0]->users->contains($groups[1]->users->first()));
+        self::assertTrue($groups[0]->users->contains($groups[2]->users->first()));
 
         $this->getQueryLog()->reset()->enable();
         $this->_em->flush();
@@ -137,7 +137,7 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         $query->setFetchMode(CmsUser::class, 'groups', ClassMetadata::FETCH_EAGER);
         $users = $query->getResult();
 
-        $editors = $users[0]->groups->filter(static fn (CmsGroup $group) => $group->name === 'editors')->first();
+        $editors = self::groupNamed($users[0]->groups, 'editors');
         $users[0]->groups->removeElement($editors);
         $users[2]->groups->add($editors);
         $this->_em->flush();
@@ -145,7 +145,7 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
 
         $users = $query->getResult();
         self::assertSame(['admins'], self::groupNames($users[0]->groups));
-        self::assertSame(['admins', 'editors'], self::groupNames($users[1]->groups));
+        self::assertSame(['admins', 'reviewers'], self::groupNames($users[1]->groups));
         self::assertSame(['editors'], self::groupNames($users[2]->groups));
     }
 
@@ -165,10 +165,12 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         foreach ($users[0]->groups as $group) {
             self::assertInstanceOf(PersistentCollection::class, $group->users);
             self::assertTrue($group->users->isInitialized());
-            self::assertCount(2, $group->users);
             self::assertTrue($group->users->contains($users[0]));
-            self::assertTrue($group->users->contains($users[1]));
         }
+
+        self::assertSame(['alice', 'bob'], self::usernames(self::groupNamed($users[0]->groups, 'admins')->users));
+        self::assertSame(['alice'], self::usernames(self::groupNamed($users[0]->groups, 'editors')->users));
+        self::assertSame(['bob'], self::usernames(self::groupNamed($users[1]->groups, 'reviewers')->users));
 
         $this->assertJoinTableQueryCount(2);
     }
@@ -210,9 +212,29 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         $users = $query->getResult();
 
         self::assertSame(['admins'], self::groupNames($users[0]->groups));
-        self::assertSame(['admins'], self::groupNames($users[1]->groups));
+        self::assertSame(['admins', 'reviewers'], self::groupNames($users[1]->groups));
         self::assertCount(0, $users[2]->groups);
         $this->assertJoinTableQueryCount(1);
+    }
+
+    public function testOrderByIsRespectedForEachOwner(): void
+    {
+        $this->createRoute('2026-03-01', '2026-01-01', '2026-05-01');
+        $this->createRoute('2026-04-01', '2026-02-01');
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $query = $this->_em->createQuery('SELECT r FROM ' . RoutingRoute::class . ' r ORDER BY r.id');
+        $query->setFetchMode(RoutingRoute::class, 'legs', ClassMetadata::FETCH_EAGER);
+
+        $this->getQueryLog()->reset()->enable();
+        $routes = $query->getResult();
+
+        $this->assertJoinTableQueryCount(1, 'RoutingRouteLegs');
+        self::assertCount(2, $routes);
+        self::assertSame(['2026-01-01', '2026-03-01', '2026-05-01'], self::departureDates($routes[0]->legs));
+        self::assertSame(['2026-02-01', '2026-04-01'], self::departureDates($routes[1]->legs));
+        $this->assertJoinTableQueryCount(1, 'RoutingRouteLegs');
     }
 
     public function testIndexedAssociationUsesPerOwnerLoading(): void
@@ -227,9 +249,9 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         $users = $this->_em->getRepository(CmsUser::class)->findBy([], ['id' => 'ASC']);
 
         self::assertSame(['admins', 'editors'], self::groupNames($users[0]->groups));
-        self::assertSame(['admins', 'editors'], self::groupNames($users[1]->groups));
+        self::assertSame(['admins', 'reviewers'], self::groupNames($users[1]->groups));
         self::assertArrayHasKey('admins', $users[0]->groups->toArray());
-        self::assertArrayHasKey('editors', $users[1]->groups->toArray());
+        self::assertArrayHasKey('reviewers', $users[1]->groups->toArray());
         self::assertCount(0, $users[2]->groups);
         $this->assertJoinTableQueryCount(3);
     }
@@ -290,6 +312,15 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         return $names;
     }
 
+    /** @param Collection<array-key, CmsGroup> $groups */
+    private static function groupNamed(Collection $groups, string $name): CmsGroup
+    {
+        $group = $groups->filter(static fn (CmsGroup $group) => $group->name === $name)->first();
+        self::assertInstanceOf(CmsGroup::class, $group);
+
+        return $group;
+    }
+
     /**
      * @param Collection<array-key, CmsUser> $users
      *
@@ -316,16 +347,47 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
         return $products;
     }
 
+    /**
+     * @param Collection<array-key, RoutingLeg> $legs
+     *
+     * @return list<string>
+     */
+    private static function departureDates(Collection $legs): array
+    {
+        return array_map(static fn (RoutingLeg $leg) => $leg->departureDate->format('Y-m-d'), $legs->getValues());
+    }
+
+    private function createRoute(string ...$departureDates): void
+    {
+        $route = new RoutingRoute();
+
+        foreach ($departureDates as $departureDate) {
+            $leg                = new RoutingLeg();
+            $leg->departureDate = new DateTime($departureDate);
+            $leg->arrivalDate   = new DateTime($departureDate);
+            $route->legs->add($leg);
+        }
+
+        $this->_em->persist($route);
+    }
+
     private function createFixture(): void
     {
         $admins = new CmsGroup();
         $admins->setName('admins');
         $editors = new CmsGroup();
         $editors->setName('editors');
+        $reviewers = new CmsGroup();
+        $reviewers->setName('reviewers');
         $empty = new CmsGroup();
         $empty->setName('empty');
 
-        foreach (['alice' => [$admins, $editors], 'bob' => [$admins, $editors], 'carol' => []] as $username => $groups) {
+        $this->_em->persist($admins);
+        $this->_em->persist($editors);
+        $this->_em->persist($reviewers);
+        $this->_em->persist($empty);
+
+        foreach (['alice' => [$admins, $editors], 'bob' => [$admins, $reviewers], 'carol' => []] as $username => $groups) {
             $user           = new CmsUser();
             $user->username = $username;
             $user->name     = $username;
@@ -338,9 +400,6 @@ class EagerFetchManyToManyTest extends OrmFunctionalTestCase
             $this->_em->persist($user);
         }
 
-        $this->_em->persist($admins);
-        $this->_em->persist($editors);
-        $this->_em->persist($empty);
         $this->_em->flush();
         $this->_em->clear();
     }
