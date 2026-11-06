@@ -1,0 +1,37 @@
+name: "Label pull request"
+
+# Runs with secrets against pull requests from forks, so it must never check
+# out or execute the pull request head. This action only reads the event
+# payload and installs its own pinned code.
+on:
+  pull_request_target:
+    types:
+      - "opened"
+  workflow_dispatch:
+    inputs:
+      number:
+        description: "Pull request number to label when triggering manually"
+        required: true
+        type: "string"
+
+permissions:
+  contents: "read"
+  issues: "write"
+  pull-requests: "read"
+
+concurrency:
+  group: "label-pull-request-${{ github.event.pull_request.number || inputs.number }}"
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: "Label pull request"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - name: "Suggest and apply labels"
+        uses: "paulinevos/label-classifier@v1"
+        with:
+          number: "${{ inputs.number }}"
+        env:
+          JEV_API_KEY: "${{ secrets.JEV_API_KEY }}"
