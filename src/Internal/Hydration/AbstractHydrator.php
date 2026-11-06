@@ -42,6 +42,12 @@ use function str_starts_with;
  * Base class for all hydrators. A hydrator is a class that provides some form
  * of transformation of an SQL result set into another structure.
  *
+ * @phpstan-type RowMapping = array{
+ *     identifiers: array<array-key, array<string, mixed>>,
+ *     entities: array<string, array<array-key, array<string, mixed>>>,
+ *     scalars: array<array-key, array<string, mixed>>,
+ *     newObjects: array<array-key, array<string, mixed>>
+ * }
  * @phpstan-consistent-constructor
  */
 abstract class AbstractHydrator
@@ -131,12 +137,7 @@ abstract class AbstractHydrator
     /**
      * Columns of the current result grouped by how they are hydrated, computed once from the first row.
      *
-     * @var array{
-     *          identifiers: array<array-key, array<string, mixed>>,
-     *          entities: array<string, array<array-key, array<string, mixed>>>,
-     *          scalars: array<array-key, array<string, mixed>>,
-     *          newObjects: array<array-key, array<string, mixed>>
-     *      }|null
+     * @var RowMapping|null
      */
     private array|null $rowMapping = null;
 
@@ -724,12 +725,7 @@ abstract class AbstractHydrator
      *
      * @param mixed[] $data SQL Result Row.
      *
-     * @return array{
-     *             identifiers: array<array-key, array<string, mixed>>,
-     *             entities: array<string, array<array-key, array<string, mixed>>>,
-     *             scalars: array<array-key, array<string, mixed>>,
-     *             newObjects: array<array-key, array<string, mixed>>
-     *         }
+     * @return RowMapping
      */
     private function buildRowMapping(array $data): array
     {
