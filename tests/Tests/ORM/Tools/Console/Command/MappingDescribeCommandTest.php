@@ -9,6 +9,7 @@ use Doctrine\ORM\Tools\Console\Command\MappingDescribeCommand;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider\SingleManagerProvider;
 use Doctrine\Tests\Models\Cache\AttractionInfo;
 use Doctrine\Tests\Models\CMS\CmsAddress;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,6 +27,7 @@ use function json_decode;
 class MappingDescribeCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     private Application $application;
 
@@ -53,10 +55,8 @@ class MappingDescribeCommandTest extends OrmFunctionalTestCase
             ],
         );
 
-        $display = $this->tester->getDisplay();
-
-        self::assertStringContainsString(AttractionInfo::class, $display);
-        self::assertStringContainsString('Root entity name', $display);
+        self::assertUnwrappedDisplayContainsString(AttractionInfo::class, $this->tester);
+        self::assertUnwrappedDisplayContainsString('Root entity name', $this->tester);
     }
 
     public function testShowSpecificFuzzySingleJson(): void
@@ -149,12 +149,10 @@ class MappingDescribeCommandTest extends OrmFunctionalTestCase
             ],
         );
 
-        $display = $this->tester->getDisplay();
-
-        self::assertStringContainsString(CmsAddress::class, $display);
-        self::assertStringContainsString('Entity listeners', $display);
-        self::assertStringContainsString('CmsAddressListener', $display);
-        self::assertStringContainsString('postPersist', $display);
-        self::assertStringContainsString('prePersist', $display);
+        self::assertUnwrappedDisplayContainsString(CmsAddress::class, $this->tester);
+        self::assertUnwrappedDisplayContainsString('Entity listeners', $this->tester);
+        self::assertUnwrappedDisplayContainsString('CmsAddressListener', $this->tester);
+        self::assertUnwrappedDisplayContainsString('postPersist', $this->tester);
+        self::assertUnwrappedDisplayContainsString('prePersist', $this->tester);
     }
 }
