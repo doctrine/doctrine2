@@ -10,6 +10,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Internal\Hydration\ObjectHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\NativeQuery;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\Tests\Models\Cache\Travel;
@@ -321,12 +322,9 @@ class PostLoadNestedHydrationTest extends OrmFunctionalTestCase
         self::assertContains($group, $this->postLoaded, 'Iteration was destroyed');
     }
 
-    public function testNativeQueryIterationKeepsPostLoadBehindEagerBatchLoads(): void
+    public function testNativeQueryIterationFiresPostLoadForEachRowAfterEagerCollectionsAreLoaded(): void
     {
         $this->loadTravelers();
-
-        $rsm = new ResultSetMappingBuilder($this->_em);
-        $rsm->addRootEntityFromClassMetadata(Traveler::class, 't');
 
         $counts           = [];
         $this->onPostLoad = static function (object $entity) use (&$counts): void {
@@ -335,13 +333,24 @@ class PostLoadNestedHydrationTest extends OrmFunctionalTestCase
             }
         };
 
-        $query = $this->_em
-            ->createNativeQuery('SELECT ' . $rsm->generateSelectClause() . ' FROM cache_traveler t ORDER BY t.id', $rsm)
-            ->setFetchMode(Traveler::class, 'travels', ClassMetadata::FETCH_EAGER);
-
-        $travelers = iterator_to_array($query->toIterable(), false);
+        foreach ($this->eagerTravelsNativeQuery()->toIterable() as $traveler) {
+            self::assertContains($traveler, $this->postLoaded);
+        }
 
         self::assertSame([2, 2, 2], $counts);
+    }
+
+    public function testNativeQueryIterationDoesNotDuplicateEagerItemsAccessedInTheLoop(): void
+    {
+        $this->loadTravelers();
+
+        $travelers = [];
+        foreach ($this->eagerTravelsNativeQuery()->toIterable() as $traveler) {
+            self::assertCount(2, $traveler->travels);
+
+            $travelers[] = $traveler;
+        }
+
         self::assertSame([2, 2, 2], array_map(static fn (Traveler $traveler): int => count($traveler->travels), $travelers));
     }
 
@@ -510,6 +519,16 @@ class PostLoadNestedHydrationTest extends OrmFunctionalTestCase
     {
         return $this->_em
             ->createQuery('SELECT t FROM ' . Traveler::class . ' t ORDER BY t.id')
+            ->setFetchMode(Traveler::class, 'travels', ClassMetadata::FETCH_EAGER);
+    }
+
+    private function eagerTravelsNativeQuery(): NativeQuery
+    {
+        $rsm = new ResultSetMappingBuilder($this->_em);
+        $rsm->addRootEntityFromClassMetadata(Traveler::class, 't');
+
+        return $this->_em
+            ->createNativeQuery('SELECT ' . $rsm->generateSelectClause() . ' FROM cache_traveler t ORDER BY t.id', $rsm)
             ->setFetchMode(Traveler::class, 'travels', ClassMetadata::FETCH_EAGER);
     }
 

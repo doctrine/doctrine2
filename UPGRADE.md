@@ -54,11 +54,17 @@ This has the following consequences:
 - If the cleanup of a hydrator fails, `postLoad` events now fire right away instead
   of with the next load.
 
-`Query::toIterable()` now fires `postLoad` at the end of each row instead of while the
-row is being hydrated, so fetch joined to-one associations are set by then. Associations
-that are not part of the row are still not guaranteed to be initialized. A custom hydrator
-that calls `UnitOfWork::hydrationComplete()` for each row when iterating over a
-`NativeQuery` now fires `postLoad` at the end of the iteration.
+`AbstractQuery::toIterable()` now fires `postLoad` at the end of each row, before the row
+is yielded. Associations that are not part of the row are still not guaranteed to be
+initialized.
+
+- For `Query::toIterable()`, this used to happen while the row was being hydrated. Fetch
+  joined to-one associations are now set when `postLoad` fires.
+- `NativeQuery::toIterable()` now behaves like `Query::toIterable()`, which it did not do
+  before. `postLoad` used to fire at the end of the iteration, unless a nested load fired
+  it earlier. Eager one-to-many collections used to be loaded in batches at the end of the
+  iteration, and got duplicate items when accessed during the iteration. They are now
+  loaded for each row, which causes one query per row and collection.
 
 ## Deprecated `Doctrine\ORM\Mapping\JoinColumns` attribute
 

@@ -717,12 +717,12 @@ as well, when all of their associations are populated.
 
 .. warning::
 
-    When using ``Doctrine\ORM\Query::toIterable()``, ``postLoad`` events are
+    When using ``Doctrine\ORM\AbstractQuery::toIterable()``, ``postLoad`` events are
     executed after each row has been hydrated, and therefore associations that are
     not part of that row are not guaranteed to be initialized. For example, eagerly
-    fetched associations are only loaded at the end of the iteration. It is not safe
-    to rely on such associations in ``postLoad`` event handlers when using
-    ``Doctrine\ORM\Query::toIterable()``.
+    fetched to-one associations are only loaded at the end of the iteration. It is not
+    safe to rely on such associations in ``postLoad`` event handlers when using
+    ``Doctrine\ORM\AbstractQuery::toIterable()``.
 
 .. _reference-events-on-clear:
 

@@ -3475,6 +3475,7 @@ class UnitOfWork implements PropertyChangedListener
 
     /**
      * Marks the end of a section started with {@see enterHydration()}.
+     * Leaving the outermost section fires deferred events.
      *
      * @internal should be called internally from object hydrators
      */

@@ -110,7 +110,7 @@ abstract class AbstractHydrator
     {
         $this->stmt  = $stmt;
         $this->rsm   = $resultSetMapping;
-        $this->hints = $hints;
+        $this->hints = [Query::HINT_INTERNAL_ITERATION => true] + $hints;
 
         $evm = $this->em->getEventManager();
 
@@ -136,10 +136,6 @@ abstract class AbstractHydrator
                     $this->cleanupAfterRowIteration();
                 } finally {
                     $this->uow->leaveHydration();
-                }
-
-                if (isset($this->hints[Query::HINT_INTERNAL_ITERATION]) && $this->hints[Query::HINT_INTERNAL_ITERATION]) {
-                    $this->uow->hydrationComplete();
                 }
 
                 if (count($result) === 1) {
@@ -213,7 +209,6 @@ abstract class AbstractHydrator
             $this->cleanup();
         } finally {
             $this->uow->leaveHydration();
-            $this->uow->hydrationComplete();
         }
     }
 

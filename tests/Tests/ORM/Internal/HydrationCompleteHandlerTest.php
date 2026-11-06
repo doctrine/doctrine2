@@ -152,30 +152,28 @@ class HydrationCompleteHandlerTest extends TestCase
         $this->handler->hydrationComplete();
     }
 
-    public function testFiresPostLoadOnlyWhenOutermostHydrationCompletes(): void
+    public function testFiresPostLoadOnlyWhenOutermostHydrationIsLeft(): void
     {
         $this->deferPostLoad();
 
+        $fired = 0;
+        $this->listenersInvoker
+            ->method('invoke')
+            ->willReturnCallback(static function () use (&$fired): void {
+                $fired++;
+            });
+
         $this->handler->enterHydration();
         $this->handler->enterHydration();
         $this->handler->hydrationComplete();
         $this->handler->leaveHydration();
         $this->handler->hydrationComplete();
+
+        self::assertSame(0, $fired);
+
         $this->handler->leaveHydration();
 
-        $this->listenersInvoker->expects(self::once())->method('invoke');
-
-        $this->handler->hydrationComplete();
-    }
-
-    public function testLeavingHydrationDoesNotFirePostLoad(): void
-    {
-        $this->deferPostLoad();
-
-        $this->listenersInvoker->expects(self::never())->method('invoke');
-
-        $this->handler->enterHydration();
-        $this->handler->leaveHydration();
+        self::assertSame(1, $fired);
     }
 
     public function testHydrationStartedByPostLoadListenerFiresItsOwnPostLoad(): void
@@ -197,9 +195,7 @@ class HydrationCompleteHandlerTest extends TestCase
 
                 $this->handler->enterHydration();
                 $this->handler->deferPostLoadInvoking($metadata, $inner);
-                $this->handler->hydrationComplete();
                 $this->handler->leaveHydration();
-                $this->handler->hydrationComplete();
 
                 self::assertSame([$outer, $inner], $fired);
             });

@@ -78,7 +78,6 @@ class DefaultQueryCache implements QueryCache
             return $this->hydrateCacheEntry($cacheEntry, $rsm);
         } finally {
             $this->uow->leaveHydration();
-            $this->uow->hydrationComplete();
         }
     }
 

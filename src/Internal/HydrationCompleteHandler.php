@@ -55,19 +55,20 @@ final class HydrationCompleteHandler
     }
 
     /**
-     * Marks the end of a section started with {@see enterHydration()}. This does not fire
-     * postLoad events, {@see hydrationComplete()} has to be called afterwards for that.
+     * Marks the end of a section started with {@see enterHydration()}. Leaving the
+     * outermost section fires the deferred postLoad events.
      */
     public function leaveHydration(): void
     {
         $this->hydrationDepth--;
+        $this->hydrationComplete();
     }
 
     /**
      * This method should be called after any hydration cycle completed.
      *
      * Method fires all deferred invocations of postLoad events, unless a hydration
-     * is still in progress. The outermost hydration then fires them when it completes.
+     * is still in progress. They are then fired when its outermost section is left.
      */
     public function hydrationComplete(): void
     {
