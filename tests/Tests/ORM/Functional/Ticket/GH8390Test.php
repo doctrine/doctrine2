@@ -29,9 +29,7 @@ final class GH8390Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! Type::hasType(GH8390CountingType::NAME)) {
-            Type::addType(GH8390CountingType::NAME, GH8390CountingType::class);
-        }
+        self::registerDbalType(GH8390CountingType::NAME, GH8390CountingType::class);
 
         $this->createSchemaForModels(GH8390Root::class, GH8390Child::class, GH8390Tag::class);
 
