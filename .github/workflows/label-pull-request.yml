@@ -26,18 +26,13 @@ concurrency:
 jobs:
   label:
     name: "Label pull request"
-    runs-on: "ubuntu-latest"
-
     permissions:
       contents: "read"
       issues: "write"
       pull-requests: "write"
-
-    steps:
-      - name: "Suggest and apply labels"
-        uses: "doctrine/.github/.github/workflows/label-pull-request.yml@494b9666ddb6ff811f235009239fd299f5356742"
-        with:
-          number: "${{ inputs.number }}"
-          endpoint: "https://opencode.ai/inference/systemone/v1/systemone"
-        secrets:
-          JEV_API_KEY: "${{ secrets.JEV_API_KEY }}"
+    uses: "doctrine/.github/.github/workflows/label-pull-request.yml@d478e0a0ed754f7078575aa686c617c28d054c40"
+    with:
+      number: "${{ inputs.number }}"
+      endpoint: "https://opencode.ai/inference/systemone/v1/systemone"
+    secrets:
+      JEV_API_KEY: "${{ secrets.JEV_API_KEY }}"
