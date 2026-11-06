@@ -14,6 +14,7 @@ use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Tests\Models\Cache\AttractionInfo;
 use Doctrine\Tests\Models\Cache\City;
+use Doctrine\Tests\ORM\Tools\Console\CommandTesterAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Helper\HelperSet;
@@ -22,6 +23,7 @@ use Symfony\Component\Console\Tester\CommandTester;
 class InfoCommandTest extends OrmFunctionalTestCase
 {
     use ApplicationCompatibility;
+    use CommandTesterAssertions;
 
     /** @var Application */
     private $application;
@@ -48,8 +50,8 @@ class InfoCommandTest extends OrmFunctionalTestCase
     {
         $this->tester->execute(['command' => $this->command->getName()]);
 
-        self::assertStringContainsString(AttractionInfo::class, $this->tester->getDisplay());
-        self::assertStringContainsString(City::class, $this->tester->getDisplay());
+        self::assertUnwrappedDisplayContainsString(AttractionInfo::class, $this->tester);
+        self::assertUnwrappedDisplayContainsString(City::class, $this->tester);
     }
 
     public function testEmptyEntityClassNames(): void
@@ -76,14 +78,14 @@ class InfoCommandTest extends OrmFunctionalTestCase
 
         $tester->execute(['command' => $command->getName()]);
 
-        self::assertStringContainsString(
-            ' ! [CAUTION] You do not have any mapped Doctrine ORM entities according to the current configuration',
-            $tester->getDisplay()
+        self::assertUnwrappedDisplayContainsString(
+            '[CAUTION] You do not have any mapped Doctrine ORM entities according to the current configuration',
+            $tester
         );
 
-        self::assertStringContainsString(
-            ' !           If you have entities or mapping files you should check your mapping configuration for errors.',
-            $tester->getDisplay()
+        self::assertUnwrappedDisplayContainsString(
+            'If you have entities or mapping files you should check your mapping configuration for errors.',
+            $tester
         );
     }
 
@@ -115,7 +117,7 @@ class InfoCommandTest extends OrmFunctionalTestCase
 
         $tester->execute(['command' => $command->getName()]);
 
-        self::assertStringContainsString('[FAIL] InvalidEntity', $tester->getDisplay());
-        self::assertStringContainsString('exception message', $tester->getDisplay());
+        self::assertUnwrappedDisplayContainsString('[FAIL] InvalidEntity', $tester);
+        self::assertUnwrappedDisplayContainsString('exception message', $tester);
     }
 }
