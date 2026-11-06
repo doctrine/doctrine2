@@ -52,6 +52,14 @@ class ObjectHydrator extends AbstractHydrator
      */
     private array $initializedCollectionElements = [];
 
+    /**
+     * Joined entities per DQL alias and identifier hash, to not gather and create
+     * an entity again that is joined to several parents.
+     *
+     * @var array<string, array<string, object>>
+     */
+    private array $joinedEntities = [];
+
     protected function prepare(): void
     {
         if (! isset($this->hints[UnitOfWork::HINT_DEFEREAGERLOAD])) {
@@ -122,6 +130,7 @@ class ObjectHydrator extends AbstractHydrator
         $this->initializedCollectionElements =
         $this->uninitializedCollections      =
         $this->existingCollections           =
+        $this->joinedEntities                =
         $this->rootAliases                   = [];
         $this->resultCounter                 = 0;
 
@@ -138,7 +147,8 @@ class ObjectHydrator extends AbstractHydrator
         $this->initializedCollections        =
         $this->initializedCollectionElements =
         $this->uninitializedCollections      =
-        $this->existingCollections           = [];
+        $this->existingCollections           =
+        $this->joinedEntities                = [];
     }
 
     /**
@@ -278,6 +288,20 @@ class ObjectHydrator extends AbstractHydrator
     }
 
     /**
+     * Gets the entity of a joined DQL alias, gathering its data only the first time it is seen.
+     *
+     * @param mixed[]                   $row  The data of the row to process.
+     * @param array<string, mixed>|null $data The already gathered instance data, if any.
+     *
+     * @throws HydrationException
+     */
+    private function getJoinedEntity(array $row, array|null $data, string $dqlAlias, string $idHash): object
+    {
+        return $this->joinedEntities[$dqlAlias][$idHash]
+            ??= $this->getEntity($data ?? $this->gatherEntityRowData($row, $dqlAlias), $dqlAlias);
+    }
+
+    /**
      * @param class-string $className
      * @phpstan-param array<string, mixed> $data
      */
@@ -364,7 +388,7 @@ class ObjectHydrator extends AbstractHydrator
                 } else {
                     // Parent object of relation not found, mark as not-fetched again
                     if (isset($nonemptyComponents[$dqlAlias])) {
-                        $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $dqlAlias), $dqlAlias);
+                        $element = $this->getJoinedEntity($row, $data, $dqlAlias, $id[$dqlAlias]);
 
                         // Update result pointer and provide initial fetch data for parent
                         $resultPointers[$dqlAlias]                     = $element;
@@ -414,7 +438,7 @@ class ObjectHydrator extends AbstractHydrator
                                 unset($resultPointers[$dqlAlias]);
                             }
                         } else {
-                            $element   = $this->getEntity($data ?? $this->gatherEntityRowData($row, $dqlAlias), $dqlAlias);
+                            $element   = $this->getJoinedEntity($row, $data, $dqlAlias, $id[$dqlAlias]);
                             $elementId = spl_object_id($element);
 
                             if (isset($resultSetMapping->indexByMap[$dqlAlias])) {
@@ -452,7 +476,7 @@ class ObjectHydrator extends AbstractHydrator
                         // we only need to take action if this value is null,
                         // we refresh the entity or its an uninitialized proxy.
                         if (isset($nonemptyComponents[$dqlAlias])) {
-                            $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $dqlAlias), $dqlAlias);
+                            $element = $this->getJoinedEntity($row, $data, $dqlAlias, $id[$dqlAlias]);
                             $reflField->setValue($parentObject, $element);
                             $this->uow->setOriginalEntityProperty($oid, $relationField, $element);
                             $targetClass = $this->metadataCache[$relation->targetEntity];
@@ -606,6 +630,7 @@ class ObjectHydrator extends AbstractHydrator
 
         $aliases = array_keys($this->identifierMap);
 
-        $this->identifierMap = array_fill_keys($aliases, []);
+        $this->identifierMap  = array_fill_keys($aliases, []);
+        $this->joinedEntities = [];
     }
 }
