@@ -11,40 +11,41 @@ use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\Table;
+use Doctrine\Tests\ORM\Tools\SchemaAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
 class DDC2182Test extends OrmFunctionalTestCase
 {
+    use SchemaAssertions;
+
     public function testPassColumnOptionsToJoinColumns(): void
     {
         if (! $this->_em->getConnection()->getDatabasePlatform() instanceof MySQLPlatform) {
             self::markTestSkipped('This test is useful for all databases, but designed only for mysql.');
         }
 
-        $sql = $this->_schemaTool->getCreateSchemaSql(
+        $schema = $this->_schemaTool->getSchemaFromMetadata(
             [
                 $this->_em->getClassMetadata(DDC2182OptionParent::class),
                 $this->_em->getClassMetadata(DDC2182OptionChild::class),
             ],
         );
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE DDC2182OptionParent (id INT UNSIGNED NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE DDC2182OptionParent (id INT UNSIGNED NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[1], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE DDC2182OptionChild (id VARCHAR(255) NOT NULL, parent_id INT UNSIGNED DEFAULT NULL, INDEX IDX_B314D4AD727ACA70 (parent_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE DDC2182OptionChild (id VARCHAR(255) NOT NULL, parent_id INT UNSIGNED DEFAULT NULL, INDEX IDX_B314D4AD727ACA70 (parent_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[2], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('ALTER TABLE DDC2182OptionChild ADD CONSTRAINT FK_B314D4AD727ACA70 FOREIGN KEY (parent_id) REFERENCES DDC2182OptionParent (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE DDC2182OptionChild ADD FOREIGN KEY (parent_id) REFERENCES DDC2182OptionParent (id)'),
-        ));
+
+        $parent = $schema->getTable('DDC2182OptionParent');
+        self::assertTableColumns($parent, [
+            'id' => ['type' => 'integer', 'nullable' => false, 'unsigned' => true],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($parent));
+
+        $child = $schema->getTable('DDC2182OptionChild');
+        self::assertTableColumns($child, [
+            'id'        => ['type' => 'string', 'nullable' => false, 'length' => 255],
+            'parent_id' => ['type' => 'integer', 'nullable' => true, 'unsigned' => true],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($child));
+        self::assertTableIndex($child, 'IDX_B314D4AD727ACA70', ['parent_id']);
+        self::assertCount(1, $child->getForeignKeys());
+        self::assertTableForeignKey($child, ['parent_id'], 'DDC2182OptionParent', ['id']);
     }
 }
 

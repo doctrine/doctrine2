@@ -25,6 +25,7 @@ use Doctrine\Tests\Models\CMS\CmsTag;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\Generic\BooleanModel;
 use Doctrine\Tests\Models\Generic\DecimalModel;
+use Doctrine\Tests\ORM\Tools\SchemaAssertions;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -39,6 +40,8 @@ use function strtolower;
 
 class MySqlSchemaToolTest extends OrmFunctionalTestCase
 {
+    use SchemaAssertions;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -48,7 +51,7 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
         }
     }
 
-    public function testGetCreateSchemaSql(): void
+    public function testGetSchemaFromMetadata(): void
     {
         $classes = [
             $this->_em->getClassMetadata(CmsGroup::class),
@@ -59,139 +62,133 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
             $this->_em->getClassMetadata(CmsPhonenumber::class),
         ];
 
-        $tool = new SchemaTool($this->_em);
-        $sql  = $tool->getCreateSchemaSql($classes);
+        $tool   = new SchemaTool($this->_em);
+        $schema = $tool->getSchemaFromMetadata($classes);
 
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_groups (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(50) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_groups (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(50) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[1], self::logicalOr(
-            // DBAL 3
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, email_id INT DEFAULT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4 (see https://github.com/doctrine/dbal/pull/4777)
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, email_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, email_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[2], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_users_groups (user_id INT NOT NULL, group_id INT NOT NULL, INDEX IDX_7EA9409AA76ED395 (user_id), INDEX IDX_7EA9409AFE54D947 (group_id), PRIMARY KEY(user_id, group_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users_groups (user_id INT NOT NULL, group_id INT NOT NULL, INDEX IDX_7EA9409AA76ED395 (user_id), INDEX IDX_7EA9409AFE54D947 (group_id), PRIMARY KEY (user_id, group_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[3], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_users_tags (user_id INT NOT NULL, tag_id INT NOT NULL, INDEX IDX_93F5A1ADA76ED395 (user_id), INDEX IDX_93F5A1ADBAD26311 (tag_id), PRIMARY KEY(user_id, tag_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users_tags (user_id INT NOT NULL, tag_id INT NOT NULL, INDEX IDX_93F5A1ADA76ED395 (user_id), INDEX IDX_93F5A1ADBAD26311 (tag_id), PRIMARY KEY (user_id, tag_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[4], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(50) DEFAULT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(50) DEFAULT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[5], self::logicalOr(
-            // DBAL 3
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, user_id INT DEFAULT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4 (see https://github.com/doctrine/dbal/pull/4777)
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[6], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_emails (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(250) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_emails (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(250) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[7], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_phonenumbers (phonenumber VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, INDEX IDX_F21F790FA76ED395 (user_id), PRIMARY KEY(phonenumber)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_phonenumbers (phonenumber VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, INDEX IDX_F21F790FA76ED395 (user_id), PRIMARY KEY (phonenumber)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[8], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_users ADD CONSTRAINT FK_3AF03EC5A832C1C9 FOREIGN KEY (email_id) REFERENCES cms_emails (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_users ADD FOREIGN KEY (email_id) REFERENCES cms_emails (id)'),
-        ));
-        self::assertThat($sql[9], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_users_groups ADD CONSTRAINT FK_7EA9409AA76ED395 FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_users_groups ADD FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-        ));
-        self::assertThat($sql[10], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_users_groups ADD CONSTRAINT FK_7EA9409AFE54D947 FOREIGN KEY (group_id) REFERENCES cms_groups (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_users_groups ADD FOREIGN KEY (group_id) REFERENCES cms_groups (id)'),
-        ));
-        self::assertThat($sql[11], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_users_tags ADD CONSTRAINT FK_93F5A1ADA76ED395 FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_users_tags ADD FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-        ));
-        self::assertThat($sql[12], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_users_tags ADD CONSTRAINT FK_93F5A1ADBAD26311 FOREIGN KEY (tag_id) REFERENCES cms_tags (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_users_tags ADD FOREIGN KEY (tag_id) REFERENCES cms_tags (id)'),
-        ));
-        self::assertThat($sql[13], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_addresses ADD CONSTRAINT FK_ACAC157BA76ED395 FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_addresses ADD FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-        ));
-        self::assertThat($sql[14], self::logicalOr(
-            // DBAL < 4.5
-            self::equalTo('ALTER TABLE cms_phonenumbers ADD CONSTRAINT FK_F21F790FA76ED395 FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-            // DBAL 4.5
-            self::equalTo('ALTER TABLE cms_phonenumbers ADD FOREIGN KEY (user_id) REFERENCES cms_users (id)'),
-        ));
+        self::assertCount(8, $schema->getTables());
 
-        self::assertCount(15, $sql);
+        $cmsGroups = $schema->getTable('cms_groups');
+        self::assertTableColumns($cmsGroups, [
+            'id'   => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'name' => ['type' => 'string', 'nullable' => false, 'length' => 50],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($cmsGroups));
+        self::assertTableOptions($cmsGroups);
+
+        $cmsUsers = $schema->getTable('cms_users');
+        self::assertTableColumns($cmsUsers, [
+            'id'       => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'status'   => ['type' => 'string', 'nullable' => true, 'length' => 50],
+            'username' => ['type' => 'string', 'nullable' => false, 'length' => 255],
+            'name'     => ['type' => 'string', 'nullable' => false, 'length' => 255],
+            'email_id' => ['type' => 'integer', 'nullable' => true],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($cmsUsers));
+        self::assertTableIndex($cmsUsers, 'UNIQ_3AF03EC5F85E0677', ['username'], true);
+        self::assertTableIndex($cmsUsers, 'UNIQ_3AF03EC5A832C1C9', ['email_id'], true);
+        self::assertCount(1, $cmsUsers->getForeignKeys());
+        self::assertTableForeignKey($cmsUsers, ['email_id'], 'cms_emails', ['id']);
+        self::assertTableOptions($cmsUsers);
+
+        $cmsUsersGroups = $schema->getTable('cms_users_groups');
+        self::assertTableColumns($cmsUsersGroups, [
+            'user_id'  => ['type' => 'integer', 'nullable' => false],
+            'group_id' => ['type' => 'integer', 'nullable' => false],
+        ]);
+        self::assertSame(['user_id', 'group_id'], self::primaryKeyColumns($cmsUsersGroups));
+        self::assertTableIndex($cmsUsersGroups, 'IDX_7EA9409AA76ED395', ['user_id']);
+        self::assertTableIndex($cmsUsersGroups, 'IDX_7EA9409AFE54D947', ['group_id']);
+        self::assertCount(2, $cmsUsersGroups->getForeignKeys());
+        self::assertTableForeignKey($cmsUsersGroups, ['user_id'], 'cms_users', ['id']);
+        self::assertTableForeignKey($cmsUsersGroups, ['group_id'], 'cms_groups', ['id']);
+        self::assertTableOptions($cmsUsersGroups);
+
+        $cmsUsersTags = $schema->getTable('cms_users_tags');
+        self::assertTableColumns($cmsUsersTags, [
+            'user_id' => ['type' => 'integer', 'nullable' => false],
+            'tag_id'  => ['type' => 'integer', 'nullable' => false],
+        ]);
+        self::assertSame(['user_id', 'tag_id'], self::primaryKeyColumns($cmsUsersTags));
+        self::assertTableIndex($cmsUsersTags, 'IDX_93F5A1ADA76ED395', ['user_id']);
+        self::assertTableIndex($cmsUsersTags, 'IDX_93F5A1ADBAD26311', ['tag_id']);
+        self::assertCount(2, $cmsUsersTags->getForeignKeys());
+        self::assertTableForeignKey($cmsUsersTags, ['user_id'], 'cms_users', ['id']);
+        self::assertTableForeignKey($cmsUsersTags, ['tag_id'], 'cms_tags', ['id']);
+        self::assertTableOptions($cmsUsersTags);
+
+        $cmsTags = $schema->getTable('cms_tags');
+        self::assertTableColumns($cmsTags, [
+            'id'       => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'tag_name' => ['type' => 'string', 'nullable' => true, 'length' => 50],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($cmsTags));
+        self::assertTableOptions($cmsTags);
+
+        $cmsAddresses = $schema->getTable('cms_addresses');
+        self::assertTableColumns($cmsAddresses, [
+            'id'      => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'country' => ['type' => 'string', 'nullable' => false, 'length' => 50],
+            'zip'     => ['type' => 'string', 'nullable' => false, 'length' => 50],
+            'city'    => ['type' => 'string', 'nullable' => false, 'length' => 50],
+            'user_id' => ['type' => 'integer', 'nullable' => true],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($cmsAddresses));
+        self::assertTableIndex($cmsAddresses, 'UNIQ_ACAC157BA76ED395', ['user_id'], true);
+        self::assertCount(1, $cmsAddresses->getForeignKeys());
+        self::assertTableForeignKey($cmsAddresses, ['user_id'], 'cms_users', ['id']);
+        self::assertTableOptions($cmsAddresses);
+
+        $cmsEmails = $schema->getTable('cms_emails');
+        self::assertTableColumns($cmsEmails, [
+            'id'    => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'email' => ['type' => 'string', 'nullable' => false, 'length' => 250],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($cmsEmails));
+        self::assertTableOptions($cmsEmails);
+
+        $cmsPhonenumbers = $schema->getTable('cms_phonenumbers');
+        self::assertTableColumns($cmsPhonenumbers, [
+            'phonenumber' => ['type' => 'string', 'nullable' => false, 'length' => 50],
+            'user_id'     => ['type' => 'integer', 'nullable' => true],
+        ]);
+        self::assertSame(['phonenumber'], self::primaryKeyColumns($cmsPhonenumbers));
+        self::assertTableIndex($cmsPhonenumbers, 'IDX_F21F790FA76ED395', ['user_id']);
+        self::assertCount(1, $cmsPhonenumbers->getForeignKeys());
+        self::assertTableForeignKey($cmsPhonenumbers, ['user_id'], 'cms_users', ['id']);
+        self::assertTableOptions($cmsPhonenumbers);
     }
 
-    public function testGetCreateSchemaSql2(): void
+    public function testGetSchemaForDecimalModel(): void
     {
-        $classes = [$this->_em->getClassMetadata(DecimalModel::class)];
+        $tool   = new SchemaTool($this->_em);
+        $schema = $tool->getSchemaFromMetadata([$this->_em->getClassMetadata(DecimalModel::class)]);
 
-        $tool = new SchemaTool($this->_em);
-        $sql  = $tool->getCreateSchemaSql($classes);
+        self::assertTrue($schema->hasTable('decimal_model'));
+        $table = $schema->getTable('decimal_model');
 
-        self::assertCount(1, $sql);
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE decimal_model (id INT AUTO_INCREMENT NOT NULL, `decimal` NUMERIC(5, 2) NOT NULL, `high_scale` NUMERIC(14, 4) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE decimal_model (id INT AUTO_INCREMENT NOT NULL, `decimal` NUMERIC(5, 2) NOT NULL, `high_scale` NUMERIC(14, 4) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
+        self::assertTableColumns($table, [
+            'id'         => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'decimal'    => ['type' => 'decimal', 'nullable' => false, 'precision' => 5, 'scale' => 2],
+            'high_scale' => ['type' => 'decimal', 'nullable' => false, 'precision' => 14, 'scale' => 4],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($table));
+        self::assertTableOptions($table);
     }
 
-    public function testGetCreateSchemaSql3(): void
+    public function testGetSchemaForBooleanModel(): void
     {
-        $classes = [$this->_em->getClassMetadata(BooleanModel::class)];
+        $tool   = new SchemaTool($this->_em);
+        $schema = $tool->getSchemaFromMetadata([$this->_em->getClassMetadata(BooleanModel::class)]);
 
-        $tool = new SchemaTool($this->_em);
-        $sql  = $tool->getCreateSchemaSql($classes);
+        self::assertTrue($schema->hasTable('boolean_model'));
+        $table = $schema->getTable('boolean_model');
 
-        self::assertCount(1, $sql);
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT(1) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT(1) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.4 (see https://github.com/doctrine/dbal/pull/7221)
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
+        self::assertTableColumns($table, [
+            'id'           => ['type' => 'integer', 'nullable' => false, 'autoincrement' => true],
+            'booleanField' => ['type' => 'boolean', 'nullable' => false],
+        ]);
+        self::assertSame(['id'], self::primaryKeyColumns($table));
+        self::assertTableOptions($table);
     }
 
     #[Group('DBAL-204')]
