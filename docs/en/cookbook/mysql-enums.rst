@@ -107,8 +107,12 @@ For example for the previous enum type:
             return $value;
         }
 
-        public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): string
+        public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
         {
+            if ($value === null) {
+                return null;
+            }
+
             if (!in_array($value, [self::STATUS_VISIBLE, self::STATUS_INVISIBLE], true)) {
                 throw new \InvalidArgumentException("Invalid status");
             }
@@ -164,6 +168,10 @@ You can generalize this approach easily to create a base class for enums:
 
         public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): mixed
         {
+            if ($value === null) {
+                return null;
+            }
+
             if (!in_array($value, $this->values, true)) {
                 throw new \InvalidArgumentException("Invalid '".$this->name."' value.");
             }
@@ -176,6 +184,9 @@ You can generalize this approach easily to create a base class for enums:
             return $this->name;
         }
     }
+
+The ``null`` checks allow the type to be used for nullable columns, since
+Doctrine passes ``null`` to the type when the field has no value.
 
 With this base class you can define an enum as easily as:
 
