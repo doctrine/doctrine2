@@ -134,6 +134,21 @@ final class EarlyDeletionPlannerTest extends TestCase
         );
     }
 
+    public function testCollisionUsesTheOldValueOfTheChangeSetOfTheDeletion(): void
+    {
+        $old    = new PlannerItem();
+        $old->f = 'renamed';
+        $new    = new PlannerItem();
+        $new->f = 'v';
+
+        self::assertSame([$old], $this->plan(
+            $old,
+            [$new],
+            originalEntityData: [spl_object_id($old) => ['f' => 'renamed']],
+            entityChangeSets: [spl_object_id($old) => ['f' => ['v', 'renamed']]],
+        ));
+    }
+
     public function testCollisionIsOnlyMatchedWithinTheSameClass(): void
     {
         $old    = new PlannerItem();

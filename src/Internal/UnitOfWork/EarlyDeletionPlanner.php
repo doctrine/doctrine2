@@ -79,13 +79,14 @@ final class EarlyDeletionPlanner
         $earlyDeletions = [];
 
         foreach ($candidates as $entity) {
-            $class = $candidateClasses[$entity::class];
+            $class    = $candidateClasses[$entity::class];
+            $oid      = spl_object_id($entity);
+            $snapshot = $this->databaseSnapshot($originalEntityData[$oid] ?? [], $entityChangeSets[$oid] ?? []);
 
-            if (! $this->collidesWithInsertion($class, $entity, $originalEntityData[spl_object_id($entity)] ?? [], $insertIndex)) {
+            if (! $this->collidesWithInsertion($class, $entity, $snapshot, $insertIndex)) {
                 continue;
             }
 
-            $oid = spl_object_id($entity);
             if (
                 isset($foreignKeyTargets[$oid])
                 || isset($manyToManyOwnerIds[$oid])
@@ -260,6 +261,24 @@ final class EarlyDeletionPlanner
         }
 
         return $this->uniqueDeclarations[$class->name] = $declarations;
+    }
+
+    /**
+     * Orphan removals are scheduled after the change sets are computed, which already
+     * overwrote their original data, so the database value is the old value of the change set.
+     *
+     * @param array<string, mixed>                     $originalData
+     * @param array<string, array{0: mixed, 1: mixed}> $changeSet
+     *
+     * @return array<string, mixed>
+     */
+    private function databaseSnapshot(array $originalData, array $changeSet): array
+    {
+        foreach ($changeSet as $fieldName => $change) {
+            $originalData[$fieldName] = $change[0];
+        }
+
+        return $originalData;
     }
 
     /**
