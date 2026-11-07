@@ -12,7 +12,7 @@ By default Doctrine does not map the MySQL enum type to a Doctrine type.
 This is because Enums contain state (their allowed values) and Doctrine
 types don't.
 
-This cookbook entry shows two possible solutions to work with MySQL enums.
+This cookbook entry shows several possible solutions to work with MySQL enums.
 But first a word of warning. The MySQL Enum type has considerable downsides:
 
 -  Adding new values requires to rebuild the whole table, which can take hours
@@ -22,6 +22,50 @@ But first a word of warning. The MySQL Enum type has considerable downsides:
    specifying invalid values leads to an empty enum for the default MySQL error
    settings. You can easily replicate the "allow only some values" requirement
    in your Doctrine entities.
+
+Recommended: PHP enums and the DBAL ``enum`` type
+-------------------------------------------------
+
+Since DBAL 4.2, the ``Doctrine\DBAL\Types\Types::ENUM`` type is available and
+generates a native ``ENUM(...)`` column on MySQL and MariaDB (and a ``VARCHAR``
+column on other platforms). Combined with :ref:`PHP backed enums
+<reference-enum-mapping>`, the ORM fills in the allowed values from the enum
+cases, converts between the database value and the enum instance and validates
+the values for you:
+
+.. code-block:: php
+
+    <?php
+    enum Visibility: string
+    {
+        case Visible = 'visible';
+        case Invisible = 'invisible';
+    }
+
+    #[Entity]
+    class Article
+    {
+        #[Column(type: Types::ENUM, enumType: Visibility::class)]
+        private Visibility $status;
+    }
+
+Without a PHP enum, the allowed values can be passed with the ``values`` option:
+
+.. code-block:: php
+
+    <?php
+    #[Entity]
+    class Article
+    {
+        #[Column(type: Types::ENUM, options: ['values' => ['visible', 'invisible']])]
+        private string $status;
+    }
+
+If you do not need a native ``ENUM`` column, mapping a PHP backed enum to a
+regular ``string`` column with ``enumType`` gives you the same type-safety while
+avoiding the downsides listed above.
+
+The following solutions are only needed when you cannot use DBAL 4.2 or newer.
 
 Solution 1: Mapping to Varchars
 -------------------------------
