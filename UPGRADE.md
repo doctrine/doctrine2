@@ -484,7 +484,7 @@ With `orphanRemoval: true`, replacing an element through `set()` now deletes
 the replaced element on the next flush, just like `remove()` does. Before, the
 replaced element was silently kept. It is not deleted when it is still part
 of the collection under another key, or when it is added to a collection
-again before the flush.
+again after the replacement.
 
 ## Deletions colliding with insertions on a unique constraint run first
 
