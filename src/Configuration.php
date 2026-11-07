@@ -50,6 +50,16 @@ class Configuration extends \Doctrine\DBAL\Configuration
     /** @phpstan-var array<class-string<AbstractPlatform>, ClassMetadata::GENERATOR_TYPE_*> */
     private $identityGenerationPreferences = [];
 
+    public function setHydrationObserver(HydrationObserver|null $observer): void
+    {
+        $this->attributes['hydrationObserver'] = $observer;
+    }
+
+    public function getHydrationObserver(): HydrationObserver|null
+    {
+        return $this->attributes['hydrationObserver'] ?? null;
+    }
+
     /** @phpstan-param array<class-string<AbstractPlatform>, ClassMetadata::GENERATOR_TYPE_*> $value */
     public function setIdentityGenerationPreferences(array $value): void
     {

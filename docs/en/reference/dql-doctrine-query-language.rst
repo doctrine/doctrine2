@@ -1266,6 +1266,27 @@ Now the hydrator is ready to be used in your queries:
     $query = $em->createQuery('SELECT u FROM CmsUser u');
     $results = $query->getResult('CustomHydrator');
 
+Profiling Hydration
+^^^^^^^^^^^^^^^^^^^
+
+Register a ``Doctrine\ORM\HydrationObserver`` with
+``Configuration::setHydrationObserver()`` to time SQL result hydration separately
+from query execution. The observer receives the hydrator class and the mapped
+entity classes at the start, and the number of top-level array results at the
+end when available.
+
+.. note::
+
+    For a fetch join, the total hydration time includes the joined entities,
+    but the count covers only the top-level results. Fetching one post with
+    its images reports a count of one and a combined duration. The observer
+    does not report separate counts or timings for joined associations.
+
+For bulk results the callbacks surround materialization, excluding hydrator setup
+and cleanup. For ``Query::toIterable()``, the callbacks surround each advance of
+the iterator so time spent processing results in application code is excluded.
+Rebuilding entities from the second-level cache is a separate operation.
+
 Pure and Mixed Results
 ~~~~~~~~~~~~~~~~~~~~~~
 
