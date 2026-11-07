@@ -564,21 +564,37 @@ OrphanRemoval works with one-to-one, one-to-many and many-to-many associations.
     Removing an instance of ``B`` from the association is interpreted as "this instance
     is not needed anymore", and Doctrine deletes it during the next flush.
 
-    Moving an instance of ``B`` from one ``A`` to another is supported, as long as you
-    add it to the collection of the new owner before flushing. Adding an element to a
-    managed collection cancels its scheduled orphan removal. However, if the element is
-    only referenced from somewhere else (for example from an unrelated association, or by
-    only setting the owning side of the association) without adding it to a managed
-    collection, Doctrine will still delete it.
+    Moving an instance of ``B`` from one ``A`` to another is supported. Removing an
+    element from a collection schedules its orphan removal, and adding it to a managed
+    collection cancels a removal that is already scheduled. The order of the calls
+    matters: first remove the element from the collection of the old owner, then add it
+    to the collection of the new owner before flushing:
+
+    .. code-block:: php
+
+        <?php
+        $oldOwner->getChildren()->removeElement($child);
+        $newOwner->getChildren()->add($child);
+        $child->setOwner($newOwner);
+        $em->flush();
+
+    Calling ``add()`` first and ``removeElement()`` afterwards schedules the removal
+    again, and the child is deleted. The child is also deleted if it is only referenced
+    from somewhere else (for example from an unrelated association, or by only setting
+    the owning side of the association) without being added to a managed collection.
 
 .. note::
 
-    Replacing the whole collection, for example with
+    Replacing the whole collection of a one-to-many association, for example with
     ``$contact->setAddresses(new ArrayCollection([...]))``, schedules a deletion of the
-    previous collection. With ``orphanRemoval=true`` this deletes **all** elements of the
-    previous collection, including elements that are also contained in the new collection.
+    previous collection. With ``orphanRemoval=true`` this deletes **all** entities of the
+    previous collection, including entities that are also contained in the new collection.
     To keep existing elements, modify the existing collection with ``add()``,
     ``removeElement()`` or ``clear()`` instead of replacing it.
+
+    For many-to-many associations, replacing the collection only deletes the rows of the
+    join table, and the links of the new collection are inserted afterwards. The target
+    entities themselves are not deleted in this case.
 
 .. note::
 
