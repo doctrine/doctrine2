@@ -11,6 +11,8 @@ use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
 use Doctrine\DBAL\Types\Type as DBALType;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\DefaultQuoteStrategy;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
@@ -18,6 +20,7 @@ use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
 use Doctrine\Tests\Models\CustomType\CustomTypeParent;
+use Doctrine\Tests\Models\CustomType\CustomTypeQuotedUpperCase;
 use Doctrine\Tests\Models\Generic\NonAlphaColumnsEntity;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Group;
@@ -59,6 +62,30 @@ class BasicEntityPersisterTypeValueSqlTest extends OrmTestCase
         $sql    = $method->invoke($this->persister);
 
         self::assertEquals('INSERT INTO customtype_parents (customInteger, child_id) VALUES (ABS(?), ?)', $sql);
+    }
+
+    #[Group('GH-7460')]
+    #[Group('GH-8191')]
+    public function testGetInsertSQLUsesTypeValuesSQLForQuotedColumns(): void
+    {
+        $persister = new BasicEntityPersister($this->entityManager, $this->entityManager->getClassMetadata(CustomTypeQuotedUpperCase::class));
+
+        self::assertSame('INSERT INTO customtype_quoted_uppercases ("key") VALUES (UPPER(?))', $persister->getInsertSQL());
+    }
+
+    #[Group('GH-8191')]
+    public function testGetInsertSQLUsesTypeValuesSQLWithQuoteStrategyQuotingAllColumns(): void
+    {
+        $this->entityManager->getConfiguration()->setQuoteStrategy(new class extends DefaultQuoteStrategy {
+            public function getColumnName(string $fieldName, ClassMetadata $class, AbstractPlatform $platform): string
+            {
+                return $platform->quoteSingleIdentifier($class->fieldMappings[$fieldName]->columnName);
+            }
+        });
+
+        $persister = new BasicEntityPersister($this->entityManager, $this->entityManager->getClassMetadata(CustomTypeParent::class));
+
+        self::assertSame('INSERT INTO customtype_parents ("customInteger", child_id) VALUES (ABS(?), ?)', $persister->getInsertSQL());
     }
 
     public function testUpdateUsesTypeValuesSQL(): void

@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
+use Doctrine\Tests\Models\CustomType\CustomTypeGeneratedUpperCase;
 use Doctrine\Tests\Models\CustomType\CustomTypeParent;
+use Doctrine\Tests\Models\CustomType\CustomTypeQuotedUpperCase;
 use Doctrine\Tests\Models\CustomType\CustomTypeUpperCase;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
+
+use function sprintf;
 
 class TypeValueSqlTest extends OrmFunctionalTestCase
 {
@@ -73,6 +78,90 @@ class TypeValueSqlTest extends OrmFunctionalTestCase
         $entity = $this->_em->find(CustomTypeUpperCase::class, $id);
         self::assertEquals('bar', $entity->namedLowerCaseString, 'Entity holds lowercase string');
         self::assertEquals('BAR', $this->_em->getConnection()->fetchOne('select named_lower_case_string from customtype_uppercases where id=' . $entity->id . ''), 'Database holds uppercase string');
+    }
+
+    #[Group('GH-7460')]
+    #[Group('GH-8191')]
+    public function testUpperCaseStringTypeWhenColumnNameIsQuoted(): void
+    {
+        $this->createSchemaForModels(CustomTypeQuotedUpperCase::class);
+
+        $connection = $this->_em->getConnection();
+        $sql        = sprintf(
+            'SELECT %s FROM customtype_quoted_uppercases WHERE id = ?',
+            $connection->getDatabasePlatform()->quoteSingleIdentifier('key'),
+        );
+
+        $entity                  = new CustomTypeQuotedUpperCase();
+        $entity->lowerCaseString = 'foo';
+
+        $this->_em->persist($entity);
+        $this->_em->flush();
+
+        $id = $entity->id;
+
+        $this->_em->clear();
+
+        $entity = $this->_em->find(CustomTypeQuotedUpperCase::class, $id);
+
+        self::assertSame('foo', $entity->lowerCaseString, 'Entity holds lowercase string');
+        self::assertSame('FOO', $connection->fetchOne($sql, [$id]), 'Database holds uppercase string');
+
+        $entity->lowerCaseString = 'bar';
+
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $entity = $this->_em->find(CustomTypeQuotedUpperCase::class, $id);
+
+        self::assertSame('bar', $entity->lowerCaseString, 'Entity holds lowercase string');
+        self::assertSame('BAR', $connection->fetchOne($sql, [$id]), 'Database holds uppercase string');
+    }
+
+    public function testUpperCaseStringTypeOfGeneratedColumn(): void
+    {
+        $this->createSchemaForModels(CustomTypeGeneratedUpperCase::class);
+
+        $entity       = new CustomTypeGeneratedUpperCase();
+        $entity->name = 'test';
+
+        $this->_em->persist($entity);
+        $this->_em->flush();
+
+        self::assertSame('generated', $entity->generatedLowerCaseString, 'Entity holds the converted generated value');
+    }
+
+    public function testTypeValueSqlInManyToManyCollectionCriteria(): void
+    {
+        $parent = new CustomTypeParent();
+
+        foreach ([-5, -7, -9] as $customInteger) {
+            $friend                = new CustomTypeParent();
+            $friend->customInteger = $customInteger;
+
+            $parent->addMyFriend($friend);
+            $this->_em->persist($friend);
+        }
+
+        $this->_em->persist($parent);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $parent = $this->_em->find(CustomTypeParent::class, $parent->id);
+
+        $friends = $parent->getMyFriends()->matching(
+            Criteria::create()->where(Criteria::expr()->eq('customInteger', -7)),
+        );
+
+        self::assertFalse($parent->getMyFriends()->isInitialized());
+        self::assertCount(1, $friends);
+        self::assertSame(-7, $friends->first()->customInteger);
+
+        $friends = $parent->getMyFriends()->matching(
+            Criteria::create()->where(Criteria::expr()->in('customInteger', [-5, -9])),
+        );
+
+        self::assertCount(2, $friends);
     }
 
     public function testTypeValueSqlWithAssociations(): void

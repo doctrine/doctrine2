@@ -320,7 +320,10 @@ class BasicEntityPersister implements EntityPersister
         $columnNames = [];
         foreach ($this->class->fieldMappings as $key => $column) {
             if (isset($column->generated) || ($this->class->isVersioned && $key === $versionedClass->versionField)) {
-                $columnNames[$key] = $this->quoteStrategy->getColumnName($key, $versionedClass, $this->platform);
+                $columnNames[$key] = $this->getType($column->type)->convertToPHPValueSQL(
+                    $this->quoteStrategy->getColumnName($key, $versionedClass, $this->platform),
+                    $this->platform,
+                );
             }
         }
 
@@ -1469,16 +1472,23 @@ class BasicEntityPersister implements EntityPersister
 
         $placeholders = [];
         $columns      = array_unique($columns);
+        $fieldNames   = $this->class->fieldNames;
+
+        // The column list contains the column names as returned by the quote strategy,
+        // whereas ClassMetadata::$fieldNames is indexed by the unquoted column names.
+        foreach ($this->class->fieldNames as $fieldName) {
+            $fieldNames[$this->quoteStrategy->getColumnName($fieldName, $this->class, $this->platform)] = $fieldName;
+        }
 
         foreach ($columns as $column) {
             $placeholder = '?';
 
             if (
-                isset($this->class->fieldNames[$column])
-                && isset($this->columnTypes[$this->class->fieldNames[$column]])
-                && isset($this->class->fieldMappings[$this->class->fieldNames[$column]])
+                isset($fieldNames[$column])
+                && isset($this->columnTypes[$fieldNames[$column]])
+                && isset($this->class->fieldMappings[$fieldNames[$column]])
             ) {
-                $type        = $this->getType($this->columnTypes[$this->class->fieldNames[$column]]);
+                $type        = $this->getType($this->columnTypes[$fieldNames[$column]]);
                 $placeholder = $type->convertToDatabaseValueSQL('?', $this->platform);
             }
 

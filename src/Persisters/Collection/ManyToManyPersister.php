@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Cache\Persister\CompatOrderings;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\InverseSideMapping;
@@ -243,17 +244,24 @@ class ManyToManyPersister extends AbstractCollectionPersister
             $paramTypes[]   = PersisterHelper::getTypeOfColumn($value, $ownerMetadata, $this->em);
         }
 
-        $parameters = $this->expandCriteriaParameters($criteria);
+        $parameters   = $this->expandCriteriaParameters($criteria);
+        $typeProvider = TypeProviderLocator::fromConnection($this->conn);
 
         foreach ($parameters as $parameter) {
             [$name, $value, $operator] = $parameter;
 
-            $field = $this->quoteStrategy->getColumnName($name, $targetClass, $this->platform);
+            $field       = $this->quoteStrategy->getColumnName($name, $targetClass, $this->platform);
+            $placeholder = '?';
+
+            if (isset($targetClass->fieldMappings[$name])) {
+                $placeholder = $typeProvider->get($targetClass->fieldMappings[$name]->type)
+                    ->convertToDatabaseValueSQL($placeholder, $this->platform);
+            }
 
             if ($value === null && ($operator === Comparison::EQ || $operator === Comparison::NEQ)) {
                 $whereClauses[] = sprintf('te.%s %s NULL', $field, $operator === Comparison::EQ ? 'IS' : 'IS NOT');
             } elseif ($operator === Comparison::IN || $operator === Comparison::NIN) {
-                $whereClauses[] = sprintf('te.%s %s (%s)', $field, $operator === Comparison::IN ? 'IN' : 'NOT IN', implode(', ', array_fill(0, count($value), '?')));
+                $whereClauses[] = sprintf('te.%s %s (%s)', $field, $operator === Comparison::IN ? 'IN' : 'NOT IN', implode(', ', array_fill(0, count($value), $placeholder)));
                 foreach ($value as $item) {
                     foreach (PersisterHelper::convertToParameterValue($item, $this->em) as $itemValue) {
                         $params[] = $itemValue;
@@ -264,7 +272,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
                     }
                 }
             } else {
-                $whereClauses[] = sprintf('te.%s %s ?', $field, $operator);
+                $whereClauses[] = sprintf('te.%s %s %s', $field, $operator, $placeholder);
 
                 $params     = [...$params, ...PersisterHelper::convertToParameterValue($value, $this->em)];
                 $paramTypes = [...$paramTypes, ...PersisterHelper::inferParameterTypes($name, $value, $targetClass, $this->em)];
