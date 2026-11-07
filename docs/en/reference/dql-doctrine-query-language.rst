@@ -1245,9 +1245,9 @@ creating a class which extends ``AbstractHydrator``:
 
     class CustomHydrator extends AbstractHydrator
     {
-        protected function _hydrateAll()
+        protected function hydrateAllData(): array
         {
-            return $this->_stmt->fetchAllAssociative();
+            return $this->stmt->fetchAllAssociative();
         }
     }
 
