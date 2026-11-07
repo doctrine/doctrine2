@@ -6,7 +6,9 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -20,6 +22,12 @@ class GH6999Test extends OrmFunctionalTestCase
 {
     protected function setUp(): void
     {
+        if (DBALType::hasType(NegativeToPositiveType::NAME)) {
+            DBALType::overrideType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
+        } else {
+            DBALType::addType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
+        }
+
         parent::setUp();
 
         $this->createSchemaForModels(
@@ -36,6 +44,8 @@ class GH6999Test extends OrmFunctionalTestCase
             GH6999Book::class,
             GH6999Article::class,
             GH6999Tag::class,
+            GH6999Wallet::class,
+            GH6999Token::class,
         );
     }
 
@@ -43,6 +53,8 @@ class GH6999Test extends OrmFunctionalTestCase
     {
         $conn = $this->_em->getConnection();
 
+        $conn->executeStatement('DELETE FROM GH6999Token');
+        $conn->executeStatement('DELETE FROM GH6999Wallet');
         $conn->executeStatement('DELETE FROM gh6999_article_tag');
         $conn->executeStatement('DELETE FROM GH6999Tag');
         $conn->executeStatement('DELETE FROM GH6999Book');
@@ -156,6 +168,11 @@ class GH6999Test extends OrmFunctionalTestCase
         self::assertSame(['a', 'b'], $this->findAccessNames());
     }
 
+    /**
+     * Not cacheable: the cached collection persister cannot build a cache entry for a
+     * collection that still contains a removed entity.
+     */
+    #[Group('non-cacheable')]
     public function testExplicitlyRemovedElementOfReplacingCollectionIsDeleted(): void
     {
         $userId = $this->createUserWithAccesses('a', 'b');
@@ -283,6 +300,27 @@ class GH6999Test extends OrmFunctionalTestCase
 
         $article = $this->_em->find(GH6999Article::class, $articleId);
         self::assertCount(2, $article->tags);
+    }
+
+    public function testReplacingCollectionKeepsElementsWithIdentifierTypeRequiringSqlConversion(): void
+    {
+        $wallet = new GH6999Wallet();
+        $wallet->tokens->add(new GH6999Token(-1, $wallet));
+        $wallet->tokens->add(new GH6999Token(-2, $wallet));
+        $this->_em->persist($wallet);
+        $this->_em->flush();
+        $walletId = $wallet->id;
+        $this->_em->clear();
+
+        $wallet         = $this->_em->find(GH6999Wallet::class, $walletId);
+        $wallet->tokens = $wallet->tokens->filter(static fn (GH6999Token $token): bool => $token->id === -1);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $ids = $this->_em->createQuery('SELECT t.id FROM ' . GH6999Token::class . ' t')
+            ->getSingleColumnResult();
+
+        self::assertSame([-1], $ids);
     }
 
     private function createUserWithAccesses(string|int ...$names): int
@@ -504,6 +542,37 @@ class GH6999Tag
     public function __construct(
         #[ORM\Column]
         public string $name,
+    ) {
+    }
+}
+
+#[ORM\Entity]
+class GH6999Wallet
+{
+    #[ORM\Id]
+    #[ORM\Column]
+    #[ORM\GeneratedValue]
+    public int|null $id = null;
+
+    /** @var Collection<int, GH6999Token> */
+    #[ORM\OneToMany(targetEntity: GH6999Token::class, mappedBy: 'wallet', cascade: ['persist'], orphanRemoval: true)]
+    public Collection $tokens;
+
+    public function __construct()
+    {
+        $this->tokens = new ArrayCollection();
+    }
+}
+
+#[ORM\Entity]
+class GH6999Token
+{
+    public function __construct(
+        #[ORM\Id]
+        #[ORM\Column(type: NegativeToPositiveType::NAME)]
+        public int $id,
+        #[ORM\ManyToOne(targetEntity: GH6999Wallet::class, inversedBy: 'tokens')]
+        public GH6999Wallet $wallet,
     ) {
     }
 }

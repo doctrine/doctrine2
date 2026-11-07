@@ -354,9 +354,13 @@ class OneToManyPersister extends AbstractCollectionPersister
         }
 
         $identifierTypes = [];
+        $placeholders    = [];
 
         foreach ($targetClass->identifier as $fieldName) {
             $identifierTypes[] = PersisterHelper::getTypeOfField($fieldName, $targetClass, $this->em)[0];
+            $placeholders[]    = isset($targetClass->fieldMappings[$fieldName])
+                ? Type::getType($targetClass->fieldMappings[$fieldName]->type)->convertToDatabaseValueSQL('?', $this->platform)
+                : '?';
         }
 
         $conditions = [];
@@ -372,7 +376,7 @@ class OneToManyPersister extends AbstractCollectionPersister
                 }
 
                 $conditions[] = [
-                    $identifierColumns[0] . ' IN (' . implode(', ', array_fill(0, count($chunk), '?')) . ')',
+                    $identifierColumns[0] . ' IN (' . implode(', ', array_fill(0, count($chunk), $placeholders[0])) . ')',
                     $parameters,
                     $types,
                 ];
@@ -380,7 +384,13 @@ class OneToManyPersister extends AbstractCollectionPersister
                 continue;
             }
 
-            $tuple = '(' . implode(' = ? AND ', $identifierColumns) . ' = ?)';
+            $comparisons = [];
+
+            foreach ($identifierColumns as $index => $identifierColumn) {
+                $comparisons[] = $identifierColumn . ' = ' . $placeholders[$index];
+            }
+
+            $tuple = '(' . implode(' AND ', $comparisons) . ')';
 
             foreach ($chunk as $values) {
                 $parameters = array_merge($parameters, $values);
