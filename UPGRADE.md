@@ -478,42 +478,24 @@ The return type of the following methods has been changed from
 All three methods continue to return an instance of `EventManager`, however
 relying on that is deprecated and will no longer be the guaranteed in 4.0.
 
-## `PersistentCollection::set()` now schedules the displaced element for orphan removal
+## `PersistentCollection::set()` now removes the replaced element with orphan removal
 
-Calling `Doctrine\ORM\PersistentCollection::set()` on a collection whose
-mapping enables orphan removal now schedules the element that was stored
-under the given key for orphan removal, like an explicit `remove()` of that
-element does. Previously the displaced element silently stayed alive even
-though it had left the collection. An element that keeps its membership
-under another key of the same collection when the displacing `set()` runs
-is not removed, and a displaced element re-homed afterwards, to the same
-or another collection, is revived: the re-homing `add()`/`set()` cancels
-the pending orphan removal of the element it receives. An element re-homed
-to another collection before the displacing `set()` is scheduled and
-deleted on the next flush, like one never re-homed.
+With `orphanRemoval: true`, replacing an element through `set()` now deletes
+the replaced element on the next flush, just like `remove()` does. Before, the
+replaced element was silently kept. It is not deleted when it is still part
+of the collection under another key, or when it is added to a collection
+again before the flush.
 
-## Deletions colliding with pending insertions run in an early batch, and unique tuples are compared as database values
+## Deletions colliding with insertions on a unique constraint run first
 
-In a single `flush()`, an entity deletion that collides with a pending
-insertion on a metadata-declared unique constraint is now executed before
-the insertions when it is safe to do so (no pending foreign-key reference
-and no pending many-to-many collection update may still reference it).
-This two-batch split moves the affected `postRemove` listeners: they run
-after all `DELETE` statements of the early batch and before the
-insertions' `postPersist` listeners. A `postRemove` listener of the early
-batch observes the entity with a reset identifier
-(`$entity->id === null`), `UnitOfWork::isScheduledForDelete()` already
-returning `false`, and the remaining deletions still pending until the
-late batch at the end of the flush. The collision detection compares
-database values: every field component of a declared unique tuple
-is converted with `Type::convertToDatabaseValue()` for the platform of the
-flush (the deletion side is compared against its database snapshot, the
-insertion side against its current values), so values the database sees as
-equal collide regardless of their in-memory representation. Equality that
-only the database server decides — for example strings equal under a
-case-insensitive `collation` — is not detected and still fails on the
-unique constraint as before. Table-level unique constraints are consumed
-in both the `columns` and the `fields` form.
+When a single `flush()` deletes an entity and inserts another one with the
+same values for a unique constraint declared in the mapping, the deletion now
+runs before the insertions instead of failing with a unique constraint
+violation. This only happens when nothing else in the flush still references
+the deleted entity; all other deletions still run last.
+
+For these early deletions, `postRemove` is dispatched before the
+`postPersist` events of the same flush.
 
 # Upgrade to 3.6
 
