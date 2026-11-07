@@ -38,19 +38,21 @@ The ``SQLFilter#getParameter()`` function takes care of the proper quoting of pa
 
     <?php
     namespace Example;
-    use Doctrine\ORM\Mapping\ClassMetadata,
-        Doctrine\ORM\Query\Filter\SQLFilter;
+    use Doctrine\ORM\Mapping\ClassMetadata;
+    use Doctrine\ORM\Query\Filter\SQLFilter;
 
     class MyLocaleFilter extends SQLFilter
     {
-        public function addFilterConstraint(ClassMetadata $targetEntity, $targetTableAlias): string
+        public function addFilterConstraint(ClassMetadata $targetEntity, string $targetTableAlias): string
         {
-            // Check if the entity implements the LocalAware interface
-            if (!$targetEntity->reflClass->implementsInterface('LocaleAware')) {
-                return "";
+            // Only filter entities that implement the LocaleAware interface and map a "locale" field
+            if (! $targetEntity->reflClass->implementsInterface(LocaleAware::class) || ! $targetEntity->hasField('locale')) {
+                return '';
             }
 
-            return $targetTableAlias.'.locale = ' . $this->getParameter('locale'); // getParameter applies quoting automatically
+            // Resolve the column name from the metadata instead of assuming it,
+            // getParameter() applies quoting automatically
+            return $targetTableAlias . '.' . $targetEntity->getColumnName('locale') . ' = ' . $this->getParameter('locale');
         }
     }
 

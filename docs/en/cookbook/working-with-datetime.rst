@@ -150,7 +150,13 @@ code before bootstrapping the ORM:
     use DoctrineExtensions\DBAL\Types\UTCDateTimeType;
 
     Type::overrideType('datetime', UTCDateTimeType::class);
-    Type::overrideType('datetimetz', UTCDateTimeType::class);
+
+Do not override the ``datetimetz`` type with this class. ``UTCDateTimeType`` extends
+``DateTimeType`` and uses its SQL declaration and format, while ``datetimetz`` columns
+are declared with a timezone (for example ``TIMESTAMP(0) WITH TIME ZONE`` on PostgreSQL)
+and use a format that includes the offset. Overriding it changes the generated schema
+and breaks reading existing ``datetimetz`` values. If you need the same behavior for
+``datetimetz`` columns, create a separate type that extends ``DateTimeTzType``.
 
 
 To be able to transform these values
@@ -196,3 +202,19 @@ This snippet makes use of the previously discussed "changeset by reference only"
 objects. That means a new DateTime will only be used during updating if the reference
 changes between retrieval and flush operation. This means we can easily go and modify
 the instance by setting the previous local timezone.
+
+.. warning::
+
+    Converting to UTC is only safe for points in time that are in the past or
+    near future, like the creation date of an event. The rules of a timezone (its
+    UTC offset and daylight saving time) are defined by the timezone database and can
+    change after the value was stored. When this happens, a UTC value that was
+    computed for a future local time, like a meeting at 10:00 in Europe/Berlin next
+    year, no longer corresponds to the intended local time when it is converted back.
+
+    For future local times, store the local date and time without conversion (for
+    example as a string or in a ``datetime`` column that is not converted to UTC)
+    together with the timezone name, and only compute the UTC value when it is needed.
+    See `Why not to convert a datetime to timestamp
+    <https://andreas.heigl.org/2016/12/22/why-not-to-convert-a-datetime-to-timestamp/>`_
+    for a longer explanation.

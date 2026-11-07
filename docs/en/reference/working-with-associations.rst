@@ -559,9 +559,42 @@ OrphanRemoval works with one-to-one, one-to-many and many-to-many associations.
 .. note::
 
     When using the ``orphanRemoval=true`` option Doctrine makes the assumption
-    that the entities are privately owned and will **NOT** be reused by other entities.
-    If you neglect this assumption your entities will get deleted by Doctrine even if
-    you assigned the orphaned entity to another one.
+    that the entities are privately owned: each instance of ``B`` belongs to exactly one
+    instance of ``A`` at a time, like the lines of an order or the addresses of a contact.
+    Removing an instance of ``B`` from the association is interpreted as "this instance
+    is not needed anymore", and Doctrine deletes it during the next flush.
+
+    Moving an instance of ``B`` from one ``A`` to another is supported. Removing an
+    element from a collection schedules its orphan removal, and adding it to a managed
+    collection cancels a removal that is already scheduled. The order of the calls
+    matters: first remove the element from the collection of the old owner, then add it
+    to the collection of the new owner before flushing:
+
+    .. code-block:: php
+
+        <?php
+        $oldOwner->getChildren()->removeElement($child);
+        $newOwner->getChildren()->add($child);
+        $child->setOwner($newOwner);
+        $em->flush();
+
+    Calling ``add()`` first and ``removeElement()`` afterwards schedules the removal
+    again, and the child is deleted. The child is also deleted if it is only referenced
+    from somewhere else (for example from an unrelated association, or by only setting
+    the owning side of the association) without being added to a managed collection.
+
+.. note::
+
+    Replacing the whole collection of a one-to-many association, for example with
+    ``$contact->setAddresses(new ArrayCollection([...]))``, schedules a deletion of the
+    previous collection. With ``orphanRemoval=true`` this deletes **all** entities of the
+    previous collection, including entities that are also contained in the new collection.
+    To keep existing elements, modify the existing collection with ``add()``,
+    ``removeElement()`` or ``clear()`` instead of replacing it.
+
+    For many-to-many associations, replacing the collection only deletes the rows of the
+    join table, and the links of the new collection are inserted afterwards. The target
+    entities themselves are not deleted in this case.
 
 .. note::
 
