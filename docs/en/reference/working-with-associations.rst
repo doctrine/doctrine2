@@ -559,9 +559,17 @@ OrphanRemoval works with one-to-one, one-to-many and many-to-many associations.
 .. note::
 
     When using the ``orphanRemoval=true`` option Doctrine makes the assumption
-    that the entities are privately owned and will **NOT** be reused by other entities.
-    If you neglect this assumption your entities will get deleted by Doctrine even if
-    you assigned the orphaned entity to another one.
+    that the entities are privately owned: each instance of ``B`` belongs to exactly one
+    instance of ``A`` at a time, like the lines of an order or the addresses of a contact.
+    Removing an instance of ``B`` from the association is interpreted as "this instance
+    is not needed anymore", and Doctrine deletes it during the next flush.
+
+    Moving an instance of ``B`` from one ``A`` to another is supported, as long as you
+    add it to the collection of the new owner before flushing. Adding an element to a
+    managed collection cancels its scheduled orphan removal. However, if the element is
+    only referenced from somewhere else (for example from an unrelated association, or by
+    only setting the owning side of the association) without adding it to a managed
+    collection, Doctrine will still delete it.
 
 .. note::
 
