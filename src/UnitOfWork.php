@@ -472,7 +472,7 @@ class UnitOfWork implements PropertyChangedListener
             // Entity deletions come last. Their order only needs to take care of other deletions
             // (first delete entities depending upon others, before deleting depended-upon entities).
             if ($this->entityDeletions) {
-                $this->executeDeletions();
+                $this->executeDeletions($this->entityDeletions);
             }
 
             $commitFailed = false;
@@ -1353,8 +1353,8 @@ class UnitOfWork implements PropertyChangedListener
         );
     }
 
-    /** @param array<int, object>|null $deletions */
-    private function executeDeletions(array|null $deletions = null): void
+    /** @param array<int, object> $deletions */
+    private function executeDeletions(array $deletions): void
     {
         $entities         = $this->computeDeleteExecutionOrder($deletions);
         $eventsToDispatch = [];
@@ -1487,16 +1487,14 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * @param array<int, object>|null $deletions
+     * @param array<int, object> $deletions
      *
      * @return list<object>
      */
-    private function computeDeleteExecutionOrder(array|null $deletions = null): array
+    private function computeDeleteExecutionOrder(array $deletions): array
     {
         $stronglyConnectedComponents = new StronglyConnectedComponents();
         $sort                        = new TopologicalSort();
-
-        $deletions ??= $this->entityDeletions;
 
         foreach ($deletions as $entity) {
             $stronglyConnectedComponents->addNode($entity);
