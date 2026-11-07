@@ -77,9 +77,11 @@ code:
 The identity map is only consulted when an entity is looked up by its
 identifier, with ``EntityManager#find()``, ``EntityManager#getReference()``
 or ``EntityRepository#find()``. All other ways of retrieving entities, like
-``findBy()``, ``findOneBy()``, ``count()``, ``matching()`` or DQL queries, always
-send a query to the database. The identity map is then only used to return the
-already known instance for each row of the result.
+``findBy()``, ``findOneBy()``, ``count()``, ``matching()`` or DQL queries, are never
+answered from the identity map alone. They send a query to the database, unless the
+result is served from the :doc:`second-level cache <second-level-cache>` or a result
+cache. The identity map is then only used to return the already known instance for
+each row of the result.
 
 This has consequences for entities whose state has not been flushed yet:
 
