@@ -674,19 +674,6 @@ If you pass an array of values Doctrine will convert the query into a WHERE fiel
     $users = $em->getRepository('MyProject\Domain\User')->findBy(array('age' => array(20, 30, 40)));
     // translates roughly to: SELECT * FROM users WHERE age IN (20, 30, 40)
 
-An EntityRepository also provides a mechanism for more concise
-calls through its use of ``__call``. Thus, the following two
-examples are equivalent:
-
-.. code-block:: php
-
-    <?php
-    // A single user by its nickname
-    $user = $em->getRepository('MyProject\Domain\User')->findOneBy(array('nickname' => 'romanb'));
-
-    // A single user by its nickname (__call magic)
-    $user = $em->getRepository('MyProject\Domain\User')->findOneByNickname('romanb');
-
 Additionally, you can just count the result of the provided conditions when you don't really need the data:
 
 .. code-block:: php
@@ -694,6 +681,48 @@ Additionally, you can just count the result of the provided conditions when you 
     <?php
     // Check there is no user with nickname
     $availableNickname = 0 === $em->getRepository('MyProject\Domain\User')->count(['nickname' => 'nonexistent']);
+
+.. _reference-magic-finders:
+
+Magic Finders
+^^^^^^^^^^^^^
+
+An ``EntityRepository`` also provides "magic finders" through its ``__call()``
+method: calls to methods that start with ``findBy``, ``findOneBy`` or ``countBy``
+followed by the name of a field or association are translated to calls of
+``findBy()``, ``findOneBy()`` and ``count()`` with a single criterion on that field.
+The part after the prefix is converted to camel case to determine the field name,
+so ``findOneByNickname`` and ``findOneByUserName`` look for the fields ``nickname``
+and ``userName``.
+
+.. code-block:: php
+
+    <?php
+    $repository = $em->getRepository('MyProject\Domain\User');
+
+    // Equivalent to $repository->findOneBy(['nickname' => 'romanb'])
+    $user = $repository->findOneByNickname('romanb');
+
+    // Equivalent to $repository->findBy(['age' => 20], ['name' => 'ASC'], 10, 0)
+    $users = $repository->findByAge(20, ['name' => 'ASC'], 10, 0);
+
+    // Equivalent to $repository->count(['status' => 'active'])
+    $activeUsers = $repository->countByStatus('active');
+
+The first argument is the value to search for. Any further arguments are passed on
+to the underlying method, for example orderings, limit and offset for ``findBy()``.
+
+A magic finder throws a ``Doctrine\ORM\Repository\Exception\InvalidMagicMethodCall``
+exception when it is called without a value or when the entity has no field or
+association with that name, and a ``BadMethodCallException`` when the method name
+does not start with one of the supported prefixes.
+
+Magic finders can only search on a single field. Since they are resolved at runtime,
+IDEs and static analysis tools do not know about them unless you declare them with
+``@method`` annotations on a custom repository class. For full IDE and static
+analysis support, call ``findBy()``, ``findOneBy()`` or ``count()`` directly, or
+add an explicit method to a
+:ref:`custom repository <working-with-objects-custom-repositories>`.
 
 By Criteria
 ~~~~~~~~~~~
@@ -784,6 +813,8 @@ using a hand-crafted SQL query and a ResultSetMapping that
 describes how the SQL result set should be transformed by Doctrine.
 More information about native queries can be found in
 :doc:`the dedicated chapter <native-sql>`.
+
+.. _working-with-objects-custom-repositories:
 
 Custom Repositories
 ~~~~~~~~~~~~~~~~~~~
