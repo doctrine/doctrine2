@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\Mapping\JoinColumnMapping;
 use Doctrine\ORM\Mapping\MappingAttribute;
+use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Persistence\Mapping\Driver\ClassNames;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Tests\Mocks\AttributeDriverFactory;
@@ -67,6 +68,16 @@ class AttributeDriverTest extends MappingDriverTestCase
         self::assertSame('version', $metadata->versionField);
         self::assertSame('integer', $metadata->getTypeOfField('version'));
         self::assertSame(1, $metadata->fieldMappings['version']->options['default']);
+    }
+
+    public function testIdentifierCannotBeVersioned(): void
+    {
+        $factory = $this->createClassMetadataFactory();
+
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage("Setting Id field 'id' as versionable");
+
+        $factory->getMetadataFor(AttributeEntityWithVersionedId::class);
     }
 
     public function testIsTransient(): void
@@ -162,6 +173,15 @@ class AttributeEntityWithTypedVersion
     #[ORM\Version]
     #[ORM\Column]
     public int $version;
+}
+
+#[ORM\Entity]
+class AttributeEntityWithVersionedId
+{
+    #[ORM\Id]
+    #[ORM\Version]
+    #[ORM\Column]
+    public int $id;
 }
 
 #[ORM\Index(name: 'bar', columns: ['id'])]

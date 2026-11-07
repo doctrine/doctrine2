@@ -330,11 +330,11 @@ class AttributeDriver implements MappingDriver
                     $metadata->setIdGeneratorType(constant('Doctrine\ORM\Mapping\ClassMetadata::GENERATOR_TYPE_' . $generatedValueAttribute->strategy));
                 }
 
-                if ($this->reader->getPropertyAttribute($property, Mapping\Version::class)) {
-                    $metadata->setVersionMapping($mapping);
-                }
-
                 $metadata->mapField($mapping);
+
+                if ($this->reader->getPropertyAttribute($property, Mapping\Version::class)) {
+                    $metadata->setVersionMappingFromFieldMapping($metadata->fieldMappings[$mapping['fieldName']]);
+                }
 
                 // Check for SequenceGenerator/TableGenerator definition
                 $seqGeneratorAttribute    = $this->reader->getPropertyAttribute($property, Mapping\SequenceGenerator::class);

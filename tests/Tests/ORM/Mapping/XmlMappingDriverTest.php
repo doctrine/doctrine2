@@ -50,6 +50,16 @@ class XmlMappingDriverTest extends MappingDriverTestCase
         );
     }
 
+    public function testVersionFieldTypeIsInferredFromTypedProperty(): void
+    {
+        $metadata = $this->createClassMetadataFactory()->getMetadataFor(XmlEntityWithTypedVersion::class);
+
+        self::assertTrue($metadata->isVersioned);
+        self::assertSame('version', $metadata->versionField);
+        self::assertSame('integer', $metadata->getTypeOfField('version'));
+        self::assertSame(1, $metadata->fieldMappings['version']->options['default']);
+    }
+
     public function testClassTableInheritanceDiscriminatorMap(): void
     {
         $mappingDriver = $this->loadDriver();
@@ -418,4 +428,10 @@ class XMLSLCFoo
 {
     /** @var int */
     public $id;
+}
+
+class XmlEntityWithTypedVersion
+{
+    public int $id;
+    public int $version;
 }

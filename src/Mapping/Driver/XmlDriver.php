@@ -257,12 +257,14 @@ class XmlDriver extends FileDriver
             foreach ($xmlRoot->field as $fieldMapping) {
                 $mapping = $this->columnToArray($fieldMapping);
 
-                if (isset($mapping['version'])) {
-                    $metadata->setVersionMapping($mapping);
-                    unset($mapping['version']);
-                }
+                $isVersioned = isset($mapping['version']);
+                unset($mapping['version']);
 
                 $metadata->mapField($mapping);
+
+                if ($isVersioned) {
+                    $metadata->setVersionMappingFromFieldMapping($metadata->fieldMappings[$mapping['fieldName']]);
+                }
             }
         }
 

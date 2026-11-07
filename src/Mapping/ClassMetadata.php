@@ -2506,21 +2506,13 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public function setVersionMapping(array &$mapping): void
     {
+        if (! empty($mapping['id'])) {
+            throw MappingException::cannotVersionIdField($this->name, $mapping['fieldName']);
+        }
+
         $this->isVersioned              = true;
         $this->versionField             = $mapping['fieldName'];
         $this->requiresFetchAfterChange = true;
-
-        // Drivers call this before mapField(), which would infer the type from the typed property.
-        if (! isset($mapping['type'])) {
-            $fieldName = $mapping['fieldName'];
-            assert(is_string($fieldName));
-
-            if ($this->isTypedProperty($fieldName)) {
-                $mapping['type'] = $this->validateAndCompleteTypedFieldMapping(['fieldName' => $fieldName])['type'] ?? null;
-            }
-
-            $mapping['type'] ??= 'string';
-        }
 
         if (! isset($mapping['default'])) {
             if (in_array($mapping['type'], ['integer', 'bigint', 'smallint'], true)) {
@@ -2531,6 +2523,16 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 throw MappingException::unsupportedOptimisticLockingType($this->name, $mapping['fieldName'], $mapping['type']);
             }
         }
+    }
+
+    /**
+     * Configures versioning using an already mapped field.
+     */
+    public function setVersionMappingFromFieldMapping(FieldMapping $mapping): void
+    {
+        $versionMapping = (array) $mapping;
+        $this->setVersionMapping($versionMapping);
+        $mapping->options = $versionMapping['options'] ?? null;
     }
 
     /**
