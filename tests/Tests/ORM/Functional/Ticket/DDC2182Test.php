@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Schema\Index as DbalIndex;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
@@ -31,21 +32,34 @@ class DDC2182Test extends OrmFunctionalTestCase
             ],
         );
 
-        $parent = $schema->getTable('DDC2182OptionParent');
-        self::assertTableColumns($parent, [
-            'id' => ['type' => 'integer', 'nullable' => false, 'unsigned' => true],
-        ]);
-        self::assertSame(['id'], self::primaryKeyColumns($parent));
+        self::assertTableEquals(
+            self::table(
+                'DDC2182OptionParent',
+                [
+                    self::column('id', 'integer', ['unsigned' => true, 'platformOptions' => []]),
+                ],
+                primaryKey: ['id'],
+            ),
+            $schema->getTable('DDC2182OptionParent'),
+        );
 
-        $child = $schema->getTable('DDC2182OptionChild');
-        self::assertTableColumns($child, [
-            'id'        => ['type' => 'string', 'nullable' => false, 'length' => 255],
-            'parent_id' => ['type' => 'integer', 'nullable' => true, 'unsigned' => true],
-        ]);
-        self::assertSame(['id'], self::primaryKeyColumns($child));
-        self::assertTableIndex($child, 'IDX_B314D4AD727ACA70', ['parent_id']);
-        self::assertCount(1, $child->getForeignKeys());
-        self::assertTableForeignKey($child, ['parent_id'], 'DDC2182OptionParent', ['id']);
+        self::assertTableEquals(
+            self::table(
+                'DDC2182OptionChild',
+                [
+                    self::column('id', 'string', ['length' => 255]),
+                    self::joinColumn('parent_id', 'integer', ['notnull' => false, 'unsigned' => true]),
+                ],
+                primaryKey: ['id'],
+                indexes: [
+                    new DbalIndex('IDX_B314D4AD727ACA70', ['parent_id']),
+                ],
+                foreignKeys: [
+                    self::foreignKey(['parent_id'], 'DDC2182OptionParent', ['id']),
+                ],
+            ),
+            $schema->getTable('DDC2182OptionChild'),
+        );
     }
 }
 
