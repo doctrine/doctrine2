@@ -8,6 +8,9 @@ use Closure;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\Mapping\ClassMetadata;
 
+use function array_keys;
+use function array_pop;
+use function array_values;
 use function is_object;
 use function spl_object_id;
 
@@ -16,10 +19,11 @@ use function spl_object_id;
  * same class on a unique constraint declared in the mapping, so they can run
  * before the insertions.
  *
- * A deletion is only selected when nothing else in the flush still references
- * it: no to-one foreign key of a pending insertion, update or deletion (current
- * or original value), and no pending many-to-many collection update as owner
- * or element class. Everything else keeps the regular commit order.
+ * A deletion is only selected when no pending insertion or update still references
+ * it through a to-one foreign key (current or original value), and when it is not
+ * part of a pending many-to-many collection update as owner or element class.
+ * Pending deletions that reference it are moved along with it, under the same
+ * conditions. Everything else keeps the regular commit order.
  *
  * @internal
  */
@@ -74,7 +78,8 @@ final class EarlyDeletionPlanner
         }
 
         $insertIndex       = $this->insertionIndex($insertions, $candidateClasses);
-        $foreignKeyTargets = $this->foreignKeyTargetsOfOperations($insertions, $updates, $deletions, $originalEntityData, $entityChangeSets);
+        $blockedTargets    = $this->foreignKeyTargetsOf([$insertions, $updates], $originalEntityData, $entityChangeSets);
+        $deletionReferrers = $this->deletionReferrers($deletions, $originalEntityData, $entityChangeSets);
 
         $earlyDeletions = [];
 
@@ -83,22 +88,64 @@ final class EarlyDeletionPlanner
             $oid      = spl_object_id($entity);
             $snapshot = $this->databaseSnapshot($originalEntityData[$oid] ?? [], $entityChangeSets[$oid] ?? []);
 
-            if (! $this->collidesWithInsertion($class, $entity, $snapshot, $insertIndex)) {
+            if (isset($earlyDeletions[$oid]) || ! $this->collidesWithInsertion($class, $entity, $snapshot, $insertIndex)) {
                 continue;
             }
 
-            if (
-                isset($foreignKeyTargets[$oid])
-                || isset($manyToManyOwnerIds[$oid])
-                || isset($manyToManyTargetClasses[$class->name])
-            ) {
-                continue;
+            $group = $this->earlyDeletionGroup($entity, $blockedTargets, $deletionReferrers, $manyToManyTargetClasses, $manyToManyOwnerIds);
+            if ($group !== null) {
+                $earlyDeletions += $group;
             }
-
-            $earlyDeletions[] = $entity;
         }
 
-        return $earlyDeletions;
+        return array_values($earlyDeletions);
+    }
+
+    /**
+     * The deletion can only run early together with all pending deletions that reference it,
+     * transitively, so the group is rejected as a whole when any of its members is blocked.
+     *
+     * @param array<int, true>         $blockedTargets
+     * @param array<int, list<object>> $deletionReferrers
+     * @param array<string, true>      $manyToManyTargetClasses
+     * @param array<int, true>         $manyToManyOwnerIds
+     *
+     * @return array<int, object>|null
+     */
+    private function earlyDeletionGroup(
+        object $entity,
+        array $blockedTargets,
+        array $deletionReferrers,
+        array $manyToManyTargetClasses,
+        array $manyToManyOwnerIds,
+    ): array|null {
+        $group   = [spl_object_id($entity) => $entity];
+        $pending = [$entity];
+
+        while ($pending !== []) {
+            $current = array_pop($pending);
+            $oid     = spl_object_id($current);
+
+            if (
+                isset($blockedTargets[$oid])
+                || isset($manyToManyOwnerIds[$oid])
+                || isset($manyToManyTargetClasses[($this->classMetadata)($current::class)->name])
+            ) {
+                return null;
+            }
+
+            foreach ($deletionReferrers[$oid] ?? [] as $referrer) {
+                $referrerOid = spl_object_id($referrer);
+                if (isset($group[$referrerOid])) {
+                    continue;
+                }
+
+                $group[$referrerOid] = $referrer;
+                $pending[]           = $referrer;
+            }
+        }
+
+        return $group;
     }
 
     /**
@@ -157,30 +204,45 @@ final class EarlyDeletionPlanner
     }
 
     /**
-     * @param array<int, object>                                   $insertions
-     * @param array<int, object>                                   $updates
-     * @param array<int, object>                                   $deletions
+     * @param list<array<int, object>>                             $operations
      * @param array<int, array<string, mixed>>                     $originalEntityData
      * @param array<int, array<string, array{0: mixed, 1: mixed}>> $entityChangeSets
      *
      * @return array<int, true>
      */
-    private function foreignKeyTargetsOfOperations(
-        array $insertions,
-        array $updates,
-        array $deletions,
-        array $originalEntityData,
-        array $entityChangeSets,
-    ): array {
+    private function foreignKeyTargetsOf(array $operations, array $originalEntityData, array $entityChangeSets): array
+    {
         $foreignKeyTargets = [];
 
-        foreach ([$insertions, $updates, $deletions] as $entities) {
+        foreach ($operations as $entities) {
             foreach ($entities as $oid => $entity) {
                 $foreignKeyTargets += $this->foreignKeyTargets(($this->classMetadata)($entity::class), $entity, $originalEntityData[$oid] ?? [], $entityChangeSets[$oid] ?? []);
             }
         }
 
         return $foreignKeyTargets;
+    }
+
+    /**
+     * @param array<int, object>                                   $deletions
+     * @param array<int, array<string, mixed>>                     $originalEntityData
+     * @param array<int, array<string, array{0: mixed, 1: mixed}>> $entityChangeSets
+     *
+     * @return array<int, list<object>>
+     */
+    private function deletionReferrers(array $deletions, array $originalEntityData, array $entityChangeSets): array
+    {
+        $referrers = [];
+
+        foreach ($deletions as $oid => $entity) {
+            $targets = $this->foreignKeyTargets(($this->classMetadata)($entity::class), $entity, $originalEntityData[$oid] ?? [], $entityChangeSets[$oid] ?? []);
+
+            foreach (array_keys($targets) as $targetOid) {
+                $referrers[$targetOid][] = $entity;
+            }
+        }
+
+        return $referrers;
     }
 
     /**

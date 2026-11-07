@@ -491,8 +491,10 @@ again after the replacement.
 When a single `flush()` deletes an entity and inserts another one with the
 same values for a unique constraint declared in the mapping, the deletion now
 runs before the insertions instead of failing with a unique constraint
-violation. This only happens when nothing else in the flush still references
-the deleted entity; all other deletions still run last.
+violation. This only happens when no insertion or update in the same flush
+still references the deleted entity. Deletions that reference it, for example
+cascade-removed children, run early together with it. All other deletions still
+run last.
 
 For these early deletions, `postRemove` is dispatched before the
 `postPersist` events of the same flush.

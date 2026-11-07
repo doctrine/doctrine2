@@ -192,12 +192,17 @@ final class EarlyDeletionPlannerTest extends TestCase
             },
         ];
 
-        yield 'referenced by a pending deletion' => [
+        yield 'referencing deletion is referenced by a pending update' => [
             static function (PlannerItem $old): array {
                 $deleted        = new PlannerItem();
                 $deleted->other = $old;
+                $updated        = new PlannerItem();
 
-                return ['deletions' => [spl_object_id($deleted) => $deleted]];
+                return [
+                    'deletions' => [spl_object_id($deleted) => $deleted],
+                    'updates' => [spl_object_id($updated) => $updated],
+                    'entityChangeSets' => [spl_object_id($updated) => ['other' => [$deleted, null]]],
+                ];
             },
         ];
 
@@ -208,6 +213,24 @@ final class EarlyDeletionPlannerTest extends TestCase
         yield 'owner of a pending many-to-many update' => [
             static fn (PlannerItem $old): array => ['manyToManyOwnerIds' => [spl_object_id($old) => true]],
         ];
+    }
+
+    public function testReferencingDeletionsRunEarlyWithTheCollidingDeletion(): void
+    {
+        $old               = new PlannerItem();
+        $new               = new PlannerItem();
+        $new->f            = 'v';
+        $child             = new PlannerItem();
+        $child->other      = $old;
+        $grandchild        = new PlannerItem();
+        $grandchild->other = $child;
+
+        self::assertSame([$old, $child, $grandchild], $this->plan(
+            $old,
+            [$new],
+            deletions: [spl_object_id($child) => $child, spl_object_id($grandchild) => $grandchild],
+            originalEntityData: [spl_object_id($old) => ['f' => 'v']],
+        ));
     }
 
     /** @param Closure(PlannerItem): array<string, mixed> $setUp */

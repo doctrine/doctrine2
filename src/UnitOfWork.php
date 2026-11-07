@@ -372,7 +372,8 @@ class UnitOfWork implements PropertyChangedListener
      * The operations are executed in the following order:
      *
      * 1) All collection deletions
-     * 2) Entity deletions colliding with a pending insertion on a unique constraint
+     * 2) Entity deletions colliding with a pending insertion on a unique constraint,
+     *    together with the deletions referencing them
      * 3) All entity insertions
      * 4) All entity updates, plus any extra updates requested by persisters
      * 5) All collection updates
