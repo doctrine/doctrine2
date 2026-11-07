@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM;
 
+use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
@@ -12,6 +13,8 @@ use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Tests\Mocks\EntityManagerMock;
+use Doctrine\Tests\Models\CMS\CmsPhonenumber;
+use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\ECommerce\ECommerceCart;
 use Doctrine\Tests\Models\ECommerce\ECommerceProduct;
 use Doctrine\Tests\OrmTestCase;
@@ -291,5 +294,77 @@ class PersistentCollectionTest extends OrmTestCase
         $collection->add(new stdClass());
         $collection[3] = new stdClass();
         self::assertCount(3, $collection);
+    }
+
+    public function testSetSchedulesDisplacedElementForOrphanRemoval(): void
+    {
+        $old = new CmsPhonenumber();
+        $new = new CmsPhonenumber();
+
+        self::assertSame(
+            ['schedule' => [$old], 'cancel' => [$new]],
+            $this->recordOrphanRemovals(['a' => $old], static fn (PersistentCollection $collection) => $collection->set('a', $new)),
+        );
+    }
+
+    public function testSetUnderNewKeySchedulesNothing(): void
+    {
+        $new = new CmsPhonenumber();
+
+        self::assertSame(
+            ['schedule' => [], 'cancel' => [$new]],
+            $this->recordOrphanRemovals(['a' => new CmsPhonenumber()], static fn (PersistentCollection $collection) => $collection->set('b', $new)),
+        );
+    }
+
+    public function testSwappingKeysRevivesTheTemporarilyDisplacedElement(): void
+    {
+        $first  = new CmsPhonenumber();
+        $second = new CmsPhonenumber();
+
+        self::assertSame(
+            ['schedule' => [$first], 'cancel' => [$second, $first]],
+            $this->recordOrphanRemovals(['a' => $first, 'b' => $second], static function (PersistentCollection $collection) use ($first, $second): void {
+                $collection->set('a', $second);
+                $collection->set('b', $first);
+            }),
+        );
+    }
+
+    public function testSetWithoutOrphanRemovalSchedulesNothing(): void
+    {
+        $unitOfWork = $this->createMock(UnitOfWork::class);
+        $unitOfWork->expects(self::never())->method('scheduleOrphanRemoval');
+        $this->_emMock->setUnitOfWork($unitOfWork);
+
+        $this->collection->set('a', new stdClass());
+        $this->collection->set('a', new stdClass());
+    }
+
+    /**
+     * @param array<string, CmsPhonenumber>       $elements
+     * @param Closure(PersistentCollection): void $change
+     *
+     * @return array{schedule: list<object>, cancel: list<object>}
+     */
+    private function recordOrphanRemovals(array $elements, Closure $change): array
+    {
+        $calls      = ['schedule' => [], 'cancel' => []];
+        $unitOfWork = $this->createMock(UnitOfWork::class);
+        $unitOfWork->method('scheduleOrphanRemoval')->willReturnCallback(static function (object $entity) use (&$calls): void {
+            $calls['schedule'][] = $entity;
+        });
+        $unitOfWork->method('cancelOrphanRemoval')->willReturnCallback(static function (object $entity) use (&$calls): void {
+            $calls['cancel'][] = $entity;
+        });
+        $this->_emMock->setUnitOfWork($unitOfWork);
+
+        $userMetadata = $this->_emMock->getClassMetadata(CmsUser::class);
+        $collection   = new PersistentCollection($this->_emMock, $this->_emMock->getClassMetadata(CmsPhonenumber::class), new ArrayCollection($elements));
+        $collection->setOwner(new CmsUser(), $userMetadata->getAssociationMapping('phonenumbers'));
+
+        $change($collection);
+
+        return $calls;
     }
 }
