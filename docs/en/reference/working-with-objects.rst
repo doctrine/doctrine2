@@ -74,6 +74,31 @@ code:
         echo "Yes we are the same!";
     }
 
+The identity map is only consulted when an entity is looked up by its
+identifier, with ``EntityManager#find()``, ``EntityManager#getReference()``
+or ``EntityRepository#find()``. All other ways of retrieving entities, like
+``findBy()``, ``findOneBy()``, ``count()``, ``matching()`` or DQL queries, always
+send a query to the database. The identity map is then only used to return the
+already known instance for each row of the result.
+
+This has consequences for entities whose state has not been flushed yet:
+
+-  A new entity that was passed to ``persist()`` is only added to the identity
+   map when its identifier is known before the flush, for example with an
+   assigned identifier or a sequence based generator. Such an entity can be returned by ``find()`` before
+   ``flush()`` is called, while ``findBy()`` and DQL queries will not find it,
+   because it is not in the database yet.
+-  Changes to managed entities that were not flushed yet are not taken into
+   account by queries. ``findBy(['headline' => 'Hello World dude!'])`` in the
+   example above does not return the modified article before ``flush()``, but
+   if the query finds the article by its old headline, the returned instance
+   contains the modified headline.
+-  Entities that were passed to ``remove()`` can still be returned by queries
+   until the removal is flushed.
+
+Call ``EntityManager#flush()`` before running queries when they should take
+pending changes into account.
+
 Sometimes you want to clear the identity map of an EntityManager to
 start over. We use this regularly in our unit-tests to enforce
 loading objects from the database again instead of serving them
