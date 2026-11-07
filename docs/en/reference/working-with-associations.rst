@@ -573,6 +573,15 @@ OrphanRemoval works with one-to-one, one-to-many and many-to-many associations.
 
 .. note::
 
+    Replacing the whole collection, for example with
+    ``$contact->setAddresses(new ArrayCollection([...]))``, schedules a deletion of the
+    previous collection. With ``orphanRemoval=true`` this deletes **all** elements of the
+    previous collection, including elements that are also contained in the new collection.
+    To keep existing elements, modify the existing collection with ``add()``,
+    ``removeElement()`` or ``clear()`` instead of replacing it.
+
+.. note::
+
     ``orphanRemoval=true`` option should be used in combination with ``cascade=["persist"]`` option
     as the child entity, that is manually persisted, will not be deleted automatically by Doctrine
     when a collection is still an instance of ArrayCollection (before first flush / hydration).
