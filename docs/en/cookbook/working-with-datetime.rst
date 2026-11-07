@@ -150,7 +150,13 @@ code before bootstrapping the ORM:
     use DoctrineExtensions\DBAL\Types\UTCDateTimeType;
 
     Type::overrideType('datetime', UTCDateTimeType::class);
-    Type::overrideType('datetimetz', UTCDateTimeType::class);
+
+Do not override the ``datetimetz`` type with this class. ``UTCDateTimeType`` extends
+``DateTimeType`` and uses its SQL declaration and format, while ``datetimetz`` columns
+are declared with a timezone (for example ``TIMESTAMP(0) WITH TIME ZONE`` on PostgreSQL)
+and use a format that includes the offset. Overriding it changes the generated schema
+and breaks reading existing ``datetimetz`` values. If you need the same behavior for
+``datetimetz`` columns, create a separate type that extends ``DateTimeTzType``.
 
 
 To be able to transform these values
