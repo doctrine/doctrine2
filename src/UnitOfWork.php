@@ -372,9 +372,7 @@ class UnitOfWork implements PropertyChangedListener
      * The operations are executed in the following order:
      *
      * 1) All collection deletions
-     * 2) The early batch of entity deletions: deletions that collide with a
-     *    pending insertion on a metadata-declared unique constraint and are
-     *    safe to run first
+     * 2) Entity deletions colliding with a pending insertion on a unique constraint
      * 3) All entity insertions
      * 4) All entity updates, plus any extra updates requested by persisters
      * 5) All collection updates
@@ -436,9 +434,8 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
-            // Early batch of deletions (before the insertions)
             $earlyDeletions = $this->computeEarlyDeletions();
-            if ($earlyDeletions) {
+            if ($earlyDeletions !== []) {
                 $this->executeDeletions($earlyDeletions);
             }
 
@@ -1307,25 +1304,16 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /**
-     * Computes the scheduled deletions that collide with a pending insertion
-     * on a metadata-declared unique constraint and are safe to run before
-     * the insertions.
-     *
-     * @return list<object>
-     */
+    /** @return list<object> */
     private function computeEarlyDeletions(): array
     {
-        if (! $this->entityDeletions || ! $this->entityInsertions) {
+        if ($this->entityDeletions === [] || $this->entityInsertions === []) {
             return [];
         }
 
         $candidates = array_values($this->entityDeletions);
 
-        // Guard inputs from pending owning many-to-many collection updates:
-        // the element class names and the owners' object ids.
-        // Collection deletions are not part of the guard input: they have
-        // already been executed above, so their join rows are gone.
+        // Collection deletions are not considered, they already ran at the start of the commit.
         $manyToManyTargetClasses = [];
         $manyToManyOwnerIds      = [];
         foreach ($this->collectionUpdates as $collection) {
@@ -1342,8 +1330,6 @@ class UnitOfWork implements PropertyChangedListener
             $manyToManyTargetClasses[$mapping->targetEntity] = true;
         }
 
-        // The elements of a many-to-many collection may be instances of the
-        // target entity's subclasses: close the element match downwards.
         foreach (array_keys($manyToManyTargetClasses) as $targetClass) {
             foreach ($this->em->getClassMetadata($targetClass)->subClasses as $subClass) {
                 $manyToManyTargetClasses[$subClass] = true;
@@ -1367,21 +1353,7 @@ class UnitOfWork implements PropertyChangedListener
         );
     }
 
-    /**
-     * Executes the given batch of entity deletions.
-     *
-     * The commit runs this method twice: once for the early batch of
-     * deletions that must precede the insertions, and once for the
-     * remaining deletions at the end of the flush. Within a batch, all
-     * DELETE statements of the batch run before the batch's postRemove
-     * listeners are dispatched: a listener observes a consistent state of
-     * its batch, the deleted entity's identifier is already reset when its
-     * postRemove listener runs, and the entity is no longer scheduled for
-     * deletion. The postRemove listeners of the early batch therefore run
-     * before the insertions' postPersist listeners.
-     *
-     * @param array<int, object>|null $deletions Subset of the scheduled entity deletions to execute; null for all of them.
-     */
+    /** @param array<int, object>|null $deletions */
     private function executeDeletions(array|null $deletions = null): void
     {
         $entities         = $this->computeDeleteExecutionOrder($deletions);
@@ -1515,7 +1487,7 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
-     * @param array<int, object>|null $deletions Subset of the scheduled entity deletions to order; null for all of them.
+     * @param array<int, object>|null $deletions
      *
      * @return list<object>
      */

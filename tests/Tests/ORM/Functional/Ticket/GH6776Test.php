@@ -21,11 +21,6 @@ use PHPUnit\Framework\Attributes\Group;
 
 use function assert;
 
-/**
- * A deletion that collides with a pending insertion on a mapped unique
- * constraint runs before the insertions, when nothing else in the flush
- * still references the deleted row (#6776, #5109, #4153, #7721).
- */
 #[Group('GH6776')]
 #[Group('non-cacheable')]
 class GH6776Test extends OrmFunctionalTestCase

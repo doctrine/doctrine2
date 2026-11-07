@@ -16,18 +16,12 @@ use function serialize;
 use function spl_object_id;
 
 /**
- * Computes the string key of a metadata-declared unique tuple for one
- * entity, in the database representation: every field component is
- * converted with Type::convertToDatabaseValue() for the platform of the
- * flush, in memory and without I/O, so keys are equal when the database
- * sees equal values.
+ * Builds a comparable key for a unique tuple of an entity from the database
+ * values of its fields and the identity of its referenced entities.
  *
- * The key is null when the tuple is not comparable: a component is NULL
- * (NULL never conflicts in a unique constraint), the candidate's snapshot
- * does not carry it, or the component has no database representation — a
- * converter failure or a non-scalar conversion result. The comparison of
- * that candidate against that declaration is skipped; this class never
- * throws.
+ * The key is null when the tuple cannot collide or cannot be compared: a NULL
+ * component, a component missing from the snapshot, or a value that does not
+ * convert to a scalar database value.
  *
  * @internal
  */
@@ -39,16 +33,9 @@ final class UniqueTupleKey
     }
 
     /**
-     * String key of the unique tuple for the entity, or null when the tuple
-     * is not comparable.
-     *
-     * The snapshot is the candidate side: the contents of its database row.
-     * A null snapshot reads the insertion side from the entity's current
-     * values.
-     *
      * @param ClassMetadata<object>     $class
      * @param list<array{string, bool}> $declaration
-     * @param array<string, mixed>|null $snapshot    entity data snapshot for the candidate side
+     * @param array<string, mixed>|null $snapshot
      */
     public function forDeclaration(ClassMetadata $class, object $entity, array $declaration, array|null $snapshot): string|null
     {

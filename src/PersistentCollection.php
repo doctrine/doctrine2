@@ -383,11 +383,6 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return parent::count();
     }
 
-    /**
-     * Sets the element at the given key; when the mapping enables orphanRemoval,
-     * the displaced element is scheduled for orphan removal, like an explicit
-     * remove() of it.
-     */
     public function set(string|int $key, mixed $value): void
     {
         $replaced = parent::get($key);
@@ -403,10 +398,6 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         }
     }
 
-    /**
-     * Schedules the element displaced by a set() for orphan removal, like an
-     * explicit remove() does.
-     */
     private function orphanReplacedElement(mixed $replaced): void
     {
         if (! is_object($replaced)) {
@@ -424,15 +415,11 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         $this->getUnitOfWork()->scheduleOrphanRemoval($replaced);
     }
 
-    /**
-     * Whether elements dropped from this collection are subject to orphan
-     * removal.
-     */
     private function managesOrphanRemoval(): bool
     {
         return $this->association !== null
             && $this->association->isToMany()
-            && $this->owner
+            && $this->owner !== null
             && $this->getMapping()->orphanRemoval;
     }
 
