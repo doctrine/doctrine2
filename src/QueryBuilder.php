@@ -1299,7 +1299,7 @@ class QueryBuilder implements Stringable
 
         $whereExpression = $criteria->getWhereExpression();
         if ($whereExpression) {
-            $this->andWhere($visitor->dispatch($whereExpression));
+            $this->andWhere($whereExpression->visit($visitor));
             foreach ($visitor->getParameters() as $parameter) {
                 $this->parameters->add($parameter);
             }

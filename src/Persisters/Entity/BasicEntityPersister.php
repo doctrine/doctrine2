@@ -917,7 +917,7 @@ class BasicEntityPersister implements EntityPersister
 
         $valueVisitor = new SqlValueVisitor();
 
-        $valueVisitor->dispatch($expression);
+        $expression->visit($valueVisitor);
 
         [, $types] = $valueVisitor->getParamsAndTypes();
 
@@ -1645,7 +1645,7 @@ class BasicEntityPersister implements EntityPersister
 
         $visitor = new SqlExpressionVisitor($this, $this->class);
 
-        return $visitor->dispatch($expression);
+        return $expression->visit($visitor);
     }
 
     public function getSelectConditionStatementSQL(
