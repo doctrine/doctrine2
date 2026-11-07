@@ -752,8 +752,16 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 if ($orgValue instanceof PersistentCollection) {
-                    // A PersistentCollection was de-referenced, so delete it.
+                    // A PersistentCollection was de-referenced, so delete it. Elements of the
+                    // replacing collection are still members of the association, so they are
+                    // no orphans, and the collection persisters do not delete their rows.
                     $coid = spl_object_id($orgValue);
+
+                    if ($assoc->orphanRemoval && $actualValue instanceof Collection) {
+                        foreach ($actualValue as $element) {
+                            $this->cancelOrphanRemoval($element);
+                        }
+                    }
 
                     if (isset($this->collectionDeletions[$coid])) {
                         continue;

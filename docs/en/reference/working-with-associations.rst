@@ -587,10 +587,17 @@ OrphanRemoval works with one-to-one, one-to-many and many-to-many associations.
 
     Replacing the whole collection of a one-to-many association, for example with
     ``$contact->setAddresses(new ArrayCollection([...]))``, schedules a deletion of the
-    previous collection. With ``orphanRemoval=true`` this deletes **all** entities of the
-    previous collection, including entities that are also contained in the new collection.
-    To keep existing elements, modify the existing collection with ``add()``,
-    ``removeElement()`` or ``clear()`` instead of replacing it.
+    previous collection. With ``orphanRemoval=true`` this deletes all entities of the
+    previous collection that are not contained in the new collection. Entities contained
+    in both collections are kept, and an orphan removal that was already scheduled for
+    them is cancelled.
+
+    The entities are deleted directly in the database, without loading them, before new
+    entities are inserted. No lifecycle events are dispatched for them. An entity that
+    was moved to the collection of another owner is deleted as well, unless it is also
+    contained in the new collection. Modify the existing collection with ``add()`` and
+    ``removeElement()`` instead of replacing it, if you need lifecycle events or move
+    entities between owners.
 
     For many-to-many associations, replacing the collection only deletes the rows of the
     join table, and the links of the new collection are inserted afterwards. The target

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Persisters\Collection;
 
 use BadMethodCallException;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Types\Type;
@@ -14,8 +15,10 @@ use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Utility\PersisterHelper;
 
+use function array_chunk;
 use function array_fill;
 use function array_keys;
+use function array_merge;
 use function array_reverse;
 use function array_values;
 use function assert;
@@ -24,12 +27,19 @@ use function defined;
 use function implode;
 use function is_int;
 use function is_string;
+use function spl_object_id;
 
 /**
  * Persister for one-to-many collections.
  */
 class OneToManyPersister extends AbstractCollectionPersister
 {
+    /**
+     * Maximum number of identifiers per IN list. Oracle does not allow more than 1000
+     * expressions in a list.
+     */
+    private const MAX_IN_LIST_SIZE = 1000;
+
     public function delete(PersistentCollection $collection): void
     {
         // The only valid case here is when you have weak entities. In this
@@ -182,6 +192,23 @@ class OneToManyPersister extends AbstractCollectionPersister
         $statement = 'DELETE FROM ' . $this->quoteStrategy->getTableName($targetClass, $this->platform)
             . ' WHERE ' . implode(' = ? AND ', $columns) . ' = ?';
 
+        $retainedConditions = $this->getRetainedElementConditions(
+            $collection,
+            $this->quoteStrategy->getIdentifierColumnNames($targetClass, $this->platform),
+        );
+
+        if (count($retainedConditions) > 0) {
+            $sql = [];
+
+            foreach ($retainedConditions as [$conditionSql, $conditionParameters, $conditionTypes]) {
+                $sql[]      = $conditionSql;
+                $parameters = array_merge($parameters, $conditionParameters);
+                $types      = array_merge($types, $conditionTypes);
+            }
+
+            $statement .= ' AND NOT (' . implode(' OR ', $sql) . ')';
+        }
+
         if ($targetClass->isInheritanceTypeSingleTable()) {
             $discriminatorColumn = $targetClass->getDiscriminatorColumn();
             $discriminatorValues = $targetClass->discriminatorValue ? [$targetClass->discriminatorValue] : array_keys($targetClass->discriminatorMap);
@@ -245,7 +272,16 @@ class OneToManyPersister extends AbstractCollectionPersister
         $parameters = array_values($sourceClass->getIdentifierValues($collection->getOwner()));
         $numDeleted = $this->conn->executeStatement($statement, $parameters);
 
-        // 3) Delete records on each table in the hierarchy
+        // 3) Keep the records of elements that are still members of the association
+        foreach ($this->getRetainedElementConditions($collection, $idColumnNames) as [$conditionSql, $conditionParameters, $conditionTypes]) {
+            $numDeleted -= $this->conn->executeStatement(
+                'DELETE FROM ' . $tempTable . ' WHERE ' . $conditionSql,
+                $conditionParameters,
+                $conditionTypes,
+            );
+        }
+
+        // 4) Delete records on each table in the hierarchy
         $classNames = [...$targetClass->parentClasses, ...[$targetClass->name], ...$targetClass->subClasses];
 
         foreach (array_reverse($classNames) as $className) {
@@ -256,7 +292,7 @@ class OneToManyPersister extends AbstractCollectionPersister
             $this->conn->executeStatement($statement);
         }
 
-        // 4) Drop temporary table
+        // 5) Drop temporary table
         $statement = $this->platform->getDropTemporaryTableSQL($tempTable);
 
         $this->conn->executeStatement($statement);
@@ -264,6 +300,101 @@ class OneToManyPersister extends AbstractCollectionPersister
         assert(is_int($numDeleted));
 
         return $numDeleted;
+    }
+
+    /**
+     * Builds SQL conditions that match the rows of the elements that are still contained in
+     * the current value of the association field, after the collection was replaced as a whole.
+     * These elements must not be deleted together with the replaced collection.
+     *
+     * Each condition holds at most {@see self::MAX_IN_LIST_SIZE} elements.
+     *
+     * @param PersistentCollection<array-key, object> $collection
+     * @param list<string>                            $identifierColumns The identifier columns, in the order of the identifier fields.
+     *
+     * @return list<array{string, list<mixed>, list<string>}>
+     */
+    private function getRetainedElementConditions(PersistentCollection $collection, array $identifierColumns): array
+    {
+        $mapping = $this->getMapping($collection);
+        $owner   = $collection->getOwner();
+        assert($owner !== null);
+
+        $sourceClass  = $this->em->getClassMetadata($mapping->sourceEntity);
+        $currentValue = $sourceClass->propertyAccessors[$mapping->fieldName]->getValue($owner);
+
+        if (! $currentValue instanceof Collection || $currentValue === $collection) {
+            return [];
+        }
+
+        $targetClass = $this->em->getClassMetadata($mapping->targetEntity);
+        $identifiers = [];
+
+        foreach ($currentValue as $element) {
+            if (
+                ! $element instanceof $mapping->targetEntity
+                || $this->uow->isScheduledForInsert($element)
+                || ! $this->uow->isInIdentityMap($element)
+            ) {
+                continue;
+            }
+
+            $identifier = $this->uow->getEntityIdentifier($element);
+            $values     = [];
+
+            foreach ($targetClass->identifier as $fieldName) {
+                $values[] = $identifier[$fieldName];
+            }
+
+            $identifiers[spl_object_id($element)] = $values;
+        }
+
+        if (count($identifiers) === 0) {
+            return [];
+        }
+
+        $identifierTypes = [];
+
+        foreach ($targetClass->identifier as $fieldName) {
+            $identifierTypes[] = PersisterHelper::getTypeOfField($fieldName, $targetClass, $this->em)[0];
+        }
+
+        $conditions = [];
+
+        foreach (array_chunk(array_values($identifiers), self::MAX_IN_LIST_SIZE) as $chunk) {
+            $parameters = [];
+            $types      = [];
+
+            if (count($identifierColumns) === 1) {
+                foreach ($chunk as $values) {
+                    $parameters[] = $values[0];
+                    $types[]      = $identifierTypes[0];
+                }
+
+                $conditions[] = [
+                    $identifierColumns[0] . ' IN (' . implode(', ', array_fill(0, count($chunk), '?')) . ')',
+                    $parameters,
+                    $types,
+                ];
+
+                continue;
+            }
+
+            $tuple = '(' . implode(' = ? AND ', $identifierColumns) . ' = ?)';
+
+            foreach ($chunk as $values) {
+                $parameters = array_merge($parameters, $values);
+                $types      = array_merge($types, $identifierTypes);
+            }
+
+            $conditions[] = [
+                '(' . implode(' OR ', array_fill(0, count($chunk), $tuple)) . ')',
+                $parameters,
+                $types,
+            ];
+        }
+
+        return $conditions;
     }
 
     private function getMapping(PersistentCollection $collection): OneToManyAssociationMapping
