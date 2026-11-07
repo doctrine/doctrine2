@@ -45,6 +45,7 @@ class GH6776Test extends OrmFunctionalTestCase
             GH6776SpecialTag::class,
             GH6776Shelf::class,
             GH6776Holder::class,
+            GH6776Note::class,
         );
     }
 
@@ -52,7 +53,7 @@ class GH6776Test extends OrmFunctionalTestCase
     {
         parent::tearDown();
 
-        foreach (['gh6776_holder', 'gh6776_shelf_tag', 'gh6776_shelf', 'gh6776_tag', 'gh6776_address', 'gh6776_user', 'gh6776_item', 'gh6776_cart'] as $table) {
+        foreach (['gh6776_holder', 'gh6776_shelf_tag', 'gh6776_shelf', 'gh6776_tag', 'gh6776_address', 'gh6776_user', 'gh6776_note', 'gh6776_item', 'gh6776_cart'] as $table) {
             static::$sharedConn->executeStatement('DELETE FROM ' . $table);
         }
     }
@@ -110,6 +111,50 @@ class GH6776Test extends OrmFunctionalTestCase
         self::assertCount(1, $cart->items);
         self::assertSame($new->id, $cart->items->get('work')->id);
         self::assertNull($this->_em->find(GH6776Item::class, $oldId));
+    }
+
+    public function testReplacingOrphanWhoseUniqueFieldChangedBeforeRemoval(): void
+    {
+        $cart = new GH6776Cart();
+        $cart->items->add(new GH6776Item('work', $cart));
+        $this->_em->persist($cart);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $cart      = $this->_em->find(GH6776Cart::class, $cart->id);
+        $old       = $cart->items->get('work');
+        $oldId     = $old->id;
+        $old->code = 'renamed';
+        $cart->items->removeElement($old);
+        $new = new GH6776Item('work', $cart);
+        $cart->items->add($new);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        self::assertNull($this->_em->find(GH6776Item::class, $oldId));
+        self::assertNotNull($this->_em->find(GH6776Item::class, $new->id));
+    }
+
+    public function testReplacingOrphanWithCascadeRemovedChildren(): void
+    {
+        $cart = new GH6776Cart();
+        $old  = new GH6776Item('work', $cart);
+        $old->notes->add(new GH6776Note($old));
+        $cart->items->add($old);
+        $this->_em->persist($cart);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $oldId = $old->id;
+        $cart  = $this->_em->find(GH6776Cart::class, $cart->id);
+        $cart->items->removeElement($cart->items->get('work'));
+        $new = new GH6776Item('work', $cart);
+        $cart->items->add($new);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        self::assertNull($this->_em->find(GH6776Item::class, $oldId));
+        self::assertNotNull($this->_em->find(GH6776Item::class, $new->id));
     }
 
     /** @return iterable<string, array{bool}> */
@@ -364,11 +409,33 @@ class GH6776Item
     #[ORM\Column]
     public int|null $id = null;
 
+    /** @var Collection<int, GH6776Note> */
+    #[ORM\OneToMany(targetEntity: GH6776Note::class, mappedBy: 'item', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public Collection $notes;
+
     public function __construct(
         #[ORM\Column]
         public string $code,
         #[ORM\ManyToOne(inversedBy: 'items')]
         public GH6776Cart $cart,
+    ) {
+        $this->notes = new ArrayCollection();
+    }
+}
+
+#[ORM\Entity]
+#[ORM\Table(name: 'gh6776_note')]
+class GH6776Note
+{
+    #[ORM\Id]
+    #[ORM\GeneratedValue]
+    #[ORM\Column]
+    public int|null $id = null;
+
+    public function __construct(
+        #[ORM\ManyToOne(inversedBy: 'notes')]
+        #[ORM\JoinColumn(nullable: false)]
+        public GH6776Item $item,
     ) {
     }
 }
