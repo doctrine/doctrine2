@@ -34,7 +34,7 @@ class SqlValueVisitor extends ExpressionVisitor
     private function doWalkCompositeExpression(CompositeExpression $expr): mixed
     {
         foreach ($expr->getExpressionList() as $child) {
-            $this->dispatch($child);
+            $child->visit($this);
         }
 
         return null;

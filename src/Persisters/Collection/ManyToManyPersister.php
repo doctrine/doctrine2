@@ -150,7 +150,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
             // And criteria conditions needs to be added
             $persister    = $this->uow->getEntityPersister($targetClass->name);
             $visitor      = new SqlExpressionVisitor($persister, $targetClass);
-            $conditions[] = $visitor->dispatch($expression);
+            $conditions[] = $expression->visit($visitor);
 
             $joinTargetEntitySQL = $targetJoinSql . $joinTargetEntitySQL;
         }*/
@@ -740,7 +740,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
 
         $valueVisitor = new SqlValueVisitor();
 
-        $valueVisitor->dispatch($expression);
+        $expression->visit($valueVisitor);
 
         [, $types] = $valueVisitor->getParamsAndTypes();
 
