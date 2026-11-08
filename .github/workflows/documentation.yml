@@ -21,4 +21,4 @@ concurrency:
 jobs:
   documentation:
     name: "Documentation"
-    uses: "doctrine/.github/.github/workflows/documentation.yml@16.0.0"
+    uses: "doctrine/.github/.github/workflows/documentation.yml@16.1.0"
