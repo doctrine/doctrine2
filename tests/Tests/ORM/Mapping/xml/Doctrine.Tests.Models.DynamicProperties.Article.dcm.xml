@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="Doctrine\Tests\Models\DynamicProperties\Article" table="dynamic_properties_article">
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="title" type="string" length="50"/>
+
+        <dynamic-properties name="attributes">
+            <many-to-many field="tags" target-entity="Doctrine\Tests\Models\DynamicProperties\Tag" inversed-by="articles">
+                <join-table name="dynamic_properties_article_tag"/>
+                <order-by>
+                    <order-by-field name="name" direction="ASC"/>
+                </order-by>
+            </many-to-many>
+            <one-to-many field="comments" target-entity="Doctrine\Tests\Models\DynamicProperties\Comment" mapped-by="article" orphan-removal="true">
+                <cascade>
+                    <cascade-persist/>
+                </cascade>
+                <order-by>
+                    <order-by-field name="id" direction="ASC"/>
+                </order-by>
+            </one-to-many>
+        </dynamic-properties>
+    </entity>
+</doctrine-mapping>

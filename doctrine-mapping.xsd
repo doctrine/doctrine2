@@ -281,6 +281,8 @@
       <xs:element name="field" type="orm:field" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="many-to-one" type="orm:many-to-one" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="one-to-one" type="orm:one-to-one" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="one-to-many" type="orm:one-to-many" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="many-to-many" type="orm:many-to-many" minOccurs="0" maxOccurs="unbounded"/>
       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other"/>
     </xs:choice>
     <xs:attribute name="name" type="xs:NMTOKEN" use="required" />

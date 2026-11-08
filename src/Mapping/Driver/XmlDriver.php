@@ -313,6 +313,14 @@ class XmlDriver extends FileDriver
             foreach ($dynamicPropertiesElement->{'one-to-one'} ?? [] as $oneToOneElement) {
                 $metadata->mapDynamicOneToOne($container, $this->oneToOneElementToArray($oneToOneElement, $metadata));
             }
+
+            foreach ($dynamicPropertiesElement->{'one-to-many'} ?? [] as $oneToManyElement) {
+                $metadata->mapDynamicOneToMany($container, $this->oneToManyElementToArray($oneToManyElement, $metadata, $className));
+            }
+
+            foreach ($dynamicPropertiesElement->{'many-to-many'} ?? [] as $manyToManyElement) {
+                $metadata->mapDynamicManyToMany($container, $this->manyToManyElementToArray($manyToManyElement, $metadata, $className));
+            }
         }
 
         // Evaluate <id ...> mappings
@@ -372,48 +380,7 @@ class XmlDriver extends FileDriver
         // Evaluate <one-to-many ...> mappings
         if (isset($xmlRoot->{'one-to-many'})) {
             foreach ($xmlRoot->{'one-to-many'} as $oneToManyElement) {
-                $mapping = [
-                    'fieldName' => (string) $oneToManyElement['field'],
-                    'mappedBy' => (string) $oneToManyElement['mapped-by'],
-                ];
-
-                if (isset($oneToManyElement['target-entity'])) {
-                    $mapping['targetEntity'] = (string) $oneToManyElement['target-entity'];
-                }
-
-                if (isset($oneToManyElement['fetch'])) {
-                    $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $oneToManyElement['fetch']);
-                }
-
-                if (isset($oneToManyElement->cascade)) {
-                    $mapping['cascade'] = $this->getCascadeMappings($oneToManyElement->cascade);
-                }
-
-                if (isset($oneToManyElement['orphan-removal'])) {
-                    $mapping['orphanRemoval'] = $this->evaluateBoolean($oneToManyElement['orphan-removal']);
-                }
-
-                if (isset($oneToManyElement->{'order-by'})) {
-                    $orderBy = [];
-                    foreach ($oneToManyElement->{'order-by'}->{'order-by-field'} ?? [] as $orderByField) {
-                        $orderBy[(string) $orderByField['name']] = $this->getDirection($orderByField, $className);
-                    }
-
-                    $mapping['orderBy'] = $orderBy;
-                }
-
-                if (isset($oneToManyElement['index-by'])) {
-                    $mapping['indexBy'] = (string) $oneToManyElement['index-by'];
-                } elseif (isset($oneToManyElement->{'index-by'})) {
-                    throw new InvalidArgumentException('<index-by /> is not a valid tag');
-                }
-
-                // Evaluate second level cache
-                if (isset($oneToManyElement->cache)) {
-                    $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($oneToManyElement->cache));
-                }
-
-                $metadata->mapOneToMany($mapping);
+                $metadata->mapOneToMany($this->oneToManyElementToArray($oneToManyElement, $metadata, $className));
             }
         }
 
@@ -427,88 +394,7 @@ class XmlDriver extends FileDriver
         // Evaluate <many-to-many ...> mappings
         if (isset($xmlRoot->{'many-to-many'})) {
             foreach ($xmlRoot->{'many-to-many'} as $manyToManyElement) {
-                $mapping = [
-                    'fieldName' => (string) $manyToManyElement['field'],
-                ];
-
-                if (isset($manyToManyElement['target-entity'])) {
-                    $mapping['targetEntity'] = (string) $manyToManyElement['target-entity'];
-                }
-
-                if (isset($manyToManyElement['fetch'])) {
-                    $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $manyToManyElement['fetch']);
-                }
-
-                if (isset($manyToManyElement['orphan-removal'])) {
-                    $mapping['orphanRemoval'] = $this->evaluateBoolean($manyToManyElement['orphan-removal']);
-                }
-
-                if (isset($manyToManyElement['mapped-by'])) {
-                    $mapping['mappedBy'] = (string) $manyToManyElement['mapped-by'];
-                } elseif (isset($manyToManyElement->{'join-table'})) {
-                    if (isset($manyToManyElement['inversed-by'])) {
-                        $mapping['inversedBy'] = (string) $manyToManyElement['inversed-by'];
-                    }
-
-                    $joinTableElement = $manyToManyElement->{'join-table'};
-                    $joinTable        = [
-                        'name' => (string) $joinTableElement['name'],
-                    ];
-
-                    if (isset($joinTableElement['schema'])) {
-                        $joinTable['schema'] = (string) $joinTableElement['schema'];
-                    }
-
-                    if (isset($joinTableElement['foreign-key-name'])) {
-                        $joinTable['foreignKeyName'] = (string) $joinTableElement['foreign-key-name'];
-                    }
-
-                    if (isset($joinTableElement['inverse-foreign-key-name'])) {
-                        $joinTable['inverseForeignKeyName'] = (string) $joinTableElement['inverse-foreign-key-name'];
-                    }
-
-                    if (isset($joinTableElement->options)) {
-                        $joinTable['options'] = $this->parseOptions($joinTableElement->options->children());
-                    }
-
-                    foreach ($joinTableElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
-                        $joinTable['joinColumns'][] = $this->joinColumnToArray($joinColumnElement);
-                    }
-
-                    foreach ($joinTableElement->{'inverse-join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
-                        $joinTable['inverseJoinColumns'][] = $this->joinColumnToArray($joinColumnElement);
-                    }
-
-                    $mapping['joinTable'] = $joinTable;
-                }
-
-                if (isset($manyToManyElement->cascade)) {
-                    $mapping['cascade'] = $this->getCascadeMappings($manyToManyElement->cascade);
-                }
-
-                if (isset($manyToManyElement->{'order-by'})) {
-                    $orderBy = [];
-                    foreach ($manyToManyElement->{'order-by'}->{'order-by-field'} ?? [] as $orderByField) {
-                        $direction = $this->getDirection($orderByField, $className);
-
-                        $orderBy[(string) $orderByField['name']] = $direction;
-                    }
-
-                    $mapping['orderBy'] = $orderBy;
-                }
-
-                if (isset($manyToManyElement['index-by'])) {
-                    $mapping['indexBy'] = (string) $manyToManyElement['index-by'];
-                } elseif (isset($manyToManyElement->{'index-by'})) {
-                    throw new InvalidArgumentException('<index-by /> is not a valid tag');
-                }
-
-                // Evaluate second level cache
-                if (isset($manyToManyElement->cache)) {
-                    $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToManyElement->cache));
-                }
-
-                $metadata->mapManyToMany($mapping);
+                $metadata->mapManyToMany($this->manyToManyElementToArray($manyToManyElement, $metadata, $className));
             }
         }
 
@@ -732,6 +618,154 @@ class XmlDriver extends FileDriver
         // Evaluate second level cache
         if (isset($manyToOneElement->cache)) {
             $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToOneElement->cache));
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Parses a <one-to-many> element into a mapping array.
+     *
+     * @param ClassMetadata<object> $metadata
+     * @param class-string          $className
+     *
+     * @return array<string, mixed>
+     */
+    private function oneToManyElementToArray(SimpleXMLElement $oneToManyElement, ClassMetadata $metadata, string $className): array
+    {
+        $mapping = [
+            'fieldName' => (string) $oneToManyElement['field'],
+            'mappedBy' => (string) $oneToManyElement['mapped-by'],
+        ];
+
+        if (isset($oneToManyElement['target-entity'])) {
+            $mapping['targetEntity'] = (string) $oneToManyElement['target-entity'];
+        }
+
+        if (isset($oneToManyElement['fetch'])) {
+            $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $oneToManyElement['fetch']);
+        }
+
+        if (isset($oneToManyElement->cascade)) {
+            $mapping['cascade'] = $this->getCascadeMappings($oneToManyElement->cascade);
+        }
+
+        if (isset($oneToManyElement['orphan-removal'])) {
+            $mapping['orphanRemoval'] = $this->evaluateBoolean($oneToManyElement['orphan-removal']);
+        }
+
+        if (isset($oneToManyElement->{'order-by'})) {
+            $orderBy = [];
+            foreach ($oneToManyElement->{'order-by'}->{'order-by-field'} ?? [] as $orderByField) {
+                $orderBy[(string) $orderByField['name']] = $this->getDirection($orderByField, $className);
+            }
+
+            $mapping['orderBy'] = $orderBy;
+        }
+
+        if (isset($oneToManyElement['index-by'])) {
+            $mapping['indexBy'] = (string) $oneToManyElement['index-by'];
+        } elseif (isset($oneToManyElement->{'index-by'})) {
+            throw new InvalidArgumentException('<index-by /> is not a valid tag');
+        }
+
+        // Evaluate second level cache
+        if (isset($oneToManyElement->cache)) {
+            $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($oneToManyElement->cache));
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Parses a <many-to-many> element into a mapping array.
+     *
+     * @param ClassMetadata<object> $metadata
+     * @param class-string          $className
+     *
+     * @return array<string, mixed>
+     */
+    private function manyToManyElementToArray(SimpleXMLElement $manyToManyElement, ClassMetadata $metadata, string $className): array
+    {
+        $mapping = [
+            'fieldName' => (string) $manyToManyElement['field'],
+        ];
+
+        if (isset($manyToManyElement['target-entity'])) {
+            $mapping['targetEntity'] = (string) $manyToManyElement['target-entity'];
+        }
+
+        if (isset($manyToManyElement['fetch'])) {
+            $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $manyToManyElement['fetch']);
+        }
+
+        if (isset($manyToManyElement['orphan-removal'])) {
+            $mapping['orphanRemoval'] = $this->evaluateBoolean($manyToManyElement['orphan-removal']);
+        }
+
+        if (isset($manyToManyElement['mapped-by'])) {
+            $mapping['mappedBy'] = (string) $manyToManyElement['mapped-by'];
+        } elseif (isset($manyToManyElement->{'join-table'})) {
+            if (isset($manyToManyElement['inversed-by'])) {
+                $mapping['inversedBy'] = (string) $manyToManyElement['inversed-by'];
+            }
+
+            $joinTableElement = $manyToManyElement->{'join-table'};
+            $joinTable        = [
+                'name' => (string) $joinTableElement['name'],
+            ];
+
+            if (isset($joinTableElement['schema'])) {
+                $joinTable['schema'] = (string) $joinTableElement['schema'];
+            }
+
+            if (isset($joinTableElement['foreign-key-name'])) {
+                $joinTable['foreignKeyName'] = (string) $joinTableElement['foreign-key-name'];
+            }
+
+            if (isset($joinTableElement['inverse-foreign-key-name'])) {
+                $joinTable['inverseForeignKeyName'] = (string) $joinTableElement['inverse-foreign-key-name'];
+            }
+
+            if (isset($joinTableElement->options)) {
+                $joinTable['options'] = $this->parseOptions($joinTableElement->options->children());
+            }
+
+            foreach ($joinTableElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
+                $joinTable['joinColumns'][] = $this->joinColumnToArray($joinColumnElement);
+            }
+
+            foreach ($joinTableElement->{'inverse-join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
+                $joinTable['inverseJoinColumns'][] = $this->joinColumnToArray($joinColumnElement);
+            }
+
+            $mapping['joinTable'] = $joinTable;
+        }
+
+        if (isset($manyToManyElement->cascade)) {
+            $mapping['cascade'] = $this->getCascadeMappings($manyToManyElement->cascade);
+        }
+
+        if (isset($manyToManyElement->{'order-by'})) {
+            $orderBy = [];
+            foreach ($manyToManyElement->{'order-by'}->{'order-by-field'} ?? [] as $orderByField) {
+                $direction = $this->getDirection($orderByField, $className);
+
+                $orderBy[(string) $orderByField['name']] = $direction;
+            }
+
+            $mapping['orderBy'] = $orderBy;
+        }
+
+        if (isset($manyToManyElement['index-by'])) {
+            $mapping['indexBy'] = (string) $manyToManyElement['index-by'];
+        } elseif (isset($manyToManyElement->{'index-by'})) {
+            throw new InvalidArgumentException('<index-by /> is not a valid tag');
+        }
+
+        // Evaluate second level cache
+        if (isset($manyToManyElement->cache)) {
+            $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToManyElement->cache));
         }
 
         return $mapping;

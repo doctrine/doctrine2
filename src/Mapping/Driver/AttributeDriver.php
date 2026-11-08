@@ -430,30 +430,7 @@ class AttributeDriver implements MappingDriver
                 $joinTableAttribute = $this->reader->getPropertyAttribute($property, Mapping\JoinTable::class);
 
                 if ($joinTableAttribute !== null) {
-                    $joinTable = [
-                        'name' => $joinTableAttribute->name,
-                        'schema' => $joinTableAttribute->schema,
-                    ];
-
-                    if ($joinTableAttribute->options) {
-                        $joinTable['options'] = $joinTableAttribute->options;
-                    }
-
-                    if ($joinTableAttribute->foreignKeyName !== null) {
-                        $joinTable['foreignKeyName'] = $joinTableAttribute->foreignKeyName;
-                    }
-
-                    if ($joinTableAttribute->inverseForeignKeyName !== null) {
-                        $joinTable['inverseForeignKeyName'] = $joinTableAttribute->inverseForeignKeyName;
-                    }
-
-                    foreach ($joinTableAttribute->joinColumns as $joinColumn) {
-                        $joinTable['joinColumns'][] = $this->joinColumnToArray($joinColumn);
-                    }
-
-                    foreach ($joinTableAttribute->inverseJoinColumns as $joinColumn) {
-                        $joinTable['inverseJoinColumns'][] = $this->joinColumnToArray($joinColumn);
-                    }
+                    $joinTable = $this->joinTableToArray($joinTableAttribute);
                 }
 
                 foreach ($this->reader->getPropertyAttributeCollection($property, Mapping\JoinColumn::class) as $joinColumn) {
@@ -646,31 +623,109 @@ class AttributeDriver implements MappingDriver
         }
 
         foreach ($associationAttributes as $associationAttribute) {
-            $association = $associationAttribute->association;
-            $mapping     = [
-                'fieldName' => $associationAttribute->key,
-                'targetEntity' => $association->targetEntity,
-                'cascade' => $association->cascade,
-                'inversedBy' => $association->inversedBy,
-                'fetch' => $this->getFetchMode($className, $association->fetch),
-                'joinColumns' => [],
-            ];
-
-            foreach ($associationAttribute->joinColumns as $joinColumn) {
-                $mapping['joinColumns'][] = $this->joinColumnToArray($joinColumn);
-            }
-
-            if ($association instanceof Mapping\OneToOne) {
-                $mapping['mappedBy']      = $association->mappedBy;
-                $mapping['orphanRemoval'] = $association->orphanRemoval;
-
-                $metadata->mapDynamicOneToOne($property->name, $mapping);
-            } else {
-                $metadata->mapDynamicManyToOne($property->name, $mapping);
-            }
+            $this->loadDynamicAssociation($property->name, $associationAttribute, $className, $metadata);
         }
 
         return true;
+    }
+
+    /**
+     * @param class-string          $className
+     * @param ClassMetadata<object> $metadata
+     */
+    private function loadDynamicAssociation(
+        string $container,
+        Mapping\DynamicAssociation $attribute,
+        string $className,
+        ClassMetadata $metadata,
+    ): void {
+        $association = $attribute->association;
+        $isToMany    = $association instanceof Mapping\OneToMany || $association instanceof Mapping\ManyToMany;
+
+        if ($attribute->joinColumns !== [] && $isToMany) {
+            throw MappingException::illegalDynamicPropertyMapping($metadata->name, $attribute->key, 'join columns are only supported for to-one associations');
+        }
+
+        if ($attribute->joinTable !== null && ! $association instanceof Mapping\ManyToMany) {
+            throw MappingException::illegalDynamicPropertyMapping($metadata->name, $attribute->key, 'a join table is only supported for many-to-many associations');
+        }
+
+        if ($attribute->orderBy !== null && ! $isToMany) {
+            throw MappingException::illegalDynamicPropertyMapping($metadata->name, $attribute->key, 'order by is only supported for to-many associations');
+        }
+
+        $mapping = [
+            'fieldName' => $attribute->key,
+            'targetEntity' => $association->targetEntity,
+            'cascade' => $association->cascade,
+            'fetch' => $this->getFetchMode($className, $association->fetch),
+        ];
+
+        if ($isToMany) {
+            $mapping['mappedBy']      = $association->mappedBy;
+            $mapping['indexBy']       = $association->indexBy;
+            $mapping['orphanRemoval'] = $association->orphanRemoval;
+
+            if ($attribute->orderBy !== null) {
+                $mapping['orderBy'] = $attribute->orderBy;
+            }
+        } else {
+            $mapping['joinColumns'] = [];
+
+            foreach ($attribute->joinColumns as $joinColumn) {
+                $mapping['joinColumns'][] = $this->joinColumnToArray($joinColumn);
+            }
+        }
+
+        if ($association instanceof Mapping\OneToOne) {
+            $mapping['mappedBy']      = $association->mappedBy;
+            $mapping['inversedBy']    = $association->inversedBy;
+            $mapping['orphanRemoval'] = $association->orphanRemoval;
+
+            $metadata->mapDynamicOneToOne($container, $mapping);
+        } elseif ($association instanceof Mapping\ManyToOne) {
+            $mapping['inversedBy'] = $association->inversedBy;
+
+            $metadata->mapDynamicManyToOne($container, $mapping);
+        } elseif ($association instanceof Mapping\OneToMany) {
+            $metadata->mapDynamicOneToMany($container, $mapping);
+        } else {
+            $mapping['inversedBy'] = $association->inversedBy;
+            $mapping['joinTable']  = $attribute->joinTable !== null ? $this->joinTableToArray($attribute->joinTable) : [];
+
+            $metadata->mapDynamicManyToMany($container, $mapping);
+        }
+    }
+
+    /** @return mixed[] */
+    private function joinTableToArray(Mapping\JoinTable $joinTableAttribute): array
+    {
+        $joinTable = [
+            'name' => $joinTableAttribute->name,
+            'schema' => $joinTableAttribute->schema,
+        ];
+
+        if ($joinTableAttribute->options) {
+            $joinTable['options'] = $joinTableAttribute->options;
+        }
+
+        if ($joinTableAttribute->foreignKeyName !== null) {
+            $joinTable['foreignKeyName'] = $joinTableAttribute->foreignKeyName;
+        }
+
+        if ($joinTableAttribute->inverseForeignKeyName !== null) {
+            $joinTable['inverseForeignKeyName'] = $joinTableAttribute->inverseForeignKeyName;
+        }
+
+        foreach ($joinTableAttribute->joinColumns as $joinColumn) {
+            $joinTable['joinColumns'][] = $this->joinColumnToArray($joinColumn);
+        }
+
+        foreach ($joinTableAttribute->inverseJoinColumns as $joinColumn) {
+            $joinTable['inverseJoinColumns'][] = $this->joinColumnToArray($joinColumn);
+        }
+
+        return $joinTable;
     }
 
     /**

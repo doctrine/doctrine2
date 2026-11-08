@@ -1417,11 +1417,19 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         if (isset($mapping['dynamicProperty'])) {
             $this->validateDynamicPropertyMapping($mapping['dynamicProperty'], $mapping['fieldName'] ?? '');
 
-            if (($mapping['type'] & self::TO_ONE) === 0 || isset($mapping['mappedBy']) || ! empty($mapping['id'])) {
+            if (! empty($mapping['id'])) {
                 throw MappingException::illegalDynamicPropertyMapping(
                     $this->name,
                     $mapping['fieldName'],
-                    'only owning side to-one associations that are not part of the identifier are supported',
+                    'dynamic properties cannot be identifiers or version fields',
+                );
+            }
+
+            if ($mapping['type'] === self::ONE_TO_ONE && isset($mapping['mappedBy'])) {
+                throw MappingException::illegalDynamicPropertyMapping(
+                    $this->name,
+                    $mapping['fieldName'],
+                    'inverse side one-to-one associations are not supported',
                 );
             }
         } elseif ($this->isTypedProperty($mapping['fieldName'])) {
@@ -2876,6 +2884,34 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $mapping['dynamicProperty'] = $container;
 
         $this->mapOneToOne($mapping);
+    }
+
+    /**
+     * Adds a one-to-many mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapOneToMany()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicOneToMany(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapOneToMany($mapping);
+    }
+
+    /**
+     * Adds a many-to-many mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapManyToMany()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicManyToMany(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapManyToMany($mapping);
     }
 
     /**
