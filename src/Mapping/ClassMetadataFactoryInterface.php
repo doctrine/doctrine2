@@ -10,6 +10,8 @@ use Doctrine\Persistence\Mapping\ClassMetadataFactory as PersistenceClassMetadat
  * The ORM-specific contract for a class metadata factory.
  *
  * @extends PersistenceClassMetadataFactory<ClassMetadata<object>>
+ * @psalm-inheritors ClassMetadataFactory
+ * @phpstan-sealed ClassMetadataFactory
  */
 interface ClassMetadataFactoryInterface extends PersistenceClassMetadataFactory
 {
