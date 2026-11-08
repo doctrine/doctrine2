@@ -255,11 +255,14 @@ class ClassMetadataBuilder
      * Fields and associations are stored in it by calling {@see FieldBuilder::inDynamicProperties()}
      * or {@see AssociationBuilder::inDynamicProperties()}, or with {@see addDynamicField()}.
      *
+     * @param string|null $columnPrefix Prepended to the column names of the fields and the join column
+     *                                  names of the to-one associations stored in the container.
+     *
      * @return $this
      */
-    public function addDynamicProperties(string $fieldName): static
+    public function addDynamicProperties(string $fieldName, string|null $columnPrefix = null): static
     {
-        $this->cm->mapDynamicProperties(['fieldName' => $fieldName]);
+        $this->cm->mapDynamicProperties(['fieldName' => $fieldName, 'columnPrefix' => $columnPrefix]);
 
         return $this;
     }

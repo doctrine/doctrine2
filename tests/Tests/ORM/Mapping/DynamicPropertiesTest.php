@@ -146,7 +146,11 @@ class DynamicPropertiesTest extends OrmTestCase
         yield 'one-to-many and owning side many-to-many' => [
             Article::class,
             static function (ClassMetadataBuilder $builder): void {
-                $builder->addDynamicProperties('attributes')
+                $builder->addDynamicProperties('attributes', 'attr_')
+                    ->addDynamicField('attributes', 'slug', Types::STRING, ['length' => 50, 'nullable' => true])
+                    ->createManyToOne('featured_tag', Tag::class)
+                        ->inDynamicProperties('attributes')
+                        ->build()
                     ->createManyToMany('tags', Tag::class)
                         ->inDynamicProperties('attributes')
                         ->inversedBy('articles')
@@ -244,8 +248,12 @@ class DynamicPropertiesTest extends OrmTestCase
         $class = $em->getClassMetadata(Customer::class);
 
         self::assertNotNull($class->dynamicProperties['extra']->declared);
+        self::assertSame('extra_', $class->dynamicProperties['extra']->columnPrefix);
         self::assertSame('extra', $class->fieldMappings['loyalty_points']->dynamicProperty);
+        self::assertSame('extra_loyalty_points', $class->fieldMappings['loyalty_points']->columnName);
         self::assertSame('extra', $class->associationMappings['loyalty_tier']->dynamicProperty);
+        self::assertSame('extra_loyalty_tier_id', $class->associationMappings['loyalty_tier']->joinColumns[0]->name);
+        self::assertSame(['extra_loyalty_tier_id' => 'id'], $class->associationMappings['loyalty_tier']->sourceToTargetKeyColumns);
 
         $customer = new Customer('Alice');
         $class->propertyAccessors['loyalty_points']->setValue($customer, 10);
@@ -267,6 +275,47 @@ class DynamicPropertiesTest extends OrmTestCase
         self::assertSame(['color' => 'red'], $product->all());
         // @phpstan-ignore property.deprecated
         self::assertSame('red', $class->reflFields['color']->getValue($product));
+    }
+
+    public function testColumnPrefixIsAppliedToDerivedColumnNames(): void
+    {
+        $class = $this->loadWithDriver(new AttributeDriver([]), Article::class);
+
+        self::assertSame('attr_', $class->dynamicProperties['attributes']->columnPrefix);
+        self::assertSame('attr_slug', $class->fieldMappings['slug']->columnName);
+        self::assertSame('attr_featured_tag_id', $class->associationMappings['featured_tag']->joinColumns[0]->name);
+        self::assertSame('id', $class->associationMappings['featured_tag']->joinColumns[0]->referencedColumnName);
+        self::assertSame('dynamic_properties_article_tag', $class->associationMappings['tags']->joinTable->name);
+        self::assertSame(['article_id' => 'id'], $class->associationMappings['tags']->relationToSourceKeyColumns);
+    }
+
+    public function testColumnPrefixKeepsQuotedColumnNamesQuoted(): void
+    {
+        $class = new ClassMetadata(DynamicPropertiesValidationEntity::class);
+        $class->initializeReflection(new RuntimeReflectionService());
+        $class->mapDynamicProperties(['fieldName' => 'values', 'columnPrefix' => 'p_']);
+
+        $class->mapDynamicField('values', ['fieldName' => 'order', 'columnName' => '`order`']);
+        $class->mapDynamicManyToOne('values', [
+            'fieldName' => 'vendor',
+            'targetEntity' => Vendor::class,
+            'joinColumns' => [['name' => '`vendor`']],
+        ]);
+
+        self::assertSame('p_order', $class->fieldMappings['order']->columnName);
+        self::assertTrue($class->fieldMappings['order']->quoted);
+        self::assertSame('p_vendor', $class->associationMappings['vendor']->joinColumns[0]->name);
+        self::assertTrue($class->associationMappings['vendor']->joinColumns[0]->quoted);
+    }
+
+    public function testColumnPrefixSurvivesSerialization(): void
+    {
+        $class = $this->getTestEntityManager()->getClassMetadata(Article::class);
+
+        $unserialized = unserialize(serialize($class));
+        self::assertInstanceOf(ClassMetadata::class, $unserialized);
+
+        self::assertSame('attr_', $unserialized->dynamicProperties['attributes']->columnPrefix);
     }
 
     public function testFieldRequiresMappedContainer(): void

@@ -11,7 +11,9 @@
 
         <field name="title" type="string" length="50"/>
 
-        <dynamic-properties name="attributes">
+        <dynamic-properties name="attributes" column-prefix="attr_">
+            <field name="slug" type="string" length="50" nullable="true"/>
+            <many-to-one field="featured_tag" target-entity="Doctrine\Tests\Models\DynamicProperties\Tag"/>
             <many-to-many field="tags" target-entity="Doctrine\Tests\Models\DynamicProperties\Tag" inversed-by="articles">
                 <join-table name="dynamic_properties_article_tag"/>
                 <order-by>

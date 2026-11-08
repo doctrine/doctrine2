@@ -604,7 +604,9 @@ class AttributeDriver implements MappingDriver
         $fieldAttributes       = $this->reader->getPropertyAttributeCollection($property, Mapping\DynamicField::class);
         $associationAttributes = $this->reader->getPropertyAttributeCollection($property, Mapping\DynamicAssociation::class);
 
-        if ($this->reader->getPropertyAttribute($property, Mapping\DynamicProperties::class) === null) {
+        $containerAttribute = $this->reader->getPropertyAttribute($property, Mapping\DynamicProperties::class);
+
+        if ($containerAttribute === null) {
             if (count($fieldAttributes) > 0 || count($associationAttributes) > 0) {
                 throw MappingException::invalidDynamicPropertiesContainer(
                     $metadata->name,
@@ -616,7 +618,7 @@ class AttributeDriver implements MappingDriver
             return false;
         }
 
-        $metadata->mapDynamicProperties(['fieldName' => $property->name]);
+        $metadata->mapDynamicProperties(['fieldName' => $property->name, 'columnPrefix' => $containerAttribute->columnPrefix]);
 
         foreach ($fieldAttributes as $fieldAttribute) {
             $metadata->mapDynamicField($property->name, $this->columnToArray($fieldAttribute->key, $fieldAttribute->column));

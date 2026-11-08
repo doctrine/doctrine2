@@ -244,6 +244,10 @@ class DynamicPropertiesTest extends OrmFunctionalTestCase
 
         $customer = $this->_em->find(Customer::class, $customer->id);
 
+        self::assertEquals(120, $this->_em->getConnection()->fetchOne(
+            'SELECT extra_loyalty_points FROM dynamic_properties_customer WHERE id = ?',
+            [$customer->id],
+        ));
         self::assertSame(120, $customer->get('loyalty_points'));
         self::assertSame('Gold', $customer->get('loyalty_tier')->name);
 

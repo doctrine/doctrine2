@@ -1317,6 +1317,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             $mapping['columnName'] = $this->namingStrategy->propertyToColumnName($mapping['fieldName'], $this->name);
         }
 
+        if (isset($mapping['dynamicProperty'])) {
+            $mapping['columnName'] = $this->prefixDynamicColumnName($mapping['dynamicProperty'], $mapping['columnName']);
+        }
+
         $mapping = FieldMapping::fromMappingArray($mapping);
 
         if ($mapping->columnName[0] === '`') {
@@ -1431,6 +1435,22 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                     $mapping['fieldName'],
                     'inverse side one-to-one associations are not supported',
                 );
+            }
+
+            if (($mapping['type'] & self::TO_ONE) !== 0 && $this->dynamicProperties[$mapping['dynamicProperty']]->columnPrefix) {
+                // An empty join column is completed with the default names, like a missing one.
+                $joinColumns = $mapping['joinColumns'] ?? [[]];
+
+                foreach ($joinColumns as $index => $joinColumn) {
+                    $joinColumns[$index]['name'] = $this->prefixDynamicColumnName(
+                        $mapping['dynamicProperty'],
+                        empty($joinColumn['name'])
+                            ? $this->namingStrategy->joinColumnName($mapping['fieldName'], $this->name)
+                            : $joinColumn['name'],
+                    );
+                }
+
+                $mapping['joinColumns'] = $joinColumns;
             }
         } elseif ($this->isTypedProperty($mapping['fieldName'])) {
             $mapping = $this->validateAndCompleteTypedAssociationMapping($mapping);
@@ -2820,7 +2840,12 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      * Fields and associations can then be stored in it with {@see mapDynamicField()},
      * {@see mapDynamicManyToOne()} and {@see mapDynamicOneToOne()}.
      *
-     * @phpstan-param array{fieldName: string, declared?: class-string|null, inherited?: class-string|null} $mapping
+     * @phpstan-param array{
+     *     fieldName: string,
+     *     columnPrefix?: string|null,
+     *     declared?: class-string|null,
+     *     inherited?: class-string|null,
+     * } $mapping
      *
      * @throws MappingException
      */
@@ -2977,6 +3002,20 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 throw MappingException::invalidDynamicPropertiesContainer($this->name, $property, 'the property must be of type array');
             }
         }
+    }
+
+    /** Prepends the column prefix of the dynamic properties container, keeping quotes intact. */
+    private function prefixDynamicColumnName(string $container, string $columnName): string
+    {
+        $prefix = $this->dynamicProperties[$container]->columnPrefix;
+
+        if (! $prefix) {
+            return $columnName;
+        }
+
+        return $columnName[0] === '`'
+            ? '`' . $prefix . trim($columnName, '`') . '`'
+            : $prefix . $columnName;
     }
 
     /** @throws MappingException */

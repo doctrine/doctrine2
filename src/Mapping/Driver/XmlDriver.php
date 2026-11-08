@@ -290,7 +290,10 @@ class XmlDriver extends FileDriver
         foreach ($xmlRoot->{'dynamic-properties'} ?? [] as $dynamicPropertiesElement) {
             $container = (string) $dynamicPropertiesElement['name'];
 
-            $metadata->mapDynamicProperties(['fieldName' => $container]);
+            $metadata->mapDynamicProperties([
+                'fieldName' => $container,
+                'columnPrefix' => isset($dynamicPropertiesElement['column-prefix']) ? (string) $dynamicPropertiesElement['column-prefix'] : null,
+            ]);
 
             foreach ($dynamicPropertiesElement->field ?? [] as $fieldElement) {
                 $mapping = $this->columnToArray($fieldElement);

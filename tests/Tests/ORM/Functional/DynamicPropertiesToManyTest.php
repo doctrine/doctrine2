@@ -61,6 +61,43 @@ class DynamicPropertiesToManyTest extends OrmFunctionalTestCase
         self::assertSame(['article_id', 'tag_id'], $columns);
     }
 
+    public function testColumnPrefix(): void
+    {
+        $columns = array_map(
+            strtolower(...),
+            array_keys($this->createSchemaManager()->listTableColumns('dynamic_properties_article')),
+        );
+        sort($columns);
+
+        self::assertSame(['attr_featured_tag_id', 'attr_slug', 'id', 'title'], $columns);
+
+        $tag     = new Tag('php');
+        $article = new Article('Hello');
+        $article->set('slug', 'hello');
+        $article->set('featured_tag', $tag);
+
+        $this->_em->persist($tag);
+        $this->_em->persist($article);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        self::assertEquals(
+            ['attr_slug' => 'hello', 'attr_featured_tag_id' => $tag->id],
+            $this->_em->getConnection()->fetchAssociative(
+                'SELECT attr_slug, attr_featured_tag_id FROM dynamic_properties_article WHERE id = ?',
+                [$article->id],
+            ),
+        );
+
+        $article = $this->_em->find(Article::class, $article->id);
+
+        self::assertSame('hello', $article->get('slug'));
+        self::assertSame('php', $article->get('featured_tag')->name);
+        self::assertSame(['Hello'], array_column($this->_em->createQuery(
+            'SELECT a.title FROM ' . Article::class . ' a JOIN a.featured_tag t WHERE a.slug = :slug AND t.name = :name',
+        )->setParameters(['slug' => 'hello', 'name' => 'php'])->getScalarResult(), 'title'));
+    }
+
     public function testPersistAndLoadCollections(): void
     {
         $article = $this->createArticle(['php', 'doctrine'], ['first', 'second']);

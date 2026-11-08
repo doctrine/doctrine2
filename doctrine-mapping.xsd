@@ -286,6 +286,7 @@
       <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other"/>
     </xs:choice>
     <xs:attribute name="name" type="xs:NMTOKEN" use="required" />
+    <xs:attribute name="column-prefix" type="xs:string" use="optional" />
     <xs:anyAttribute namespace="##other"/>
   </xs:complexType>
 

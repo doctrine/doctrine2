@@ -19,7 +19,9 @@ class Article
     public int $id;
 
     /** @var array<string, mixed> */
-    #[ORM\DynamicProperties]
+    #[ORM\DynamicProperties(columnPrefix: 'attr_')]
+    #[ORM\DynamicField('slug', new ORM\Column(length: 50, nullable: true))]
+    #[ORM\DynamicAssociation('featured_tag', new ORM\ManyToOne(targetEntity: Tag::class))]
     #[ORM\DynamicAssociation(
         'tags',
         new ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'articles'),

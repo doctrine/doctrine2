@@ -14,7 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 abstract class ExtensibleEntity
 {
     /** @var array<string, mixed> */
-    #[ORM\DynamicProperties]
+    #[ORM\DynamicProperties(columnPrefix: 'extra_')]
     private array $extra = [];
 
     public function get(string $key): mixed

@@ -39,6 +39,12 @@ final class DynamicPropertiesMapping implements ArrayAccess
      */
     public string|null $declared = null;
 
+    /**
+     * Prepended to the column names of the fields and the join column names of the
+     * to-one associations stored in the container, including explicitly named ones.
+     */
+    public string|null $columnPrefix = null;
+
     /** @param string $fieldName The name of the array property holding the dynamic properties. */
     public function __construct(public string $fieldName)
     {
@@ -49,6 +55,7 @@ final class DynamicPropertiesMapping implements ArrayAccess
      *     fieldName: string,
      *     inherited?: class-string|null,
      *     declared?: class-string|null,
+     *     columnPrefix?: string|null,
      * } $mappingArray
      */
     public static function fromMappingArray(array $mappingArray): self
@@ -72,7 +79,7 @@ final class DynamicPropertiesMapping implements ArrayAccess
     {
         $serialized = ['fieldName'];
 
-        foreach (['inherited', 'declared'] as $property) {
+        foreach (['inherited', 'declared', 'columnPrefix'] as $property) {
             if ($this->$property !== null) {
                 $serialized[] = $property;
             }

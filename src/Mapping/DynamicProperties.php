@@ -16,4 +16,12 @@ use Attribute;
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class DynamicProperties implements MappingAttribute
 {
+    /**
+     * @param string|null $columnPrefix Prepended to the column names of the fields and the join column
+     *                                  names of the to-one associations stored in the container.
+     */
+    public function __construct(
+        public readonly string|null $columnPrefix = null,
+    ) {
+    }
 }
