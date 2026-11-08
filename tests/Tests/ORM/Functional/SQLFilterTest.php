@@ -1120,6 +1120,32 @@ class SQLFilterTest extends OrmFunctionalTestCase
             ->setParameter('id', $this->eventId2);
     }
 
+    public function testIndexedEagerCollectionWithFilterOnCTI(): void
+    {
+        $this->loadCompanyOrganizationEventJoinedSubclassFixtureData();
+
+        $class       = $this->_em->getClassMetadata(CompanyOrganization::class);
+        $association = $class->associationMappings['events'];
+
+        // Use a subclass so that indexBy refers to an inherited field.
+        $class->associationMappings['events']['targetEntity'] = CompanyAuction::class;
+        $class->associationMappings['events']['indexBy']      = 'id';
+        $class->associationMappings['events']['fetch']        = ClassMetadata::FETCH_EAGER;
+
+        try {
+            $organization = $this->_em->find(CompanyOrganization::class, $this->organizationId);
+            self::assertEqualsCanonicalizing([$this->eventId1, $this->eventId2], $organization->events->getKeys());
+
+            $this->_em->clear();
+            $this->useCompanyEventIdFilter();
+
+            $organization = $this->_em->find(CompanyOrganization::class, $this->organizationId);
+            self::assertSame([$this->eventId2], $organization->events->getKeys());
+        } finally {
+            $class->associationMappings['events'] = $association;
+        }
+    }
+
     public function testOneToManyExtraLazyCountWithFilterOnCTI(): void
     {
         $this->loadCompanyOrganizationEventJoinedSubclassFixtureData();

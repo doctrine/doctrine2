@@ -10,6 +10,7 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Internal\SQLResultCasing;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Utility\LockSqlHelper;
 use Doctrine\ORM\Utility\PersisterHelper;
 use LengthException;
@@ -414,6 +415,9 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
         if ($this->currentPersisterContext->selectColumnListSql !== null && $this->isFilterHashUpToDate()) {
             return $this->currentPersisterContext->selectColumnListSql;
         }
+
+        // Rebuilding the SELECT clause must not leave stale column aliases in the result mapping.
+        $this->currentPersisterContext->rsm = new ResultSetMapping();
 
         $columnList       = [];
         $discrColumn      = $this->class->getDiscriminatorColumn();
