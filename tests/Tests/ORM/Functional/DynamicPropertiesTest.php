@@ -73,14 +73,13 @@ class DynamicPropertiesTest extends OrmFunctionalTestCase
         $this->_em->flush();
         $this->_em->clear();
 
-        $this->getQueryLog()->reset()->enable();
-
-        $product = $this->_em->find(Product::class, $product->id);
-
-        $sql = $this->getLastLoggedQuery()['sql'];
+        // Not taken from the query log, the second level cache test run serves find() from the cache.
+        $sql = $this->_em->getUnitOfWork()->getEntityPersister(Product::class)->getSelectSQL([]);
         self::assertStringContainsString('color', $sql);
         self::assertStringContainsString('size_eu', $sql);
         self::assertStringContainsString('vendor_id', $sql);
+
+        $product = $this->_em->find(Product::class, $product->id);
 
         self::assertSame('Shirt', $product->name);
         self::assertSame('red', $product->get('color'));
