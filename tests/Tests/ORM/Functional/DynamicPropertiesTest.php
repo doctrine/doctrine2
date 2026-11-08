@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\ORM\Events;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\Tests\Models\DynamicProperties\Customer;
 use Doctrine\Tests\Models\DynamicProperties\LoyaltyMetadataListener;
 use Doctrine\Tests\Models\DynamicProperties\LoyaltyTier;
@@ -140,11 +141,56 @@ class DynamicPropertiesTest extends OrmFunctionalTestCase
         self::assertSame(['size' => 42], $this->_em->find(Product::class, $product->id)->all());
     }
 
-    public function testUnmappedKeysAreNotPersisted(): void
+    public function testUnmappedKeyThrowsOnInsert(): void
     {
-        $product = $this->createProduct(['color' => 'red', 'unmapped' => 'value']);
+        $product = new Product('Shirt');
+        $product->set('color', 'red');
+        $product->set('unmapped', 'value');
+        $product->set('other', null);
 
-        self::assertSame(['color' => 'red'], $this->_em->find(Product::class, $product->id)->all());
+        $this->_em->persist($product);
+
+        $this->expectException(ORMInvalidArgumentException::class);
+        $this->expectExceptionMessage('The dynamic properties container "attributes" of entity ' . Product::class);
+        $this->expectExceptionMessage('contains the unmapped key(s) "unmapped", "other".');
+
+        $this->_em->flush();
+    }
+
+    public function testUnmappedKeyThrowsOnUpdateWithoutWritingChanges(): void
+    {
+        $product = $this->createProduct(['color' => 'red']);
+
+        $product = $this->_em->find(Product::class, $product->id);
+        $product->set('color', 'blue');
+        $product->set('unmapped', 'value');
+
+        try {
+            $this->_em->flush();
+            self::fail('Expected an exception for the unmapped key.');
+        } catch (ORMInvalidArgumentException $e) {
+            self::assertStringContainsString('contains the unmapped key(s) "unmapped".', $e->getMessage());
+        }
+
+        self::assertTrue($this->_em->isOpen());
+        self::assertSame(
+            'red',
+            $this->_em->getConnection()->fetchOne('SELECT color FROM dynamic_properties_product WHERE id = ?', [$product->id]),
+        );
+    }
+
+    public function testUnmappedKeyThrowsForContainerFilledByListener(): void
+    {
+        $customer = new Customer('Alice');
+        $customer->set('loyalty_points', 10);
+        $customer->set('loyalty_level', 'gold');
+
+        $this->_em->persist($customer);
+
+        $this->expectException(ORMInvalidArgumentException::class);
+        $this->expectExceptionMessage('The dynamic properties container "extra" of entity ' . Customer::class);
+
+        $this->_em->flush();
     }
 
     public function testQueryingDynamicProperties(): void

@@ -93,6 +93,9 @@ class DynamicPropertiesTest extends OrmTestCase
         $unserialized->propertyAccessors['status']->setValue($product, 'active');
 
         self::assertSame(['color' => 'red', 'status' => ProductStatus::Active], $product->all());
+
+        $product->set('unmapped', 'value');
+        self::assertSame(['attributes' => ['unmapped']], $unserialized->getUnmappedDynamicPropertyKeys($product));
     }
 
     public function testContainerDeclaredInMappedSuperclassAndFilledByListener(): void

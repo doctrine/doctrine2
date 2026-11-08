@@ -33,6 +33,7 @@ use Stringable;
 use function array_column;
 use function array_count_values;
 use function array_diff;
+use function array_diff_key;
 use function array_filter;
 use function array_flip;
 use function array_intersect;
@@ -53,6 +54,7 @@ use function func_num_args;
 use function implode;
 use function in_array;
 use function interface_exists;
+use function is_array;
 use function is_string;
 use function is_subclass_of;
 use function ltrim;
@@ -580,6 +582,20 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /** @var array<string, PropertyAccessor> */
     public array $propertyAccessors = [];
 
+    /**
+     * The accessor of each dynamic properties container. Built by {@see wakeupReflection()}, not serialized.
+     *
+     * @var array<string, PropertyAccessor>
+     */
+    private array $dynamicContainerAccessors = [];
+
+    /**
+     * The keys mapped in each dynamic properties container. Built by {@see wakeupReflection()}, not serialized.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $dynamicPropertyKeys = [];
+
     private InstantiatorInterface|null $instantiator = null;
 
     private readonly TypedFieldMapper $typedFieldMapper;
@@ -865,14 +881,16 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $this->reflFields   = new LegacyReflectionFields($this, $reflService);
         $this->instantiator = $this->instantiator ?: new Instantiator();
 
-        $parentAccessors           = [];
-        $dynamicContainerAccessors = [];
+        $parentAccessors                 = [];
+        $this->dynamicContainerAccessors = [];
+        $this->dynamicPropertyKeys       = [];
 
         foreach ($this->dynamicProperties as $property => $dynamicProperties) {
-            $dynamicContainerAccessors[$property] = PropertyAccessorFactory::createPropertyAccessor(
+            $this->dynamicContainerAccessors[$property] = PropertyAccessorFactory::createPropertyAccessor(
                 $dynamicProperties->declared ?? $this->name,
                 $property,
             );
+            $this->dynamicPropertyKeys[$property]       = [];
         }
 
         foreach ($this->embeddedClasses as $property => $embeddedClass) {
@@ -903,8 +921,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
         foreach ($this->fieldMappings as $field => $mapping) {
             if (isset($mapping->dynamicProperty)) {
-                $this->propertyAccessors[$field] = new DynamicPropertyAccessor(
-                    $dynamicContainerAccessors[$mapping->dynamicProperty],
+                $this->dynamicPropertyKeys[$mapping->dynamicProperty][$field] = true;
+                $this->propertyAccessors[$field]                              = new DynamicPropertyAccessor(
+                    $this->dynamicContainerAccessors[$mapping->dynamicProperty],
                     $field,
                 );
 
@@ -952,8 +971,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
         foreach ($this->associationMappings as $field => $mapping) {
             if (isset($mapping->dynamicProperty)) {
-                $this->propertyAccessors[$field] = new DynamicPropertyAccessor(
-                    $dynamicContainerAccessors[$mapping->dynamicProperty],
+                $this->dynamicPropertyKeys[$mapping->dynamicProperty][$field] = true;
+                $this->propertyAccessors[$field]                              = new DynamicPropertyAccessor(
+                    $this->dynamicContainerAccessors[$mapping->dynamicProperty],
                     $field,
                 );
 
@@ -2865,6 +2885,34 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         return isset($this->fieldMappings[$fieldName]->dynamicProperty)
             || isset($this->associationMappings[$fieldName]->dynamicProperty);
+    }
+
+    /**
+     * Returns the keys of the entity's dynamic properties containers that are not mapped, indexed by container.
+     *
+     * @internal
+     *
+     * @return array<string, non-empty-list<int|string>>
+     */
+    public function getUnmappedDynamicPropertyKeys(object $entity): array
+    {
+        $unmapped = [];
+
+        foreach ($this->dynamicContainerAccessors as $property => $accessor) {
+            $values = $accessor->getValue($entity);
+
+            if (! is_array($values)) {
+                continue;
+            }
+
+            $keys = array_keys(array_diff_key($values, $this->dynamicPropertyKeys[$property]));
+
+            if ($keys !== []) {
+                $unmapped[$property] = $keys;
+            }
+        }
+
+        return $unmapped;
     }
 
     /**

@@ -175,6 +175,18 @@ EXCEPTION
         return new self(sprintf('Your proxy directory "%s" must be writable', $proxyDirectory));
     }
 
+    /** @param non-empty-list<int|string> $keys */
+    public static function unmappedDynamicProperties(object $entity, string $container, array $keys): self
+    {
+        return new self(sprintf(
+            'The dynamic properties container "%s" of entity %s contains the unmapped key(s) "%s". Only keys that are'
+            . ' mapped as dynamic fields or associations can be stored in it.',
+            $container,
+            self::objToStr($entity),
+            implode('", "', $keys),
+        ));
+    }
+
     /**
      * Helper method to show an object as string.
      */
