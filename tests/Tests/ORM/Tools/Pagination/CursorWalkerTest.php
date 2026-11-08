@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Tools\Pagination;
 
+use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Tools\Pagination\CursorWalker;
+use Doctrine\Tests\DbalTypes\BinaryCodeType;
 use LogicException;
 
 class CursorWalkerTest extends PaginationTestCase
@@ -131,6 +134,28 @@ class CursorWalkerTest extends PaginationTestCase
 
         self::assertSame(5, $query->getParameter('p_id_0')?->getValue());
         self::assertSame(10, $query->getParameter('dctrn_cursor_0')?->getValue());
+    }
+
+    public function testCursorValuesAreBoundWithTheBindingTypeOfTheirField(): void
+    {
+        if (! Type::hasType(BinaryCodeType::NAME)) {
+            Type::addType(BinaryCodeType::NAME, BinaryCodeType::class);
+        }
+
+        $query = $this->entityManager->createQuery(
+            'SELECT i FROM Doctrine\Tests\Models\Pagination\CodedItem i ORDER BY i.code ASC, i.id ASC',
+        );
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [CursorWalker::class]);
+        $query->setHint(CursorWalker::HINT_CURSOR_REVERSE, false);
+        $query->setHint(CursorWalker::HINT_CURSOR_PARAMETERS, ['i.code' => "\xff\x00\x00\x01", 'i.id' => 1]);
+
+        $query->getSQL();
+
+        // the database value is bound as such, and not converted by the type of the field
+        self::assertSame("\xff\x00\x00\x01", $query->getParameter('dctrn_cursor_0')?->getValue());
+        self::assertSame(ParameterType::BINARY, $query->getParameter('dctrn_cursor_0')?->getType());
+        self::assertSame(1, $query->getParameter('dctrn_cursor_1')?->getValue());
+        self::assertSame(ParameterType::INTEGER, $query->getParameter('dctrn_cursor_1')?->getType());
     }
 
     public function testQueryWithJoinAndOrderByJoinedEntity(): void
