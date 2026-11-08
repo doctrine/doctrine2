@@ -21,4 +21,4 @@ concurrency:
 jobs:
   composer-lint:
     name: "Composer Lint"
-    uses: "doctrine/.github/.github/workflows/composer-lint.yml@16.0.0"
+    uses: "doctrine/.github/.github/workflows/composer-lint.yml@16.1.0"
