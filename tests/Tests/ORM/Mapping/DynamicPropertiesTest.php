@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Mapping;
 
+use Closure;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\AssociationMapping;
+use Doctrine\ORM\Mapping\Builder\ClassMetadataBuilder;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\Mapping\Driver\XmlDriver;
+use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\PropertyAccessors\DynamicPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\EnumPropertyAccessor;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\DynamicProperties\Article;
+use Doctrine\Tests\Models\DynamicProperties\Comment;
 use Doctrine\Tests\Models\DynamicProperties\Customer;
 use Doctrine\Tests\Models\DynamicProperties\LoyaltyMetadataListener;
 use Doctrine\Tests\Models\DynamicProperties\Product;
@@ -26,6 +32,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use SortDirection;
 
+use function array_filter;
 use function array_keys;
 use function serialize;
 use function unserialize;
@@ -109,6 +116,98 @@ class DynamicPropertiesTest extends OrmTestCase
         self::assertEquals($attributeClass->dynamicProperties, $xmlClass->dynamicProperties);
         self::assertEquals($attributeClass->fieldMappings, $xmlClass->fieldMappings);
         self::assertEquals($attributeClass->associationMappings, $xmlClass->associationMappings);
+    }
+
+    /** @return iterable<string, array{class-string, Closure(ClassMetadataBuilder): void}> */
+    public static function builderMappings(): iterable
+    {
+        yield 'fields and to-one associations' => [
+            Product::class,
+            static function (ClassMetadataBuilder $builder): void {
+                $builder->addDynamicProperties('attributes')
+                    ->addDynamicField('attributes', 'color', Types::STRING, ['length' => 20, 'nullable' => true])
+                    ->createField('size', Types::INTEGER)
+                        ->inDynamicProperties('attributes')
+                        ->columnName('size_eu')
+                        ->nullable()
+                        ->build()
+                    ->addDynamicField('attributes', 'status', Types::STRING, [
+                        'length' => 10,
+                        'nullable' => true,
+                        'enumType' => ProductStatus::class,
+                    ])
+                    ->createManyToOne('vendor', Vendor::class)
+                        ->inDynamicProperties('attributes')
+                        ->addJoinColumn('vendor_id', 'id', onDelete: 'SET NULL')
+                        ->build();
+            },
+        ];
+
+        yield 'one-to-many and owning side many-to-many' => [
+            Article::class,
+            static function (ClassMetadataBuilder $builder): void {
+                $builder->addDynamicProperties('attributes')
+                    ->createManyToMany('tags', Tag::class)
+                        ->inDynamicProperties('attributes')
+                        ->inversedBy('articles')
+                        ->setJoinTable('dynamic_properties_article_tag')
+                        ->setOrderBy(['name' => SortDirection::Ascending])
+                        ->build()
+                    ->createOneToMany('comments', Comment::class)
+                        ->inDynamicProperties('attributes')
+                        ->mappedBy('article')
+                        ->cascadePersist()
+                        ->orphanRemoval()
+                        ->setOrderBy(['id' => SortDirection::Ascending])
+                        ->build();
+            },
+        ];
+
+        yield 'inverse side many-to-many' => [
+            Tag::class,
+            static function (ClassMetadataBuilder $builder): void {
+                $builder->addDynamicProperties('attributes')
+                    ->createManyToMany('articles', Article::class)
+                        ->inDynamicProperties('attributes')
+                        ->mappedBy('tags')
+                        ->build();
+            },
+        ];
+    }
+
+    /**
+     * @param class-string                        $className
+     * @param Closure(ClassMetadataBuilder): void $build
+     */
+    #[DataProvider('builderMappings')]
+    public function testClassMetadataBuilderIsEquivalentToAttributeMapping(string $className, Closure $build): void
+    {
+        $attributeClass = $this->loadWithDriver(new AttributeDriver([]), $className);
+
+        $builderClass = new ClassMetadata($className);
+        $builderClass->initializeReflection(new RuntimeReflectionService());
+        $build(new ClassMetadataBuilder($builderClass));
+
+        $dynamic = static fn (array $mappings): array => array_filter(
+            $mappings,
+            static fn (FieldMapping|AssociationMapping $mapping): bool => $mapping->dynamicProperty !== null,
+        );
+
+        self::assertNotEmpty($builderClass->associationMappings);
+        self::assertEquals($attributeClass->dynamicProperties, $builderClass->dynamicProperties);
+        self::assertEquals($dynamic($attributeClass->fieldMappings), $builderClass->fieldMappings);
+        self::assertEquals($dynamic($attributeClass->associationMappings), $builderClass->associationMappings);
+    }
+
+    public function testClassMetadataBuilderRejectsDynamicVersionField(): void
+    {
+        $class   = $this->createClassMetadata(DynamicPropertiesValidationEntity::class);
+        $builder = new ClassMetadataBuilder($class);
+
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('dynamic properties cannot be identifiers or version fields');
+
+        $builder->createField('revision', Types::INTEGER)->inDynamicProperties('values')->isVersionField()->build();
     }
 
     public function testMetadataSurvivesSerialization(): void

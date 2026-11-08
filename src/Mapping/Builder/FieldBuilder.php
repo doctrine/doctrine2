@@ -79,6 +79,21 @@ class FieldBuilder
     }
 
     /**
+     * Stores the field under its name in the given dynamic properties container
+     * instead of in a property of the same name.
+     *
+     * @see ClassMetadataBuilder::addDynamicProperties()
+     *
+     * @return $this
+     */
+    public function inDynamicProperties(string $container): static
+    {
+        $this->mapping['dynamicProperty'] = $container;
+
+        return $this;
+    }
+
+    /**
      * Sets column name.
      *
      * @return $this

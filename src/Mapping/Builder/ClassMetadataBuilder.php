@@ -250,6 +250,38 @@ class ClassMetadataBuilder
     }
 
     /**
+     * Adds a dynamic properties container: an array property whose keys are mapped to columns.
+     *
+     * Fields and associations are stored in it by calling {@see FieldBuilder::inDynamicProperties()}
+     * or {@see AssociationBuilder::inDynamicProperties()}, or with {@see addDynamicField()}.
+     *
+     * @return $this
+     */
+    public function addDynamicProperties(string $fieldName): static
+    {
+        $this->cm->mapDynamicProperties(['fieldName' => $fieldName]);
+
+        return $this;
+    }
+
+    /**
+     * Adds a field that is stored under its name in the given dynamic properties container.
+     *
+     * @phpstan-param array<string, mixed> $mapping
+     *
+     * @return $this
+     */
+    public function addDynamicField(string $container, string $name, string $type, array $mapping = []): static
+    {
+        $mapping['fieldName'] = $name;
+        $mapping['type']      = $type;
+
+        $this->cm->mapDynamicField($container, $mapping);
+
+        return $this;
+    }
+
+    /**
      * Creates a field builder.
      */
     public function createField(string $name, string $type): FieldBuilder

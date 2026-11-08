@@ -20,6 +20,21 @@ class AssociationBuilder
     ) {
     }
 
+    /**
+     * Stores the association under its name in the given dynamic properties container
+     * instead of in a property of the same name.
+     *
+     * @see ClassMetadataBuilder::addDynamicProperties()
+     *
+     * @return $this
+     */
+    public function inDynamicProperties(string $container): static
+    {
+        $this->mapping['dynamicProperty'] = $container;
+
+        return $this;
+    }
+
     /** @return $this */
     public function mappedBy(string $fieldName): static
     {
