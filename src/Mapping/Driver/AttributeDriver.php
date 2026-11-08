@@ -16,10 +16,12 @@ use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
+use ReflectionProperty;
 
 use function assert;
 use function class_exists;
 use function constant;
+use function count;
 use function defined;
 use function sprintf;
 
@@ -279,6 +281,10 @@ class AttributeDriver implements MappingDriver
 
         foreach ($reflectionClass->getProperties() as $property) {
             if ($this->isRepeatedPropertyDeclaration($property, $metadata)) {
+                continue;
+            }
+
+            if ($this->loadDynamicProperties($property, $className, $metadata)) {
                 continue;
             }
 
@@ -606,6 +612,65 @@ class AttributeDriver implements MappingDriver
                 }
             }
         }
+    }
+
+    /**
+     * Maps the #[DynamicProperties] container and its #[DynamicField] / #[DynamicAssociation] entries.
+     *
+     * @param class-string          $className
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return bool Whether the property is a dynamic properties container
+     */
+    private function loadDynamicProperties(ReflectionProperty $property, string $className, ClassMetadata $metadata): bool
+    {
+        $fieldAttributes       = $this->reader->getPropertyAttributeCollection($property, Mapping\DynamicField::class);
+        $associationAttributes = $this->reader->getPropertyAttributeCollection($property, Mapping\DynamicAssociation::class);
+
+        if ($this->reader->getPropertyAttribute($property, Mapping\DynamicProperties::class) === null) {
+            if (count($fieldAttributes) > 0 || count($associationAttributes) > 0) {
+                throw MappingException::invalidDynamicPropertiesContainer(
+                    $metadata->name,
+                    $property->name,
+                    sprintf('#[%s] and #[%s] require #[%s] on the same property', Mapping\DynamicField::class, Mapping\DynamicAssociation::class, Mapping\DynamicProperties::class),
+                );
+            }
+
+            return false;
+        }
+
+        $metadata->mapDynamicProperties(['fieldName' => $property->name]);
+
+        foreach ($fieldAttributes as $fieldAttribute) {
+            $metadata->mapDynamicField($property->name, $this->columnToArray($fieldAttribute->key, $fieldAttribute->column));
+        }
+
+        foreach ($associationAttributes as $associationAttribute) {
+            $association = $associationAttribute->association;
+            $mapping     = [
+                'fieldName' => $associationAttribute->key,
+                'targetEntity' => $association->targetEntity,
+                'cascade' => $association->cascade,
+                'inversedBy' => $association->inversedBy,
+                'fetch' => $this->getFetchMode($className, $association->fetch),
+                'joinColumns' => [],
+            ];
+
+            foreach ($associationAttribute->joinColumns as $joinColumn) {
+                $mapping['joinColumns'][] = $this->joinColumnToArray($joinColumn);
+            }
+
+            if ($association instanceof Mapping\OneToOne) {
+                $mapping['mappedBy']      = $association->mappedBy;
+                $mapping['orphanRemoval'] = $association->orphanRemoval;
+
+                $metadata->mapDynamicOneToOne($property->name, $mapping);
+            } else {
+                $metadata->mapDynamicManyToOne($property->name, $mapping);
+            }
+        }
+
+        return true;
     }
 
     /**

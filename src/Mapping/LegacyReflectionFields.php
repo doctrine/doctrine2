@@ -63,6 +63,29 @@ class LegacyReflectionFields implements ArrayAccess, IteratorAggregate
         );
 
         if (isset($this->classMetadata->propertyAccessors[$field])) {
+            $dynamicProperty = $this->classMetadata->fieldMappings[$field]->dynamicProperty
+                ?? $this->classMetadata->associationMappings[$field]->dynamicProperty
+                ?? null;
+
+            if ($dynamicProperty !== null) {
+                $container = $this->classMetadata->dynamicProperties[$dynamicProperty];
+
+                /** @psalm-suppress ArgumentTypeCoercion */
+                $this->reflFields[$field] = new ReflectionDynamicProperty(
+                    $this->getAccessibleProperty($container->declared ?? $this->classMetadata->name, $dynamicProperty),
+                    $field,
+                );
+
+                if (isset($this->classMetadata->fieldMappings[$field]) && $this->classMetadata->fieldMappings[$field]->enumType !== null) {
+                    $this->reflFields[$field] = new EnumReflectionProperty(
+                        $this->reflFields[$field],
+                        $this->classMetadata->fieldMappings[$field]->enumType,
+                    );
+                }
+
+                return $this->reflFields[$field];
+            }
+
             $fieldName = str_contains($field, '.') ? $this->classMetadata->fieldMappings[$field]->originalField : $field;
             $className = $this->classMetadata->name;
 

@@ -130,6 +130,7 @@
       <xs:element name="id" type="orm:id" minOccurs="0" maxOccurs="unbounded" />
       <xs:element name="field" type="orm:field" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="embedded" type="orm:embedded" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="dynamic-properties" type="orm:dynamic-properties" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="one-to-one" type="orm:one-to-one" minOccurs="0" maxOccurs="unbounded"/>
       <xs:element name="one-to-many" type="orm:one-to-many" minOccurs="0" maxOccurs="unbounded" />
       <xs:element name="many-to-one" type="orm:many-to-one" minOccurs="0" maxOccurs="unbounded" />
@@ -273,6 +274,17 @@
     <xs:attribute name="class" type="orm:fqcn" use="optional" />
     <xs:attribute name="column-prefix" type="xs:string" use="optional" />
     <xs:attribute name="use-column-prefix" type="xs:boolean" default="true" use="optional" />
+  </xs:complexType>
+
+  <xs:complexType name="dynamic-properties">
+    <xs:choice minOccurs="0" maxOccurs="unbounded">
+      <xs:element name="field" type="orm:field" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="many-to-one" type="orm:many-to-one" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="one-to-one" type="orm:one-to-one" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:any minOccurs="0" maxOccurs="unbounded" namespace="##other"/>
+    </xs:choice>
+    <xs:attribute name="name" type="xs:NMTOKEN" use="required" />
+    <xs:anyAttribute namespace="##other"/>
   </xs:complexType>
 
   <xs:complexType name="discriminator-column">

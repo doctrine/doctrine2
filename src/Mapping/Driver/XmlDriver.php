@@ -286,6 +286,35 @@ class XmlDriver extends FileDriver
             }
         }
 
+        // Evaluate <dynamic-properties ...> mappings
+        foreach ($xmlRoot->{'dynamic-properties'} ?? [] as $dynamicPropertiesElement) {
+            $container = (string) $dynamicPropertiesElement['name'];
+
+            $metadata->mapDynamicProperties(['fieldName' => $container]);
+
+            foreach ($dynamicPropertiesElement->field ?? [] as $fieldElement) {
+                $mapping = $this->columnToArray($fieldElement);
+
+                if (isset($mapping['version'])) {
+                    throw MappingException::illegalDynamicPropertyMapping(
+                        $metadata->name,
+                        $mapping['fieldName'],
+                        'dynamic properties cannot be identifiers or version fields',
+                    );
+                }
+
+                $metadata->mapDynamicField($container, $mapping);
+            }
+
+            foreach ($dynamicPropertiesElement->{'many-to-one'} ?? [] as $manyToOneElement) {
+                $metadata->mapDynamicManyToOne($container, $this->manyToOneElementToArray($manyToOneElement, $metadata));
+            }
+
+            foreach ($dynamicPropertiesElement->{'one-to-one'} ?? [] as $oneToOneElement) {
+                $metadata->mapDynamicOneToOne($container, $this->oneToOneElementToArray($oneToOneElement, $metadata));
+            }
+        }
+
         // Evaluate <id ...> mappings
         $associationIds = [];
         foreach ($xmlRoot->id ?? [] as $idElement) {
@@ -336,57 +365,7 @@ class XmlDriver extends FileDriver
         // Evaluate <one-to-one ...> mappings
         if (isset($xmlRoot->{'one-to-one'})) {
             foreach ($xmlRoot->{'one-to-one'} as $oneToOneElement) {
-                $mapping = [
-                    'fieldName' => (string) $oneToOneElement['field'],
-                ];
-
-                if (isset($oneToOneElement['target-entity'])) {
-                    $mapping['targetEntity'] = (string) $oneToOneElement['target-entity'];
-                }
-
-                if (array_key_exists($mapping['fieldName'], $associationIds)) {
-                    $mapping['id']         = true;
-                    $mapping['idPosition'] = $associationIds[$mapping['fieldName']];
-                }
-
-                if (isset($oneToOneElement['fetch'])) {
-                    $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $oneToOneElement['fetch']);
-                }
-
-                if (isset($oneToOneElement['mapped-by'])) {
-                    $mapping['mappedBy'] = (string) $oneToOneElement['mapped-by'];
-                } else {
-                    if (isset($oneToOneElement['inversed-by'])) {
-                        $mapping['inversedBy'] = (string) $oneToOneElement['inversed-by'];
-                    }
-
-                    $joinColumns = [];
-
-                    if (isset($oneToOneElement->{'join-column'})) {
-                        $joinColumns[] = $this->joinColumnToArray($oneToOneElement->{'join-column'});
-                    } elseif (isset($oneToOneElement->{'join-columns'})) {
-                        foreach ($oneToOneElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
-                            $joinColumns[] = $this->joinColumnToArray($joinColumnElement);
-                        }
-                    }
-
-                    $mapping['joinColumns'] = $joinColumns;
-                }
-
-                if (isset($oneToOneElement->cascade)) {
-                    $mapping['cascade'] = $this->getCascadeMappings($oneToOneElement->cascade);
-                }
-
-                if (isset($oneToOneElement['orphan-removal'])) {
-                    $mapping['orphanRemoval'] = $this->evaluateBoolean($oneToOneElement['orphan-removal']);
-                }
-
-                // Evaluate second level cache
-                if (isset($oneToOneElement->cache)) {
-                    $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($oneToOneElement->cache));
-                }
-
-                $metadata->mapOneToOne($mapping);
+                $metadata->mapOneToOne($this->oneToOneElementToArray($oneToOneElement, $metadata, $associationIds));
             }
         }
 
@@ -441,49 +420,7 @@ class XmlDriver extends FileDriver
         // Evaluate <many-to-one ...> mappings
         if (isset($xmlRoot->{'many-to-one'})) {
             foreach ($xmlRoot->{'many-to-one'} as $manyToOneElement) {
-                $mapping = [
-                    'fieldName' => (string) $manyToOneElement['field'],
-                ];
-
-                if (isset($manyToOneElement['target-entity'])) {
-                    $mapping['targetEntity'] = (string) $manyToOneElement['target-entity'];
-                }
-
-                if (array_key_exists($mapping['fieldName'], $associationIds)) {
-                    $mapping['id']         = true;
-                    $mapping['idPosition'] = $associationIds[$mapping['fieldName']];
-                }
-
-                if (isset($manyToOneElement['fetch'])) {
-                    $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $manyToOneElement['fetch']);
-                }
-
-                if (isset($manyToOneElement['inversed-by'])) {
-                    $mapping['inversedBy'] = (string) $manyToOneElement['inversed-by'];
-                }
-
-                $joinColumns = [];
-
-                if (isset($manyToOneElement->{'join-column'})) {
-                    $joinColumns[] = $this->joinColumnToArray($manyToOneElement->{'join-column'});
-                } elseif (isset($manyToOneElement->{'join-columns'})) {
-                    foreach ($manyToOneElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
-                        $joinColumns[] = $this->joinColumnToArray($joinColumnElement);
-                    }
-                }
-
-                $mapping['joinColumns'] = $joinColumns;
-
-                if (isset($manyToOneElement->cascade)) {
-                    $mapping['cascade'] = $this->getCascadeMappings($manyToOneElement->cascade);
-                }
-
-                // Evaluate second level cache
-                if (isset($manyToOneElement->cache)) {
-                    $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToOneElement->cache));
-                }
-
-                $metadata->mapManyToOne($mapping);
+                $metadata->mapManyToOne($this->manyToOneElementToArray($manyToOneElement, $metadata, $associationIds));
             }
         }
 
@@ -680,6 +617,124 @@ class XmlDriver extends FileDriver
                 }
             }
         }
+    }
+
+    /**
+     * Parses a <one-to-one> element into a mapping array.
+     *
+     * @param ClassMetadata<object>   $metadata
+     * @param array<string, int|null> $associationIds
+     *
+     * @return array<string, mixed>
+     */
+    private function oneToOneElementToArray(SimpleXMLElement $oneToOneElement, ClassMetadata $metadata, array $associationIds = []): array
+    {
+        $mapping = [
+            'fieldName' => (string) $oneToOneElement['field'],
+        ];
+
+        if (isset($oneToOneElement['target-entity'])) {
+            $mapping['targetEntity'] = (string) $oneToOneElement['target-entity'];
+        }
+
+        if (array_key_exists($mapping['fieldName'], $associationIds)) {
+            $mapping['id']         = true;
+            $mapping['idPosition'] = $associationIds[$mapping['fieldName']];
+        }
+
+        if (isset($oneToOneElement['fetch'])) {
+            $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $oneToOneElement['fetch']);
+        }
+
+        if (isset($oneToOneElement['mapped-by'])) {
+            $mapping['mappedBy'] = (string) $oneToOneElement['mapped-by'];
+        } else {
+            if (isset($oneToOneElement['inversed-by'])) {
+                $mapping['inversedBy'] = (string) $oneToOneElement['inversed-by'];
+            }
+
+            $joinColumns = [];
+
+            if (isset($oneToOneElement->{'join-column'})) {
+                $joinColumns[] = $this->joinColumnToArray($oneToOneElement->{'join-column'});
+            } elseif (isset($oneToOneElement->{'join-columns'})) {
+                foreach ($oneToOneElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
+                    $joinColumns[] = $this->joinColumnToArray($joinColumnElement);
+                }
+            }
+
+            $mapping['joinColumns'] = $joinColumns;
+        }
+
+        if (isset($oneToOneElement->cascade)) {
+            $mapping['cascade'] = $this->getCascadeMappings($oneToOneElement->cascade);
+        }
+
+        if (isset($oneToOneElement['orphan-removal'])) {
+            $mapping['orphanRemoval'] = $this->evaluateBoolean($oneToOneElement['orphan-removal']);
+        }
+
+        // Evaluate second level cache
+        if (isset($oneToOneElement->cache)) {
+            $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($oneToOneElement->cache));
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Parses a <many-to-one> element into a mapping array.
+     *
+     * @param ClassMetadata<object>   $metadata
+     * @param array<string, int|null> $associationIds
+     *
+     * @return array<string, mixed>
+     */
+    private function manyToOneElementToArray(SimpleXMLElement $manyToOneElement, ClassMetadata $metadata, array $associationIds = []): array
+    {
+        $mapping = [
+            'fieldName' => (string) $manyToOneElement['field'],
+        ];
+
+        if (isset($manyToOneElement['target-entity'])) {
+            $mapping['targetEntity'] = (string) $manyToOneElement['target-entity'];
+        }
+
+        if (array_key_exists($mapping['fieldName'], $associationIds)) {
+            $mapping['id']         = true;
+            $mapping['idPosition'] = $associationIds[$mapping['fieldName']];
+        }
+
+        if (isset($manyToOneElement['fetch'])) {
+            $mapping['fetch'] = constant('Doctrine\ORM\Mapping\ClassMetadata::FETCH_' . (string) $manyToOneElement['fetch']);
+        }
+
+        if (isset($manyToOneElement['inversed-by'])) {
+            $mapping['inversedBy'] = (string) $manyToOneElement['inversed-by'];
+        }
+
+        $joinColumns = [];
+
+        if (isset($manyToOneElement->{'join-column'})) {
+            $joinColumns[] = $this->joinColumnToArray($manyToOneElement->{'join-column'});
+        } elseif (isset($manyToOneElement->{'join-columns'})) {
+            foreach ($manyToOneElement->{'join-columns'}->{'join-column'} ?? [] as $joinColumnElement) {
+                $joinColumns[] = $this->joinColumnToArray($joinColumnElement);
+            }
+        }
+
+        $mapping['joinColumns'] = $joinColumns;
+
+        if (isset($manyToOneElement->cascade)) {
+            $mapping['cascade'] = $this->getCascadeMappings($manyToOneElement->cascade);
+        }
+
+        // Evaluate second level cache
+        if (isset($manyToOneElement->cache)) {
+            $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($manyToOneElement->cache));
+        }
+
+        return $mapping;
     }
 
     /**

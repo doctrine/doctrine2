@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                                      https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="Doctrine\Tests\Models\DynamicProperties\Product" table="dynamic_properties_product">
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="name" type="string" length="50"/>
+
+        <dynamic-properties name="attributes">
+            <field name="color" type="string" length="20" nullable="true"/>
+            <field name="size" column="size_eu" type="integer" nullable="true"/>
+            <field name="status" type="string" length="10" nullable="true" enum-type="Doctrine\Tests\Models\DynamicProperties\ProductStatus"/>
+            <many-to-one field="vendor" target-entity="Doctrine\Tests\Models\DynamicProperties\Vendor">
+                <join-column name="vendor_id" nullable="true" on-delete="SET NULL"/>
+            </many-to-one>
+        </dynamic-properties>
+    </entity>
+</doctrine-mapping>
