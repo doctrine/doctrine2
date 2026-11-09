@@ -212,6 +212,14 @@ This also affects the (rare) case of custom persisters extending `AbstractEntity
 or pass its value on to other typed methods, you can switch to `ClassMetadataFactoryInterface`
 already now.
 
+## Deprecated `ClassMetadataFactory::getOwningSide()`
+
+Resolving an association's owning side moves out of the metadata factory and
+into a static helper. Use `Doctrine\ORM\Utility\OwningSideResolver::resolve()`
+instead, passing the metadata factory and the mapping:
+`OwningSideResolver::resolve($em->getMetadataFactory(), $mapping)` replaces
+`$em->getMetadataFactory()->getOwningSide($mapping)`.
+
 # Upgrade to 3.7
 
 ## Deprecated `Doctrine\ORM\Mapping\JoinColumns` attribute

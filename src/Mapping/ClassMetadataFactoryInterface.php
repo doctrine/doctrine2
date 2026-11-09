@@ -28,18 +28,4 @@ interface ClassMetadataFactoryInterface extends PersistenceClassMetadataFactory
      * @param class-string $className
      */
     public function isMapped(string $className): bool;
-
-    /**
-     * @param A $maybeOwningSide
-     *
-     * @return (A is ManyToManyAssociationMapping ? ManyToManyOwningSideMapping : (
-     *     A is OneToOneAssociationMapping ? OneToOneOwningSideMapping : (
-     *     A is OneToManyAssociationMapping ? ManyToOneAssociationMapping : (
-     *     A is ManyToOneAssociationMapping ? ManyToOneAssociationMapping :
-     *     ManyToManyOwningSideMapping|OneToOneOwningSideMapping|ManyToOneAssociationMapping
-     * ))))
-     *
-     * @template A of AssociationMapping
-     */
-    public function getOwningSide(AssociationMapping $maybeOwningSide): OwningSideMapping;
 }

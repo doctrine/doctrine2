@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\PathExpression;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Doctrine\ORM\Utility\OwningSideResolver;
 
 use function assert;
 
@@ -62,7 +63,7 @@ class SizeFunction extends FunctionNode
             }
         } else { // many-to-many
             assert($assoc->isManyToMany());
-            $owningAssoc = $entityManager->getMetadataFactory()->getOwningSide($assoc);
+            $owningAssoc = OwningSideResolver::resolve($entityManager->getMetadataFactory(), $assoc);
             $joinTable   = $owningAssoc->joinTable;
 
             // SQL table aliases

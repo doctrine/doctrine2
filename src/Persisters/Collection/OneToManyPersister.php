@@ -12,6 +12,7 @@ use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
+use Doctrine\ORM\Utility\OwningSideResolver;
 use Doctrine\ORM\Utility\PersisterHelper;
 
 use function array_fill;
@@ -173,7 +174,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         $parameters  = [];
         $types       = [];
 
-        foreach ($this->em->getMetadataFactory()->getOwningSide($mapping)->joinColumns as $joinColumn) {
+        foreach (OwningSideResolver::resolve($this->em->getMetadataFactory(), $mapping)->joinColumns as $joinColumn) {
             $columns[]    = $this->quoteStrategy->getJoinColumnName($joinColumn, $targetClass, $this->platform);
             $parameters[] = $identifier[$sourceClass->getFieldForColumn($joinColumn->referencedColumnName)];
             $types[]      = PersisterHelper::getTypeOfColumn($joinColumn->referencedColumnName, $sourceClass, $this->em);

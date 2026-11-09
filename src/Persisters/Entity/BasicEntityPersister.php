@@ -40,6 +40,7 @@ use Doctrine\ORM\Repository\Exception\InvalidFindByCall;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Utility\IdentifierFlattener;
 use Doctrine\ORM\Utility\LockSqlHelper;
+use Doctrine\ORM\Utility\OwningSideResolver;
 use Doctrine\ORM\Utility\PersisterHelper;
 use LengthException;
 use SortDirection;
@@ -537,7 +538,7 @@ class BasicEntityPersister implements EntityPersister
                 $class = $this->em->getClassMetadata($mapping->targetEntity);
             }
 
-            $association = $this->em->getMetadataFactory()->getOwningSide($association);
+            $association = OwningSideResolver::resolve($this->em->getMetadataFactory(), $association);
             $joinColumns = $mapping->isOwningSide()
                 ? $association->joinTable->joinColumns
                 : $association->joinTable->inverseJoinColumns;
@@ -1077,7 +1078,7 @@ class BasicEntityPersister implements EntityPersister
             $class = $this->em->getClassMetadata($assoc->targetEntity);
         }
 
-        $association = $this->em->getMetadataFactory()->getOwningSide($assoc);
+        $association = OwningSideResolver::resolve($this->em->getMetadataFactory(), $assoc);
         $joinColumns = $assoc->isOwningSide()
             ? $association->joinTable->joinColumns
             : $association->joinTable->inverseJoinColumns;
@@ -1441,7 +1442,7 @@ class BasicEntityPersister implements EntityPersister
         $association      = $manyToMany;
         $sourceTableAlias = $this->getSQLTableAlias($this->class->name);
 
-        $association   = $this->em->getMetadataFactory()->getOwningSide($manyToMany);
+        $association   = OwningSideResolver::resolve($this->em->getMetadataFactory(), $manyToMany);
         $joinTableName = $this->quoteStrategy->getJoinTableName($association, $this->class, $this->platform);
         $joinColumns   = $manyToMany->isOwningSide()
             ? $association->joinTable->inverseJoinColumns

@@ -20,6 +20,7 @@ use Doctrine\ORM\Id\SequenceGenerator;
 use Doctrine\ORM\Mapping\Exception\InvalidCustomGenerator;
 use Doctrine\ORM\Mapping\Exception\UnknownGeneratorType;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
+use Doctrine\ORM\Utility\OwningSideResolver;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
@@ -114,6 +115,8 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory implements Class
     }
 
     /**
+     * @deprecated Use {@see OwningSideResolver::resolve()} instead.
+     *
      * @param A $maybeOwningSide
      *
      * @return (A is ManyToManyAssociationMapping ? ManyToManyOwningSideMapping : (
@@ -127,24 +130,15 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory implements Class
      */
     final public function getOwningSide(AssociationMapping $maybeOwningSide): OwningSideMapping
     {
-        if ($maybeOwningSide instanceof OwningSideMapping) {
-            assert($maybeOwningSide instanceof ManyToManyOwningSideMapping ||
-                $maybeOwningSide instanceof OneToOneOwningSideMapping ||
-                $maybeOwningSide instanceof ManyToOneAssociationMapping);
+        Deprecation::trigger(
+            'doctrine/orm',
+            'https://github.com/doctrine/orm/pull/12760',
+            '%s is deprecated, use %s::resolve() instead.',
+            __METHOD__,
+            OwningSideResolver::class,
+        );
 
-            return $maybeOwningSide;
-        }
-
-        assert($maybeOwningSide instanceof InverseSideMapping);
-
-        $owningSide = $this->getMetadataFor($maybeOwningSide->targetEntity)
-            ->associationMappings[$maybeOwningSide->mappedBy];
-
-        assert($owningSide instanceof ManyToManyOwningSideMapping ||
-            $owningSide instanceof OneToOneOwningSideMapping ||
-            $owningSide instanceof ManyToOneAssociationMapping);
-
-        return $owningSide;
+        return OwningSideResolver::resolve($this, $maybeOwningSide);
     }
 
     protected function initialize(): void

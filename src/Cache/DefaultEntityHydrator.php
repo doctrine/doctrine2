@@ -10,6 +10,7 @@ use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Utility\IdentifierFlattener;
+use Doctrine\ORM\Utility\OwningSideResolver;
 
 use function assert;
 use function is_array;
@@ -65,7 +66,7 @@ class DefaultEntityHydrator implements EntityHydrator
 
             if (! isset($assoc->cache)) {
                 $targetClassMetadata = $this->em->getClassMetadata($assoc->targetEntity);
-                $owningAssociation   = $this->em->getMetadataFactory()->getOwningSide($assoc);
+                $owningAssociation   = OwningSideResolver::resolve($this->em->getMetadataFactory(), $assoc);
                 $associationIds      = $this->identifierFlattener->flattenIdentifier(
                     $targetClassMetadata,
                     $targetClassMetadata->getIdentifierValues($data[$name]),
