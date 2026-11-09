@@ -208,9 +208,9 @@ change.
 
 This also affects the (rare) case of custom persisters extending `AbstractEntityPersister` or
 `AbstractCollectionPersister`: their protected `$metadataFactory` property will widen to
-`ClassMetadataFactoryInterface` in a future major version. If you redeclare this property
-or pass its value on to other typed methods, you can switch to `ClassMetadataFactoryInterface`
-already now.
+`ClassMetadataFactoryInterface` in a future major version. Methods receiving this property's
+value can accept `ClassMetadataFactoryInterface` already now. Subclasses that redeclare the
+property must keep `ClassMetadataFactory` until the parent property's type changes.
 
 ## Deprecated `ClassMetadataFactory::getOwningSide()`
 
