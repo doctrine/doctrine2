@@ -116,8 +116,9 @@ abstract class OrmTestCase extends TestCase
 
         $config = new Configuration();
 
-        $config->setUseSchemaEditorApi(method_exists(Schema::class, 'edit')
-            && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true));
+        if (method_exists(Schema::class, 'edit') && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true)) {
+            $config->setUseSchemaEditorApi(true);
+        }
 
         TestUtil::configureProxies($config);
         $config->setMetadataCache($metadataCache);

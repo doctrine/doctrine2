@@ -926,8 +926,9 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             $config->setClassMetadataFactoryName($metadataFactoryClassName);
         }
 
-        $config->setUseSchemaEditorApi(method_exists(Schema::class, 'edit')
-            && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true));
+        if (method_exists(Schema::class, 'edit') && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true)) {
+            $config->setUseSchemaEditorApi(true);
+        }
 
         if ($this->resultCache !== null) {
             $config->setResultCache($this->resultCache);

@@ -1032,6 +1032,31 @@ class SchemaToolTest extends OrmTestCase
         );
     }
 
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[IgnoreDeprecations]
+    public function testNotUsingSchemaEditorApiIsDeprecated(): void
+    {
+        $em = $this->getTestEntityManager();
+        $em->getConfiguration()->setUseSchemaEditorApi(false);
+
+        // Take the expectation after disabling the API, so that this only verifies
+        // the deprecation triggered when the SchemaTool is instantiated.
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        new SchemaTool($em);
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    public function testUsingSchemaEditorApiIsNotDeprecated(): void
+    {
+        $em = $this->getTestEntityManager();
+        $em->getConfiguration()->setUseSchemaEditorApi(true);
+
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        new SchemaTool($em);
+    }
+
     private function getSchemaTableForEntity(string $className): DbalTable
     {
         $em         = $this->getTestEntityManager();

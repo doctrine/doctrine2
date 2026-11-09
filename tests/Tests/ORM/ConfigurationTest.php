@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM;
 
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Configuration;
@@ -19,6 +20,7 @@ use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Tests\Models\DDC753\DDC753CustomRepository;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
@@ -228,5 +230,14 @@ class ConfigurationTest extends TestCase
         $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12005');
 
         $this->configuration->enableNativeLazyObjects(false);
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[IgnoreDeprecations]
+    public function testDisablingSchemaEditorApiIsDeprecated(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        $this->configuration->setUseSchemaEditorApi(false);
     }
 }

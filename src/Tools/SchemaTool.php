@@ -82,12 +82,23 @@ class SchemaTool
      */
     public function __construct(private readonly EntityManagerInterface $em)
     {
+        $useSchemaEditorApi = $em->getConfiguration()->getUseSchemaEditorApi();
+
         $this->platform               = $em->getConnection()->getDatabasePlatform();
         $this->quoteStrategy          = $em->getConfiguration()->getQuoteStrategy();
         $this->schemaManager          = $em->getConnection()->createSchemaManager();
-        $this->experimentalSchemaTool = $em->getConfiguration()->getUseSchemaEditorApi()
+        $this->experimentalSchemaTool = $useSchemaEditorApi
             ? new ExperimentalSchemaTool($em)
             : null;
+
+        /** @phpstan-ignore function.alreadyNarrowedType (This API is not always available) */
+        if (! $useSchemaEditorApi && method_exists(Schema::class, 'edit')) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/pull/12780',
+                'Not using the schema editor API is deprecated and will be impossible in Doctrine ORM 4.0. Call Doctrine\ORM\Configuration::setUseSchemaEditorApi(true) to enable it.',
+            );
+        }
     }
 
     /**

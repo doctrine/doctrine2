@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Persisters;
 
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Types\Type as DbalType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -18,6 +19,8 @@ use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\Models\BinaryPrimaryKey\BinaryIdType;
 use Doctrine\Tests\Models\BinaryPrimaryKey\Category;
 use Doctrine\Tests\OrmTestCase;
+
+use function method_exists;
 
 use const PHP_VERSION_ID;
 
@@ -74,6 +77,10 @@ final class BinaryIdPersisterTest extends OrmTestCase
             isDevMode: true,
         );
         $config->enableNativeLazyObjects(PHP_VERSION_ID >= 80400);
+
+        if (method_exists(Schema::class, 'edit')) {
+            $config->setUseSchemaEditorApi(true);
+        }
 
         if (! DbalType::hasType(BinaryIdType::NAME)) {
             DbalType::addType(BinaryIdType::NAME, BinaryIdType::class);
