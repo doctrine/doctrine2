@@ -105,10 +105,10 @@ class SchemaToolTest extends OrmTestCase
         self::assertTrue(self::columnIsIndexed($schema->getTable('cms_users'), 'username'), 'username column should be indexed.');
     }
 
-    /** Only the schema generation based on the DBAL editor API deprecates custom platform options. */
-    private function expectEditorApiDeprecation(EntityManagerInterface $em): void
+    /** Only the schema generation based on the schema editor API deprecates custom platform options. */
+    private function expectSchemaEditorApiDeprecation(EntityManagerInterface $em): void
     {
-        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
             return;
         }
 
@@ -119,7 +119,7 @@ class SchemaToolTest extends OrmTestCase
     public function testAttributeOptionsArgument(): void
     {
         $em = $this->getTestEntityManager();
-        $this->expectEditorApiDeprecation($em);
+        $this->expectSchemaEditorApiDeprecation($em);
         $schemaTool = new SchemaTool($em);
 
         $schema = $schemaTool->getSchemaFromMetadata(
@@ -162,7 +162,7 @@ class SchemaToolTest extends OrmTestCase
     public function testPassColumnOptionsToJoinColumn(): void
     {
         $em = $this->getTestEntityManager();
-        $this->expectEditorApiDeprecation($em);
+        $this->expectSchemaEditorApiDeprecation($em);
         $category = $em->getClassMetadata(GH6830Category::class);
         $board    = $em->getClassMetadata(GH6830Board::class);
 
@@ -723,8 +723,8 @@ class SchemaToolTest extends OrmTestCase
     {
         $em = $this->createTestEntityManagerWithPlatform($platform);
 
-        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
-            self::markTestSkipped('Requires the DBAL editor API.');
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
         }
 
         $schemaTool = new SchemaTool($em);
@@ -964,8 +964,8 @@ class SchemaToolTest extends OrmTestCase
     #[RequiresMethod(Schema::class, 'edit')]
     public function testConflictingIndexTypeFlagsThrow(): void
     {
-        if (! $this->getTestEntityManager()->getConfiguration()->getUseDbalEditorApi()) {
-            self::markTestSkipped('Requires the DBAL editor API.');
+        if (! $this->getTestEntityManager()->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
         }
 
         $em         = $this->getTestEntityManager();
@@ -983,8 +983,8 @@ class SchemaToolTest extends OrmTestCase
     {
         $em = $this->getTestEntityManager();
 
-        if (! $em->getConfiguration()->getUseDbalEditorApi()) {
-            self::markTestSkipped('Requires the DBAL editor API.');
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
         }
 
         $metadata = $em->getClassMetadata(FulltextSpatialFlagIndex::class);

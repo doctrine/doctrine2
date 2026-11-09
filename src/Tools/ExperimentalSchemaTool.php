@@ -160,7 +160,7 @@ final class ExperimentalSchemaTool
     }
 
     /**
-     * Creates a Schema instance from a given set of metadata classes, using the DBAL editor API
+     * Creates a Schema instance from a given set of metadata classes, using the schema editor API
      *
      * @phpstan-param list<ClassMetadata> $classes
      *

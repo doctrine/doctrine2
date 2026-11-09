@@ -85,7 +85,7 @@ class SchemaTool
         $this->platform               = $em->getConnection()->getDatabasePlatform();
         $this->quoteStrategy          = $em->getConfiguration()->getQuoteStrategy();
         $this->schemaManager          = $em->getConnection()->createSchemaManager();
-        $this->experimentalSchemaTool = $em->getConfiguration()->getUseDbalEditorApi()
+        $this->experimentalSchemaTool = $em->getConfiguration()->getUseSchemaEditorApi()
             ? new ExperimentalSchemaTool($em)
             : null;
     }

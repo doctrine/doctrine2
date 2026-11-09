@@ -168,19 +168,19 @@ class Configuration extends \Doctrine\DBAL\Configuration
         $this->attributes['proxyNamespace'] = $ns;
     }
 
-    public function getUseDbalEditorApi(): bool
+    public function getUseSchemaEditorApi(): bool
     {
-        return $this->attributes['use_dbal_editor_api'] ?? false;
+        return $this->attributes['use_schema_editor_api'] ?? false;
     }
 
-    public function setUseDbalEditorApi(bool $useDbalEditorApi): void
+    public function setUseSchemaEditorApi(bool $useSchemaEditorApi): void
     {
         /** @phpstan-ignore function.alreadyNarrowedType (This API is not always available) */
-        if ($useDbalEditorApi && ! method_exists(Schema::class, 'edit')) {
-            throw new LogicException('Using the DBAL editor API requires doctrine/dbal 4.5 or higher.');
+        if ($useSchemaEditorApi && ! method_exists(Schema::class, 'edit')) {
+            throw new LogicException('Using the schema editor API requires doctrine/dbal 4.5 or higher.');
         }
 
-        $this->attributes['use_dbal_editor_api'] = $useDbalEditorApi;
+        $this->attributes['use_schema_editor_api'] = $useSchemaEditorApi;
     }
 
     /**
