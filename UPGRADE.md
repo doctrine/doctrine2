@@ -40,14 +40,14 @@ composer require doctrine/orm-plugin-second-level-cache
 Without this package, calling `Configuration::setSecondLevelCacheEnabled(true)`
 throws a `LogicException`.
 
-## The DBAL editor API can be enabled with `Configuration::setUseDbalEditorApi()`
+## The schema editor API can be enabled with `Configuration::setUseSchemaEditorApi()`
 
-Schema generation can now use the DBAL editor API (`TableEditor`, `SchemaEditor`...)
+Schema generation can now use the schema editor API (`TableEditor`, `SchemaEditor`...)
 instead of the mutable DBAL schema objects, which are deprecated. It requires
 doctrine/dbal 4.5 or higher, and is opt-in:
 
 ```php
-$configuration->setUseDbalEditorApi(true);
+$configuration->setUseSchemaEditorApi(true);
 ```
 
 Note that with this API, foreign keys that you do not name are no longer given a

@@ -116,8 +116,8 @@ abstract class OrmTestCase extends TestCase
 
         $config = new Configuration();
 
-        $config->setUseDbalEditorApi(method_exists(Schema::class, 'edit')
-            && $this->getEnv('ENABLE_DBAL_EDITOR_API', true));
+        $config->setUseSchemaEditorApi(method_exists(Schema::class, 'edit')
+            && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true));
 
         TestUtil::configureProxies($config);
         $config->setMetadataCache($metadataCache);

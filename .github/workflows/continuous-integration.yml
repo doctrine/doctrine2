@@ -140,7 +140,7 @@ jobs:
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage-no-cache.xml"
         env:
-            ENABLE_DBAL_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
+            ENABLE_SCHEMA_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
             ENABLE_SECOND_LEVEL_CACHE: 0
             ENABLE_NATIVE_LAZY_OBJECTS: ${{ matrix.native_lazy }}
 
@@ -151,7 +151,7 @@ jobs:
             --coverage-clover=coverage-cache.xml
         if: "${{ matrix.php-version == '8.1' }}"
         env:
-            ENABLE_DBAL_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
+            ENABLE_SCHEMA_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
             ENABLE_SECOND_LEVEL_CACHE: 1
             ENABLE_NATIVE_LAZY_OBJECTS: ${{ matrix.native_lazy }}
 
@@ -204,7 +204,7 @@ jobs:
       -   name: "Run PHPUnit"
           run: "vendor/bin/phpunit -c ci/github/phpunit/sqlite3.xml --fail-on-deprecation"
           env:
-            ENABLE_DBAL_EDITOR_API: 1
+            ENABLE_SCHEMA_EDITOR_API: 1
             ENABLE_SECOND_LEVEL_CACHE: 0
             ENABLE_NATIVE_LAZY_OBJECTS: 1
 
@@ -283,7 +283,7 @@ jobs:
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage.xml"
         env:
-            ENABLE_DBAL_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
+            ENABLE_SCHEMA_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
 
       - name: "Upload coverage file"
         uses: "actions/upload-artifact@v7"
@@ -363,7 +363,7 @@ jobs:
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage.xml"
         env:
-            ENABLE_DBAL_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
+            ENABLE_SCHEMA_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
 
       - name: "Upload coverage file"
         uses: "actions/upload-artifact@v7"
@@ -446,7 +446,7 @@ jobs:
       - name: "Run PHPUnit"
         run: "vendor/bin/phpunit -c ci/github/phpunit/${{ matrix.extension }}.xml --coverage-clover=coverage-no-cache.xml"
         env:
-            ENABLE_DBAL_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
+            ENABLE_SCHEMA_EDITOR_API: ${{ matrix.dbal-version == '4@dev' }}
             ENABLE_SECOND_LEVEL_CACHE: 0
 
       - name: "Upload coverage files"
