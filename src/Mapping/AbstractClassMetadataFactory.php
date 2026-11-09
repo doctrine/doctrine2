@@ -53,7 +53,7 @@ use const PHP_VERSION_ID;
 
 /**
  * Shared driver access, inheritance resolution and embedded-class handling for the "lazy"
- * {@see ClassMetadataFactory}, {@see ClassMetadatasBuilder} and {@see CompiledClassMetadataFactory}.
+ * {@see ClassMetadataFactory}, {@see ClassMetadataBagCompiler} and {@see CompiledClassMetadataFactory}.
  */
 abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataFactory, ClassMetadataFactoryInterface
 {
