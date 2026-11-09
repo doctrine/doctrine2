@@ -792,7 +792,7 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
 
         $nonIdentityDefaultStrategy = self::NON_IDENTITY_DEFAULT_STRATEGY;
 
-        // DBAL 3
+        // @phpstan-ignore function.alreadyNarrowedType (DBAL 3 compatibility)
         if (method_exists($platform, 'getIdentitySequenceName')) {
             $nonIdentityDefaultStrategy[Platforms\PostgreSQLPlatform::class] = ClassMetadata::GENERATOR_TYPE_SEQUENCE;
         }
