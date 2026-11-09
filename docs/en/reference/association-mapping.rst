@@ -1090,6 +1090,16 @@ of your own that carries domain-specific methods:
         }
     }
 
+The property always holds a ``BookList``, including for entities loaded from
+the database, so getters can be typed against it. The ORM only manages the
+collection inside it: on the first flush, it replaces the ``ArrayCollection``
+created by the constructor with a ``PersistentCollection``, and when it loads
+the entity, it creates the ``BookList`` without calling its constructor, like
+entities, and puts a ``PersistentCollection`` in it. Because every operation
+of the custom class goes through that collection, lazy loading,
+``EXTRA_LAZY`` behavior, change tracking, orphan removal and cascades keep
+working exactly as with plain collections.
+
 The custom class is inferred from the property type when it is a class
 implementing ``DelegateCollection``, whatever the mapping driver. Declare it
 with the ``collectionClass`` mapping option when the property has a broader
@@ -1097,14 +1107,6 @@ type, for instance ``Collection`` with a custom class extending
 ``AbstractDelegateCollection``. The equivalent XML mapping uses the
 ``collection-class`` attribute on ``<one-to-many />`` and ``<many-to-many />``
 elements.
-
-The property always holds a ``BookList``, including for entities loaded from
-the database, so getters can be typed against it. Only the collection inside
-it is replaced: the ORM injects a ``PersistentCollection`` there, as it does
-in a property typed ``Collection``. Because every operation of the custom
-class goes through the underlying collection, lazy loading, ``EXTRA_LAZY``
-behavior, change tracking, orphan removal and cascades keep working exactly
-as with plain collections.
 
 A custom collection class must follow these rules:
 
@@ -1117,10 +1119,8 @@ A custom collection class must follow these rules:
 - That property is the single source of truth for the elements: every read
   and write performed by the class must go through it. State kept outside of
   it (plain arrays, cached copies of ``toArray()`` results, ...) is invisible
-  to the ORM and will not be persisted.
-- Like entities, it is instantiated without calling its constructor when the
-  ORM creates an instance during hydration: state initialized only in the
-  constructor is not available then.
+  to the ORM and will not be persisted. In particular, state initialized only
+  in the constructor is not available on loaded entities.
 - It must read the underlying collection from the property on each call: do
   not keep it in another property or a closure, as the ORM replaces it on the
   first flush and on refresh.
@@ -1132,7 +1132,7 @@ forwarding methods, extend the convenience base class
 ``Doctrine\ORM\Collection\AbstractDelegateCollection``, which implements both
 ``DelegateCollection`` and ``Collection`` and forwards every method. Its
 mutating methods are ``final`` and always write to the underlying collection;
-put domain rules in your own methods, such as ``addComment()``:
+put domain rules in your own methods, such as ``addComment()`` below:
 
 .. code-block:: php
 
@@ -1142,18 +1142,28 @@ put domain rules in your own methods, such as ``addComment()``:
     /** @template-extends AbstractDelegateCollection<int, Comment> */
     final class CommentCollection extends AbstractDelegateCollection
     {
+        public function addComment(Comment $comment): void
+        {
+            if ($comment->isSpam()) {
+                throw new InvalidArgumentException('Spam comments are rejected.');
+            }
+
+            $this->add($comment);
+        }
+
         public function enabled(): Collection
         {
             return $this->filter(static fn (Comment $comment) => $comment->isEnabled());
         }
     }
 
-Known limitations:
+As with plain collections, ``filter()``, ``map()``, ``matching()`` and
+similar methods return a new plain collection, never a ``CommentCollection``.
 
-- ``matching()``, ``filter()``, ``map()`` and similar operations return plain
-  collections, never an instance of the custom class.
-- Listeners and the ``UnitOfWork`` API (change sets, ``PreUpdateEventArgs``,
-  original entity data, scheduled collection updates) see the underlying
-  ``PersistentCollection``, exactly as for plain collections; read the
-  property of the owner (``$collection->getOwner()``) to get the custom
-  object.
+.. note::
+
+    Listeners and the ``UnitOfWork`` API (change sets, ``PreUpdateEventArgs``,
+    original entity data, scheduled collection updates) see the underlying
+    ``PersistentCollection``, exactly as for plain collections; read the
+    property of the owner (``$collection->getOwner()``) to get the custom
+    object.

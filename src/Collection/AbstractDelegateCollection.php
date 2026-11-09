@@ -31,10 +31,10 @@ abstract class AbstractDelegateCollection extends AbstractLazyCollection impleme
 {
     use DelegateCollectionImplementation;
 
-    /** @phpstan-param Collection<TKey, T> $collection */
-    public function __construct(Collection $collection = new ArrayCollection())
+    /** @phpstan-param Collection<TKey, T> $delegatee */
+    public function __construct(Collection $delegatee = new ArrayCollection())
     {
-        $this->collection  = $collection;
+        $this->collection  = $delegatee;
         $this->initialized = true;
     }
 
