@@ -20,8 +20,12 @@ class SingleSelectSqlFinalizer implements SqlFinalizer
 {
     use LockSqlHelper;
 
-    public function __construct(private string $sql)
+    /** Not promoted: a promoted property would stay uninitialized in finalizers cached before it existed. */
+    private string $sqlComments = '';
+
+    public function __construct(private string $sql, string $sqlComments = '')
     {
+        $this->sqlComments = $sqlComments;
     }
 
     /**
@@ -53,6 +57,7 @@ class SingleSelectSqlFinalizer implements SqlFinalizer
     /** @return FinalizedSelectExecutor */
     public function createExecutor(Query $query): AbstractSqlExecutor
     {
-        return new FinalizedSelectExecutor($this->finalizeSql($query));
+        // Comments are added here rather than in finalizeSql(), which also builds SQL embedded as a subquery.
+        return new FinalizedSelectExecutor($this->sqlComments . $this->finalizeSql($query));
     }
 }

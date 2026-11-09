@@ -10,6 +10,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Exec\FinalizedSelectExecutor;
 use Doctrine\ORM\Query\Exec\PreparedExecutorFinalizer;
 use Doctrine\ORM\Query\Exec\SingleSelectExecutor;
+use Doctrine\ORM\Query\Exec\SingleSelectSqlFinalizer;
 use Doctrine\ORM\Query\ParserResult;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\OrmFunctionalTestCase;
@@ -22,6 +23,8 @@ use Symfony\Component\VarExporter\VarExporter;
 use function file_get_contents;
 use function rtrim;
 use function serialize;
+use function sprintf;
+use function strlen;
 use function unserialize;
 
 class ParserResultSerializationTest extends OrmFunctionalTestCase
@@ -106,6 +109,26 @@ class ParserResultSerializationTest extends OrmFunctionalTestCase
     public static function provideSerializedSingleSelectResults(): Generator
     {
         yield '2.17.0' => [rtrim(file_get_contents(__DIR__ . '/ParserResults/single_select_2_17_0.txt'), "\n")];
+    }
+
+    public function testUnserializeSingleSelectSqlFinalizerCachedBeforeSqlComments(): void
+    {
+        $class = SingleSelectSqlFinalizer::class;
+        $sql   = 'SELECT 1';
+        $name  = "\0" . $class . "\0sql";
+
+        $finalizer = unserialize(sprintf(
+            'O:%d:"%s":1:{s:%d:"%s";s:%d:"%s";}',
+            strlen($class),
+            $class,
+            strlen($name),
+            $name,
+            strlen($sql),
+            $sql,
+        ));
+
+        self::assertInstanceOf(SingleSelectSqlFinalizer::class, $finalizer);
+        self::assertSame($sql, $finalizer->createExecutor($this->_em->createQuery())->getSqlStatements());
     }
 
     public function testSymfony44ProvidedData(): void

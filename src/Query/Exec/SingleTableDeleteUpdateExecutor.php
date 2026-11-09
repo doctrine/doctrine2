@@ -20,9 +20,9 @@ class SingleTableDeleteUpdateExecutor extends AbstractSqlExecutor
     public function __construct(AST\Node $AST, SqlWalker $sqlWalker)
     {
         if ($AST instanceof AST\UpdateStatement) {
-            $this->sqlStatements = $sqlWalker->walkUpdateStatement($AST);
+            $this->sqlStatements = $sqlWalker->walkSqlComments() . $sqlWalker->walkUpdateStatement($AST);
         } elseif ($AST instanceof AST\DeleteStatement) {
-            $this->sqlStatements = $sqlWalker->walkDeleteStatement($AST);
+            $this->sqlStatements = $sqlWalker->walkSqlComments() . $sqlWalker->walkDeleteStatement($AST);
         }
     }
 

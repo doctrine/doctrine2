@@ -32,6 +32,7 @@ use function array_map;
 use function array_merge;
 use function assert;
 use function count;
+use function explode;
 use function implode;
 use function in_array;
 use function is_array;
@@ -42,6 +43,7 @@ use function is_string;
 use function preg_match;
 use function reset;
 use function sprintf;
+use function str_replace;
 use function strtolower;
 use function strtoupper;
 use function trim;
@@ -504,6 +506,34 @@ class SqlWalker
         }
 
         return implode(' AND ', $filterClauses);
+    }
+
+    /**
+     * Generates the SQL comments of the {@see Query::HINT_SQL_COMMENTS} hint, to be put before a statement.
+     *
+     * A double-hyphen comment ends at the end of the line, so every line of a comment gets its own
+     * delimiter: otherwise a line terminator would let the rest of the comment escape into the SQL.
+     * Line terminators are normalized first because a lone carriage return ends the comment on the
+     * platforms that treat it as a line terminator.
+     */
+    public function walkSqlComments(): string
+    {
+        if (! $this->query->hasHint(Query::HINT_SQL_COMMENTS)) {
+            return '';
+        }
+
+        $lines = [];
+        foreach ((array) $this->query->getHint(Query::HINT_SQL_COMMENTS) as $comment) {
+            foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", (string) $comment)) as $line) {
+                $lines[] = '-- ' . $line;
+            }
+        }
+
+        if ($lines === []) {
+            return '';
+        }
+
+        return implode("\n", $lines) . "\n\n";
     }
 
     /**
