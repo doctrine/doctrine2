@@ -61,8 +61,8 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
 
         self::assertSame($books, $library->getBooks(), 'The user-constructed BookList instance must survive the flush.');
         self::assertSame($tags, $library->getTags(), 'The user-constructed TagCollection instance must survive the flush.');
-        self::assertInstanceOf(PersistentCollection::class, $books->getDoctrineCollection());
-        self::assertInstanceOf(PersistentCollection::class, $tags->getDoctrineCollection());
+        self::assertInstanceOf(PersistentCollection::class, $books->getDelegatee());
+        self::assertInstanceOf(PersistentCollection::class, $tags->getDelegatee());
 
         $this->_em->clear();
 
@@ -82,7 +82,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($loaded instanceof Library);
 
         $books = $loaded->getBooks();
-        $inner = $books->getDoctrineCollection();
+        $inner = $books->getDelegatee();
 
         self::assertInstanceOf(BookList::class, $books);
         self::assertInstanceOf(PersistentCollection::class, $inner);
@@ -91,6 +91,22 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
 
         self::assertSame(['Astronomy', 'Zoology'], $books->titles());
         self::assertTrue($inner->isInitialized());
+    }
+
+    public function testReferenceExposesCustomCollectionsOnceInitialized(): void
+    {
+        $library = $this->createLibrary();
+        $this->_em->clear();
+
+        $reference = $this->_em->getReference(Library::class, $library->id);
+        assert($reference instanceof Library);
+
+        $books = $reference->getBooks();
+
+        self::assertInstanceOf(BookList::class, $books);
+        self::assertInstanceOf(PersistentCollection::class, $books->getDelegatee());
+        self::assertSame(['Astronomy', 'Zoology'], $books->titles());
+        self::assertSame($books, $reference->getBooks(), 'The custom collection instance must stay the same after initialization.');
     }
 
     public function testIsInitializedReflectsTheUnderlyingCollection(): void
@@ -120,7 +136,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($loaded instanceof Library);
 
         $books = $loaded->getBooks();
-        $inner = $books->getDoctrineCollection();
+        $inner = $books->getDelegatee();
         assert($inner instanceof PersistentCollection);
 
         self::assertCount(2, $books);
@@ -176,7 +192,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($tag instanceof Tag);
 
         self::assertInstanceOf(LibraryList::class, $tag->libraries);
-        $inner = $tag->libraries->getDoctrineCollection();
+        $inner = $tag->libraries->getDelegatee();
         assert($inner instanceof PersistentCollection);
         self::assertFalse($inner->isInitialized(), 'The inverse side must be loaded lazily.');
 
@@ -192,7 +208,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($joined instanceof Tag);
 
         self::assertInstanceOf(LibraryList::class, $joined->libraries);
-        $joinedInner = $joined->libraries->getDoctrineCollection();
+        $joinedInner = $joined->libraries->getDelegatee();
         assert($joinedInner instanceof PersistentCollection);
         self::assertTrue($joinedInner->isInitialized(), 'A fetch-joined inverse side must be hydrated as initialized.');
         self::assertSame(['Central'], $joined->libraries->names());
@@ -409,7 +425,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($loaded instanceof Library);
 
         $books = $loaded->getBooks();
-        $inner = $books->getDoctrineCollection();
+        $inner = $books->getDelegatee();
         assert($inner instanceof PersistentCollection);
 
         self::assertInstanceOf(BookList::class, $books);
@@ -443,7 +459,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         assert($loadedFirst instanceof Shelf && $loadedSecond instanceof Shelf);
 
         self::assertInstanceOf(BookList::class, $loadedFirst->books);
-        $inner = $loadedFirst->books->getDoctrineCollection();
+        $inner = $loadedFirst->books->getDelegatee();
         assert($inner instanceof PersistentCollection);
         self::assertTrue($inner->isInitialized(), 'Eager collections must be initialized by the batch query.');
 
@@ -486,7 +502,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         unlink($file);
 
         self::assertStringContainsString('tags [PROXY] PersistentCollection unknown element size', (string) $dump);
-        $inner = $loaded->tags->getDoctrineCollection();
+        $inner = $loaded->tags->getDelegatee();
         assert($inner instanceof PersistentCollection);
         self::assertFalse($inner->isInitialized(), 'Dumping the identity map must not initialize the collection.');
     }

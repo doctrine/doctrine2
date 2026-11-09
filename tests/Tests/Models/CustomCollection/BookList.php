@@ -29,7 +29,7 @@ final class BookList implements Countable, DelegateCollection, IteratorAggregate
     {
     }
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return $this->collection;
     }

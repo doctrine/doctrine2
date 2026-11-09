@@ -41,7 +41,7 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         $this->createAccessor()->setValue($holder, $collection);
 
         self::assertInstanceOf(NamedTagCollection::class, $holder->tags);
-        self::assertSame($collection, $holder->tags->getDoctrineCollection());
+        self::assertSame($collection, $holder->tags->getDelegatee());
     }
 
     public function testSetValueReusesTheCurrentInstance(): void
@@ -54,7 +54,7 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         $this->createAccessor()->setValue($holder, $collection);
 
         self::assertSame($current, $holder->tags);
-        self::assertSame($collection, $current->getDoctrineCollection());
+        self::assertSame($collection, $current->getDelegatee());
     }
 
     public function testSetValueCreatesAnInstanceWhenTheCurrentOneBelongsToAnotherEntity(): void
@@ -71,8 +71,8 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         $this->createAccessor()->setValue($holder, $collection);
 
         self::assertNotSame($shared, $holder->tags);
-        self::assertSame($owned, $shared->getDoctrineCollection(), 'The other entity keeps its collection.');
-        self::assertSame($collection, $holder->tags->getDoctrineCollection());
+        self::assertSame($owned, $shared->getDelegatee(), 'The other entity keeps its collection.');
+        self::assertSame($collection, $holder->tags->getDelegatee());
     }
 }
 

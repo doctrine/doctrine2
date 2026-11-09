@@ -7,6 +7,9 @@ namespace Doctrine\ORM\Collection;
 use Doctrine\Common\Collections\AbstractLazyCollection;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\Criteria;
+use Doctrine\Common\Collections\ReadableCollection;
+use Doctrine\Common\Collections\Selectable;
 
 /**
  * Convenience base class for custom collections that want to expose the full
@@ -22,8 +25,9 @@ use Doctrine\Common\Collections\Collection;
  * @phpstan-template T
  * @template-extends AbstractLazyCollection<TKey,T>
  * @template-implements DelegateCollection<TKey,T>
+ * @template-implements Selectable<TKey,T>
  */
-abstract class AbstractDelegateCollection extends AbstractLazyCollection implements DelegateCollection
+abstract class AbstractDelegateCollection extends AbstractLazyCollection implements DelegateCollection, Selectable
 {
     use DelegateCollectionImplementation;
 
@@ -35,7 +39,7 @@ abstract class AbstractDelegateCollection extends AbstractLazyCollection impleme
     }
 
     /** @phpstan-return Collection<TKey, T> */
-    final public function getDoctrineCollection(): Collection
+    final public function getDelegatee(): Collection
     {
         $this->initialize();
 
@@ -54,7 +58,17 @@ abstract class AbstractDelegateCollection extends AbstractLazyCollection impleme
 
     private function doAdd(mixed $value): void
     {
-        $this->getDoctrineCollection()->add($value);
+        $this->getDelegatee()->add($value);
+    }
+
+    /**
+     * Declared here as AbstractLazyCollection only implements Selectable since doctrine/collections 2.6.
+     *
+     * @phpstan-return ReadableCollection<TKey, T>&Selectable<TKey, T>
+     */
+    public function matching(Criteria $criteria): ReadableCollection
+    {
+        return $this->getDelegatee()->matching($criteria);
     }
 
     final public function clear(): void

@@ -40,6 +40,7 @@ use Doctrine\ORM\Internal\UnitOfWork\InsertBatch;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\ReadonlyAccessor;
 use Doctrine\ORM\Mapping\ToManyInverseSideMapping;
@@ -3343,7 +3344,7 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         if ($obj instanceof DelegateCollection) {
-            $obj = $obj->getDoctrineCollection();
+            $obj = DelegateCollectionPropertyAccessor::readInnerCollection($obj) ?? $obj;
         }
 
         if ($obj instanceof PersistentCollection) {

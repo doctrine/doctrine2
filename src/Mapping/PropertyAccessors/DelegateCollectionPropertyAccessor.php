@@ -26,6 +26,9 @@ use function sprintf;
  */
 final class DelegateCollectionPropertyAccessor implements PropertyAccessor
 {
+    /** @var array<class-string, ReflectionProperty> */
+    private static array $innerProperties = [];
+
     /** @var ReflectionClass<DelegateCollection<array-key, mixed>> */
     private readonly ReflectionClass $collectionClass;
     private readonly ReflectionProperty $innerProperty;
@@ -41,7 +44,7 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     {
         $value = $this->parent->getValue($object);
 
-        return $value instanceof DelegateCollection ? $value->getDoctrineCollection() : $value;
+        return $value instanceof DelegateCollection ? self::readInnerCollection($value) : $value;
     }
 
     public function setValue(object $object, mixed $value): void
@@ -63,6 +66,21 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     public function getUnderlyingReflector(): ReflectionProperty
     {
         return $this->parent->getUnderlyingReflector();
+    }
+
+    /**
+     * Returns the collection held by a custom collection, read from its property
+     * so that no user code runs.
+     *
+     * @param DelegateCollection<array-key, mixed> $delegate
+     *
+     * @return Collection<array-key, mixed>|null
+     */
+    public static function readInnerCollection(DelegateCollection $delegate): Collection|null
+    {
+        $property = self::$innerProperties[$delegate::class] ??= self::resolveInnerProperty($delegate::class);
+
+        return $property->isInitialized($delegate) ? $property->getValue($delegate) : null;
     }
 
     /**
@@ -127,7 +145,7 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
      */
     private static function isOwnedByAnotherEntity(DelegateCollection $current, object $object): bool
     {
-        $inner = $current->getDoctrineCollection();
+        $inner = self::readInnerCollection($current);
 
         return $inner instanceof PersistentCollection && $inner->getOwner() !== null && $inner->getOwner() !== $object;
     }

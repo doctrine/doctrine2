@@ -34,7 +34,7 @@ and directly start using native lazy objects.
 The new `collectionClass` mapping option on `#[OneToMany]` and `#[ManyToMany]`
 (`collection-class` in XML) allows exposing an association through a
 user-defined collection class carrying domain-specific methods. The class must
-implement the new `Doctrine\ORM\Collection\DelegateCollection` interface; the
+implement the new `Doctrine\ORM\Collection\DelegateCollection` marker interface; the
 optional base class `Doctrine\ORM\Collection\AbstractDelegateCollection` can be
 extended to get the full `Collection` API for free. The option can be omitted when the property is typed with the custom class: the ORM infers it from the property type.
 

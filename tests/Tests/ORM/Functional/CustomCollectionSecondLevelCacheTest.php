@@ -104,6 +104,6 @@ class CustomCollectionSecondLevelCacheTest extends OrmFunctionalTestCase
         $cached = $this->_em->createQuery($dql)->setParameter('id', $shelf->id)->setCacheable(true)->getSingleResult();
         assert($cached instanceof Shelf);
 
-        self::assertCount(2, $cached->tags->getDoctrineCollection(), 'The query cache must store every element, not only the ones the custom iterator yields.');
+        self::assertCount(2, $cached->tags->getDelegatee(), 'The query cache must store every element, not only the ones the custom iterator yields.');
     }
 }

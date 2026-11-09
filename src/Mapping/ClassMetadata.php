@@ -1440,7 +1440,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'only to-many associations support a custom collection class');
             }
 
-            if (! class_exists($mapping['collectionClass'])) {
+            if (! class_exists($mapping['collectionClass']) && ! interface_exists($mapping['collectionClass'])) {
                 throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class does not exist');
             }
 
@@ -1449,7 +1449,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             }
 
             if (! (new ReflectionClass($mapping['collectionClass']))->isInstantiable()) {
-                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class is not instantiable');
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class is not instantiable, declare a concrete class with the collectionClass mapping option');
             }
 
             try {

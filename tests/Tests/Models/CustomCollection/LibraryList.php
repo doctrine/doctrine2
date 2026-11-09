@@ -27,7 +27,7 @@ final class LibraryList implements DelegateCollection, IteratorAggregate
     {
     }
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return $this->collection;
     }

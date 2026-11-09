@@ -89,6 +89,17 @@ final class CustomCollectionMappingTest extends TestCase
         $this->mapBooksWithCollectionClass(AbstractDelegateCollection::class);
     }
 
+    public function testInferredInterfaceAsksForAConcreteCollectionClass(): void
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('the class is not instantiable');
+
+        $class = new ClassMetadata(InterfaceTypedHolder::class);
+        $class->initializeReflection(new RuntimeReflectionService());
+
+        $class->mapManyToMany(['fieldName' => 'tags', 'targetEntity' => Tag::class]);
+    }
+
     public function testCollectionClassConstructorMayRequireArguments(): void
     {
         $this->expectNotToPerformAssertions();
@@ -176,7 +187,7 @@ final class ArrayBackedCollection implements DelegateCollection
     /** @var list<Tag> */
     private array $items = [];
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return new ArrayCollection($this->items);
     }
@@ -209,7 +220,7 @@ final class ReadonlyPropertyCollection implements DelegateCollection
     {
     }
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return $this->collection;
     }
@@ -228,7 +239,7 @@ final class ArrayCollectionPropertyCollection implements DelegateCollection
     {
     }
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return $this->collection;
     }
@@ -237,4 +248,14 @@ final class ArrayCollectionPropertyCollection implements DelegateCollection
     {
         return $this->collection->getIterator();
     }
+}
+
+/** @template-extends DelegateCollection<array-key, Tag> */
+interface TagListContract extends DelegateCollection
+{
+}
+
+class InterfaceTypedHolder
+{
+    public TagListContract $tags;
 }

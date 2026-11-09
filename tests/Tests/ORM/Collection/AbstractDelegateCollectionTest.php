@@ -18,7 +18,7 @@ class AbstractDelegateCollectionTest extends TestCase
     {
         $collection = new ConcreteDelegateCollection();
 
-        self::assertInstanceOf(ArrayCollection::class, $collection->getDoctrineCollection());
+        self::assertInstanceOf(ArrayCollection::class, $collection->getDelegatee());
         self::assertTrue($collection->isEmpty());
     }
 
@@ -27,7 +27,7 @@ class AbstractDelegateCollectionTest extends TestCase
         $inner      = new ArrayCollection(['a', 'b']);
         $collection = new ConcreteDelegateCollection($inner);
 
-        self::assertSame($inner, $collection->getDoctrineCollection());
+        self::assertSame($inner, $collection->getDelegatee());
         self::assertSame(['a', 'b'], $collection->toArray());
     }
 
@@ -58,7 +58,7 @@ class AbstractDelegateCollectionTest extends TestCase
 
         DelegateCollectionPropertyAccessor::resolveInnerProperty(ConcreteDelegateCollection::class)->setValue($collection, $replacement);
 
-        self::assertSame($replacement, $collection->getDoctrineCollection());
+        self::assertSame($replacement, $collection->getDelegatee());
         self::assertSame(['b'], $collection->toArray());
     }
 
@@ -85,7 +85,7 @@ class AbstractDelegateCollectionTest extends TestCase
 
         $copy = clone $collection;
 
-        self::assertNotSame($inner, $copy->getDoctrineCollection());
+        self::assertNotSame($inner, $copy->getDelegatee());
         self::assertSame(['a'], $copy->toArray());
 
         $copy->add('b');

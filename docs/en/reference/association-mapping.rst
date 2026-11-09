@@ -1051,11 +1051,6 @@ of your own that carries domain-specific methods:
         {
         }
 
-        public function getDoctrineCollection(): Collection
-        {
-            return $this->books;
-        }
-
         public function getIterator(): Traversable
         {
             return $this->books->getIterator();
@@ -1113,16 +1108,16 @@ as with plain collections.
 
 A custom collection class must follow these rules:
 
-- It must implement ``Doctrine\ORM\Collection\DelegateCollection`` (which
-  extends ``IteratorAggregate``, so custom collections are always iterable).
+- It must implement the ``Doctrine\ORM\Collection\DelegateCollection``
+  marker interface (which extends ``IteratorAggregate``, so custom
+  collections are always iterable).
 - It must declare exactly one non-static, non-readonly property whose type is
-  exactly ``Collection`` (nullable allowed): the
-  ORM injects the managed collection into that property through reflection.
+  exactly ``Collection`` (nullable allowed): the ORM reads and writes the
+  managed collection in that property through reflection.
 - That property is the single source of truth for the elements: every read
-  and write performed by the class must go through it, and
-  ``getDoctrineCollection()`` must return it. State kept outside of it (plain
-  arrays, cached copies of ``toArray()`` results, ...) is invisible to the
-  ORM and will not be persisted.
+  and write performed by the class must go through it. State kept outside of
+  it (plain arrays, cached copies of ``toArray()`` results, ...) is invisible
+  to the ORM and will not be persisted.
 - Like entities, it is instantiated without calling its constructor when the
   ORM creates an instance during hydration: state initialized only in the
   constructor is not available then.

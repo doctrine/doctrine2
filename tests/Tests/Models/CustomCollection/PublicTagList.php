@@ -25,7 +25,7 @@ final class PublicTagList implements DelegateCollection, IteratorAggregate
     {
     }
 
-    public function getDoctrineCollection(): Collection
+    public function getDelegatee(): Collection
     {
         return $this->collection;
     }
