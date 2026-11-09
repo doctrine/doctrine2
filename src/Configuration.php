@@ -13,6 +13,7 @@ use Doctrine\ORM\Exception\InvalidEntityRepository;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\ClassMetadataFactoryInterface;
 use Doctrine\ORM\Mapping\DefaultEntityListenerResolver;
 use Doctrine\ORM\Mapping\DefaultNamingStrategy;
 use Doctrine\ORM\Mapping\DefaultQuoteStrategy;
@@ -446,14 +447,24 @@ class Configuration extends \Doctrine\DBAL\Configuration
     /**
      * Sets a class metadata factory.
      *
-     * @param class-string $cmfName
+     * @param class-string<ClassMetadataFactory> $cmfName
      */
     public function setClassMetadataFactoryName(string $cmfName): void
     {
+        if (! is_a($cmfName, ClassMetadataFactoryInterface::class, true)) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/pull/12760',
+                'Not implementing the %s interface in class %s is deprecated and will not be possible in Doctrine ORM 4.0.',
+                ClassMetadataFactoryInterface::class,
+                $cmfName,
+            );
+        }
+
         $this->attributes['classMetadataFactoryName'] = $cmfName;
     }
 
-    /** @return class-string */
+    /** @return class-string<ClassMetadataFactory> */
     public function getClassMetadataFactoryName(): string
     {
         if (! isset($this->attributes['classMetadataFactoryName'])) {

@@ -559,12 +559,6 @@ parameters:
 			path: src/EntityManager.php
 
 		-
-			message: '#^Property Doctrine\\ORM\\EntityManager\:\:\$metadataFactory \(Doctrine\\ORM\\Mapping\\ClassMetadataFactory\) does not accept object\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/EntityManager.php
-
-		-
 			message: '#^Return type \(Doctrine\\ORM\\Mapping\\ClassMetadataFactory\) of method Doctrine\\ORM\\EntityManager\:\:getMetadataFactory\(\) should be compatible with return type \(Doctrine\\Persistence\\Mapping\\ClassMetadataFactory\<Doctrine\\Persistence\\Mapping\\ClassMetadata\<object\>\>\) of method Doctrine\\Persistence\\ObjectManager\:\:getMetadataFactory\(\)$#'
 			identifier: method.childReturnType
 			count: 1

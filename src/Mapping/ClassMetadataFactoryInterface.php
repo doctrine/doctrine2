@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\Mapping\ClassMetadataFactory as PersistenceClassMetadataFactory;
 
 /**
  * The ORM-specific contract for a class metadata factory.
  *
  * @extends PersistenceClassMetadataFactory<ClassMetadata<object>>
- * @psalm-inheritors ClassMetadataFactory
- * @phpstan-sealed ClassMetadataFactory
  */
 interface ClassMetadataFactoryInterface extends PersistenceClassMetadataFactory
 {
+    /**
+     * Injects the EntityManager using this CMF instance
+     */
+    public function setEntityManager(EntityManagerInterface $em): void;
+
     /**
      * Whether this class is mapped by the ORM.
      *
