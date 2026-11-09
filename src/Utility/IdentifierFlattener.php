@@ -6,8 +6,8 @@ namespace Doctrine\ORM\Utility;
 
 use BackedEnum;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\ClassMetadataFactoryInterface;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\Persistence\Mapping\ClassMetadataFactory;
 
 use function assert;
 use function implode;
@@ -31,7 +31,7 @@ final class IdentifierFlattener
         /**
          * The metadata factory, used to retrieve the ORM metadata of entity classes.
          */
-        private readonly ClassMetadataFactoryInterface $metadataFactory,
+        private readonly ClassMetadataFactory $metadataFactory,
     ) {
     }
 

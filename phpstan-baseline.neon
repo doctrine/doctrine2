@@ -3064,6 +3064,12 @@ parameters:
 			path: src/Utility/HierarchyDiscriminatorResolver.php
 
 		-
+			message: '#^Method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:__construct\(\) has parameter \$metadataFactory with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadataFactory but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Utility/IdentifierFlattener.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:flattenIdentifier\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
