@@ -19,8 +19,12 @@ class Tag
     #[ORM\Column(type: 'string', length: 255)]
     public string $name;
 
+    #[ORM\ManyToMany(targetEntity: Library::class, mappedBy: 'tags')]
+    public LibraryList $libraries;
+
     public function __construct(string $name)
     {
-        $this->name = $name;
+        $this->name      = $name;
+        $this->libraries = new LibraryList();
     }
 }

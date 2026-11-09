@@ -24,7 +24,7 @@ class Library
     #[ORM\Cache('NONSTRICT_READ_WRITE')]
     private BookList $books;
 
-    #[ORM\ManyToMany(targetEntity: Tag::class, cascade: ['persist'], indexBy: 'name')]
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'libraries', cascade: ['persist'], indexBy: 'name')]
     #[ORM\JoinTable(name: 'customcollection_library_tag')]
     #[ORM\Cache('NONSTRICT_READ_WRITE')]
     private TagCollection $tags;

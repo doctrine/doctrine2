@@ -18,7 +18,7 @@
             </cascade>
         </one-to-many>
 
-        <many-to-many field="tags" target-entity="Doctrine\Tests\Models\CustomCollection\Tag" index-by="name" collection-class="Doctrine\Tests\Models\CustomCollection\TagCollection">
+        <many-to-many field="tags" target-entity="Doctrine\Tests\Models\CustomCollection\Tag" inversed-by="libraries" index-by="name" collection-class="Doctrine\Tests\Models\CustomCollection\TagCollection">
             <cascade>
                 <cascade-persist/>
             </cascade>

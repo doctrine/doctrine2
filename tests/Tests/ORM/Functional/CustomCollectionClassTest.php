@@ -10,6 +10,7 @@ use Doctrine\ORM\Tools\DebugUnitOfWorkListener;
 use Doctrine\Tests\Models\CustomCollection\Book;
 use Doctrine\Tests\Models\CustomCollection\BookList;
 use Doctrine\Tests\Models\CustomCollection\Library;
+use Doctrine\Tests\Models\CustomCollection\LibraryList;
 use Doctrine\Tests\Models\CustomCollection\Shelf;
 use Doctrine\Tests\Models\CustomCollection\Tag;
 use Doctrine\Tests\Models\CustomCollection\TagCollection;
@@ -163,6 +164,40 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         self::assertSame('sql', $reloaded->getTags()->get('sql')->name, 'indexBy must be honored.');
     }
 
+    public function testInverseSideManyToManyUsesCustomCollection(): void
+    {
+        $library = $this->createLibrary();
+        $this->_em->clear();
+
+        $tag = $this->_em->createQuery('SELECT t FROM ' . Tag::class . ' t JOIN t.libraries l WHERE l.id = :id AND t.name = :name')
+            ->setParameter('id', $library->id)
+            ->setParameter('name', 'php')
+            ->getSingleResult();
+        assert($tag instanceof Tag);
+
+        self::assertInstanceOf(LibraryList::class, $tag->libraries);
+        $inner = $tag->libraries->getDoctrineCollection();
+        assert($inner instanceof PersistentCollection);
+        self::assertFalse($inner->isInitialized(), 'The inverse side must be loaded lazily.');
+
+        self::assertSame(['Central'], $tag->libraries->names());
+        self::assertTrue($inner->isInitialized());
+
+        $this->_em->clear();
+
+        $joined = $this->_em->createQuery('SELECT t, l FROM ' . Tag::class . ' t JOIN t.libraries l WHERE l.id = :id AND t.name = :name')
+            ->setParameter('id', $library->id)
+            ->setParameter('name', 'php')
+            ->getSingleResult();
+        assert($joined instanceof Tag);
+
+        self::assertInstanceOf(LibraryList::class, $joined->libraries);
+        $joinedInner = $joined->libraries->getDoctrineCollection();
+        assert($joinedInner instanceof PersistentCollection);
+        self::assertTrue($joinedInner->isInitialized(), 'A fetch-joined inverse side must be hydrated as initialized.');
+        self::assertSame(['Central'], $joined->libraries->names());
+    }
+
     public function testOrphanRemovalThroughCustomMethod(): void
     {
         $library = $this->createLibrary();
@@ -210,10 +245,12 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         $this->_em->flush();
         $this->_em->clear();
 
-        foreach ($bookIds as $bookId) {
-            self::assertNull($this->_em->find(Book::class, $bookId), 'Replacing the custom collection must delete the orphaned books.');
-        }
+        // A DQL query, as orphans are deleted in bulk without evicting their second-level cache entries
+        $remaining = $this->_em->createQuery('SELECT COUNT(b) FROM ' . Book::class . ' b WHERE b.id IN (:ids)')
+            ->setParameter('ids', $bookIds)
+            ->getSingleScalarResult();
 
+        self::assertSame(0, (int) $remaining, 'Replacing the custom collection must delete the orphaned books.');
         self::assertSame(['Physics'], $this->_em->find(Library::class, $library->id)->getBooks()->titles());
     }
 
