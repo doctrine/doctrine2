@@ -63,7 +63,7 @@
             <join-column name="address_id" referenced-column-name="id" on-delete="CASCADE" />
         </one-to-one>
 
-        <one-to-many field="phonenumbers" target-entity="Phonenumber" mapped-by="user" index-by="number" orphan-removal="true">
+        <one-to-many field="phonenumbers" target-entity="Phonenumber" mapped-by="user" index-by="number" collection-class="Doctrine\Tests\Models\CustomCollection\TagCollection" orphan-removal="true">
             <cascade>
                 <cascade-persist/>
             </cascade>

@@ -626,6 +626,10 @@ Optional attributes:
 
 -  fetch - Either LAZY, EXTRA_LAZY or EAGER, defaults to LAZY.
 -  index-by: Index the collection by a field on the target entity.
+-  collection-class - FQCN of a custom collection class implementing
+   ``Doctrine\ORM\Collection\DelegateCollection`` that the association
+   is exposed through. Inferred from the property type when it is such
+   a class.
 
 Defining Many-To-Many Associations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -659,6 +663,10 @@ Optional attributes:
    field on the inverse entity that contains the back-reference.
 -  fetch - Either LAZY, EXTRA_LAZY or EAGER, defaults to LAZY.
 -  index-by: Index the collection by a field on the target entity.
+-  collection-class - FQCN of a custom collection class implementing
+   ``Doctrine\ORM\Collection\DelegateCollection`` that the association
+   is exposed through. Inferred from the property type when it is such
+   a class.
 
 The mapping defaults would lead to a join-table with the name
 "User\_Group" being created that contains two columns "user\_id"

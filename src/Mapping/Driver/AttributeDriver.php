@@ -383,12 +383,13 @@ class AttributeDriver implements MappingDriver
                     throw MappingException::invalidAttributeOnEmbeddable($metadata->name, Mapping\OneToMany::class);
                 }
 
-                $mapping['mappedBy']      = $oneToManyAttribute->mappedBy;
-                $mapping['targetEntity']  = $oneToManyAttribute->targetEntity;
-                $mapping['cascade']       = $oneToManyAttribute->cascade;
-                $mapping['indexBy']       = $oneToManyAttribute->indexBy;
-                $mapping['orphanRemoval'] = $oneToManyAttribute->orphanRemoval;
-                $mapping['fetch']         = $this->getFetchMode($className, $oneToManyAttribute->fetch);
+                $mapping['mappedBy']        = $oneToManyAttribute->mappedBy;
+                $mapping['targetEntity']    = $oneToManyAttribute->targetEntity;
+                $mapping['cascade']         = $oneToManyAttribute->cascade;
+                $mapping['indexBy']         = $oneToManyAttribute->indexBy;
+                $mapping['collectionClass'] = $oneToManyAttribute->collectionClass;
+                $mapping['orphanRemoval']   = $oneToManyAttribute->orphanRemoval;
+                $mapping['fetch']           = $this->getFetchMode($className, $oneToManyAttribute->fetch);
 
                 $orderByAttribute = $this->reader->getPropertyAttribute($property, Mapping\OrderBy::class);
 
@@ -458,14 +459,15 @@ class AttributeDriver implements MappingDriver
                     $joinTable['inverseJoinColumns'][] = $this->joinColumnToArray($joinColumn);
                 }
 
-                $mapping['joinTable']     = $joinTable;
-                $mapping['targetEntity']  = $manyToManyAttribute->targetEntity;
-                $mapping['mappedBy']      = $manyToManyAttribute->mappedBy;
-                $mapping['inversedBy']    = $manyToManyAttribute->inversedBy;
-                $mapping['cascade']       = $manyToManyAttribute->cascade;
-                $mapping['indexBy']       = $manyToManyAttribute->indexBy;
-                $mapping['orphanRemoval'] = $manyToManyAttribute->orphanRemoval;
-                $mapping['fetch']         = $this->getFetchMode($className, $manyToManyAttribute->fetch);
+                $mapping['joinTable']       = $joinTable;
+                $mapping['targetEntity']    = $manyToManyAttribute->targetEntity;
+                $mapping['mappedBy']        = $manyToManyAttribute->mappedBy;
+                $mapping['inversedBy']      = $manyToManyAttribute->inversedBy;
+                $mapping['cascade']         = $manyToManyAttribute->cascade;
+                $mapping['indexBy']         = $manyToManyAttribute->indexBy;
+                $mapping['collectionClass'] = $manyToManyAttribute->collectionClass;
+                $mapping['orphanRemoval']   = $manyToManyAttribute->orphanRemoval;
+                $mapping['fetch']           = $this->getFetchMode($className, $manyToManyAttribute->fetch);
 
                 $orderByAttribute = $this->reader->getPropertyAttribute($property, Mapping\OrderBy::class);
 

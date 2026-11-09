@@ -429,6 +429,10 @@ class XmlDriver extends FileDriver
                     throw new InvalidArgumentException('<index-by /> is not a valid tag');
                 }
 
+                if (isset($oneToManyElement['collection-class'])) {
+                    $mapping['collectionClass'] = (string) $oneToManyElement['collection-class'];
+                }
+
                 // Evaluate second level cache
                 if (isset($oneToManyElement->cache)) {
                     $mapping['cache'] = $metadata->getAssociationCacheDefaults($mapping['fieldName'], $this->cacheToArray($oneToManyElement->cache));
@@ -564,6 +568,10 @@ class XmlDriver extends FileDriver
                     $mapping['indexBy'] = (string) $manyToManyElement['index-by'];
                 } elseif (isset($manyToManyElement->{'index-by'})) {
                     throw new InvalidArgumentException('<index-by /> is not a valid tag');
+                }
+
+                if (isset($manyToManyElement['collection-class'])) {
+                    $mapping['collectionClass'] = (string) $manyToManyElement['collection-class'];
                 }
 
                 // Evaluate second level cache

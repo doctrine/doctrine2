@@ -818,6 +818,10 @@ Optional parameters:
 -  **cascade**: Cascade Option
 -  **fetch**: One of ``LAZY``, ``EXTRA_LAZY`` or ``EAGER``
 -  **indexBy**: Index the collection by a field on the target entity.
+-  **collectionClass**: FQCN of a custom collection class implementing
+   ``Doctrine\ORM\Collection\DelegateCollection`` that the association is
+   exposed through. Inferred from the property type when it is such a
+   class. See :ref:`custom_collection_classes`.
 
 .. note::
 
@@ -944,6 +948,10 @@ Optional parameters:
    required attribute for the inverse side of a relationship.
 -  **fetch**: One of LAZY, EXTRA_LAZY or EAGER.
 -  **indexBy**: Index the collection by a field on the target entity.
+-  **collectionClass**: FQCN of a custom collection class implementing
+   ``Doctrine\ORM\Collection\DelegateCollection`` that the association is
+   exposed through. Inferred from the property type when it is such a
+   class. See :ref:`custom_collection_classes`.
 
 Example:
 

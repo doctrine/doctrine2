@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Doctrine\ORM\Collection\DelegateCollection;
 use LogicException;
 use SortDirection;
 
@@ -19,6 +20,15 @@ trait ToManyAssociationMappingImplementation
      * are actually related.
      */
     public string|null $indexBy = null;
+
+    /**
+     * The class of a user-defined custom collection that holds the managed
+     * collection of this association, or NULL when the association uses a
+     * plain Doctrine collection.
+     *
+     * @var class-string<DelegateCollection<array-key, mixed>>|null
+     */
+    public string|null $collectionClass = null;
 
     /**
      * A map of field names (of the target entity) to sorting directions
@@ -59,6 +69,10 @@ trait ToManyAssociationMappingImplementation
 
         if ($this->indexBy !== null) {
             $serialized[] = 'indexBy';
+        }
+
+        if ($this->collectionClass !== null) {
+            $serialized[] = 'collectionClass';
         }
 
         if ($this->orderBy !== []) {

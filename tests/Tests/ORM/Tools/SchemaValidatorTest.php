@@ -25,6 +25,8 @@ use Doctrine\ORM\Mapping\OrderBy;
 use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Tools\SchemaValidator;
 use Doctrine\Tests\Models\BigIntegers\BigIntegers;
+use Doctrine\Tests\Models\CustomCollection\Book;
+use Doctrine\Tests\Models\CustomCollection\BookList;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -55,12 +57,13 @@ class SchemaValidatorTest extends OrmTestCase
     public static function modelSetProvider(): array
     {
         return [
-            'cms'        => [__DIR__ . '/../../Models/CMS'],
-            'company'    => [__DIR__ . '/../../Models/Company'],
-            'ecommerce'  => [__DIR__ . '/../../Models/ECommerce'],
-            'forum'      => [__DIR__ . '/../../Models/Forum'],
-            'navigation' => [__DIR__ . '/../../Models/Navigation'],
-            'routing'    => [__DIR__ . '/../../Models/Routing'],
+            'cms'              => [__DIR__ . '/../../Models/CMS'],
+            'customcollection' => [__DIR__ . '/../../Models/CustomCollection'],
+            'company'          => [__DIR__ . '/../../Models/Company'],
+            'ecommerce'        => [__DIR__ . '/../../Models/ECommerce'],
+            'forum'            => [__DIR__ . '/../../Models/Forum'],
+            'navigation'       => [__DIR__ . '/../../Models/Navigation'],
+            'routing'          => [__DIR__ . '/../../Models/Routing'],
         ];
     }
 
@@ -116,6 +119,17 @@ class SchemaValidatorTest extends OrmTestCase
 
         self::assertEquals(
             ["The association 'Doctrine\Tests\ORM\Tools\DDC1649Two#one' is a many-to-one association and is the sole identifier of the entity. This effectively makes the association one-to-one; use a one-to-one association instead or add another identifier field."],
+            $ce,
+        );
+    }
+
+    public function testPropertyTypeMustAcceptCollectionClass(): void
+    {
+        $class = $this->em->getClassMetadata(CustomCollectionWithIncompatibleProperty::class);
+        $ce    = $this->validator->validateClass($class);
+
+        self::assertEquals(
+            ["The property 'Doctrine\Tests\ORM\Tools\CustomCollectionWithIncompatibleProperty#books' is typed 'Doctrine\Common\Collections\Collection', which does not accept its collection class 'Doctrine\Tests\Models\CustomCollection\BookList'."],
             $ce,
         );
     }
@@ -633,4 +647,18 @@ class MultipleInversedByInverse
     /** @var Collection<int, MultipleInversedByOwner1> */
     #[OneToMany(targetEntity: MultipleInversedByOwner1::class, mappedBy: 'target')]
     public Collection $owners;
+}
+
+
+#[Entity]
+class CustomCollectionWithIncompatibleProperty
+{
+    #[Id]
+    #[Column]
+    #[GeneratedValue]
+    public int $id;
+
+    /** @var Collection<int, Book> */
+    #[ManyToMany(targetEntity: Book::class, collectionClass: BookList::class)]
+    public Collection $books;
 }

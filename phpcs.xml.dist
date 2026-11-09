@@ -50,6 +50,7 @@
     </rule>
 
     <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
+        <exclude-pattern>src/Collection/DelegateCollectionImplementation.php</exclude-pattern>
         <exclude-pattern>src/Mapping/Driver/LoadMappingFileImplementation.php</exclude-pattern>
         <exclude-pattern>src/Mapping/GetReflectionClassImplementation.php</exclude-pattern>
         <exclude-pattern>src/Persisters/SqlValueVisitorImplementation.php</exclude-pattern>

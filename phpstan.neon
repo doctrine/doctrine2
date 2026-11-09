@@ -10,6 +10,7 @@ parameters:
         # These have intentional signature mismatches that cannot be resolved
         - src/PersistentCollectionImplementation.php
         - src/Persisters/SqlValueVisitorImplementation.php
+        - src/Collection/DelegateCollectionImplementation.php
 
     ignoreErrors:
         # Paginator is deprecated in favor of OffsetPaginator, but the static-analysis

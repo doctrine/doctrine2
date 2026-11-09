@@ -45,6 +45,7 @@ use Doctrine\Tests\Models\Company\CompanyFixContract;
 use Doctrine\Tests\Models\Company\CompanyFlexContract;
 use Doctrine\Tests\Models\Company\CompanyFlexUltraContract;
 use Doctrine\Tests\Models\Company\CompanyFlexUltraContractListener;
+use Doctrine\Tests\Models\CustomCollection\TagCollection;
 use Doctrine\Tests\Models\DDC1476\DDC1476EntityWithDefaultFieldType;
 use Doctrine\Tests\Models\DDC2825\ExplicitSchemaAndTable;
 use Doctrine\Tests\Models\DDC2825\SchemaAndTableInTableName;
@@ -397,6 +398,7 @@ abstract class MappingDriverTestCase extends OrmTestCase
         self::assertFalse($class->associationMappings['phonenumbers']->isCascadeRefresh());
         self::assertFalse($class->associationMappings['phonenumbers']->isCascadeDetach());
         self::assertTrue($class->associationMappings['phonenumbers']->orphanRemoval);
+        self::assertSame(TagCollection::class, $class->associationMappings['phonenumbers']->collectionClass);
 
         // Test Order By
         self::assertEquals(['number' => SortDirection::Ascending], $class->associationMappings['phonenumbers']->orderBy);
@@ -461,6 +463,7 @@ abstract class MappingDriverTestCase extends OrmTestCase
         self::assertTrue($class->associationMappings['groups']->isCascadeDetach());
 
         self::assertFalse($class->associationMappings['groups']->isOrdered());
+        self::assertNull($class->associationMappings['groups']->collectionClass);
 
         return $class;
     }
@@ -1056,7 +1059,7 @@ class User
     public $address;
 
     /** @var Collection<int, Phonenumber> */
-    #[ORM\OneToMany(targetEntity: 'Phonenumber', mappedBy: 'user', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: 'Phonenumber', mappedBy: 'user', cascade: ['persist'], orphanRemoval: true, collectionClass: TagCollection::class)]
     #[ORM\OrderBy(['number' => SortDirection::Ascending])]
     public $phonenumbers;
 
@@ -1172,6 +1175,7 @@ class User
                 'orphanRemoval' => true,
                 'orderBy' =>
                 ['number' => SortDirection::Ascending],
+                'collectionClass' => TagCollection::class,
             ],
         );
         $metadata->mapManyToMany(

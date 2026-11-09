@@ -13,8 +13,10 @@ use Doctrine\Deprecations\Deprecation;
 use Doctrine\Instantiator\Instantiator;
 use Doctrine\Instantiator\InstantiatorInterface;
 use Doctrine\ORM\Cache\Exception\NonCacheableEntityAssociation;
+use Doctrine\ORM\Collection\DelegateCollection;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Id\AbstractIdGenerator;
+use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\EmbeddablePropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\EnumPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessor;
@@ -52,6 +54,7 @@ use function func_num_args;
 use function implode;
 use function in_array;
 use function interface_exists;
+use function is_a;
 use function is_string;
 use function is_subclass_of;
 use function ltrim;
@@ -915,6 +918,13 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             $this->propertyAccessors[$field] = isset($mapping->declared)
                 ? PropertyAccessorFactory::createPropertyAccessor($mapping->declared, $field)
                 : PropertyAccessorFactory::createPropertyAccessor($this->name, $field);
+
+            if (($mapping instanceof ToManyOwningSideMapping || $mapping instanceof ToManyInverseSideMapping) && $mapping->collectionClass !== null) {
+                $this->propertyAccessors[$field] = new DelegateCollectionPropertyAccessor(
+                    $this->propertyAccessors[$field],
+                    $mapping->collectionClass,
+                );
+            }
         }
     }
 
@@ -1192,6 +1202,15 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         $type = $this->reflClass->getProperty($mapping['fieldName'])->getType();
 
+        if (
+            ($mapping['type'] & self::TO_MANY) !== 0
+            && empty($mapping['collectionClass'])
+            && $type instanceof ReflectionNamedType
+            && is_a($type->getName(), DelegateCollection::class, true)
+        ) {
+            $mapping['collectionClass'] = $type->getName();
+        }
+
         if ($type === null || ($mapping['type'] & self::TO_ONE) === 0) {
             return $mapping;
         }
@@ -1332,6 +1351,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             unset($mapping['indexBy']);
         }
 
+        if (empty($mapping['collectionClass'])) {
+            unset($mapping['collectionClass']);
+        }
+
         // If targetEntity is unqualified, assume it is in the same namespace as
         // the sourceEntity.
         $mapping['sourceEntity'] = $this->name;
@@ -1408,6 +1431,32 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
         if (isset($mapping['id']) && $mapping['id'] === true && $mapping['type'] & self::TO_MANY) {
             throw MappingException::illegalToManyIdentifierAssociation($this->name, $mapping['fieldName']);
+        }
+
+        if (isset($mapping['collectionClass'])) {
+            $mapping['collectionClass'] = ltrim($mapping['collectionClass'], '\\');
+
+            if (! ($mapping['type'] & self::TO_MANY)) {
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'only to-many associations support a custom collection class');
+            }
+
+            if (! class_exists($mapping['collectionClass'])) {
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class does not exist');
+            }
+
+            if (! is_a($mapping['collectionClass'], DelegateCollection::class, true)) {
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], sprintf('the class does not implement the %s interface', DelegateCollection::class));
+            }
+
+            if (! (new ReflectionClass($mapping['collectionClass']))->isInstantiable()) {
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class is not instantiable');
+            }
+
+            try {
+                DelegateCollectionPropertyAccessor::resolveInnerProperty($mapping['collectionClass']);
+            } catch (LogicException $e) {
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], $e->getMessage());
+            }
         }
 
         // Fetch mode. Default fetch mode to LAZY, if not set.

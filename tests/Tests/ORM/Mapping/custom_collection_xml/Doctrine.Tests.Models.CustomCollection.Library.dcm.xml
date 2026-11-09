@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                          https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+    <entity name="Doctrine\Tests\Models\CustomCollection\Library" table="customcollection_library">
+
+        <id name="id" type="integer">
+            <generator strategy="AUTO"/>
+        </id>
+
+        <field name="name" type="string" length="255"/>
+
+        <one-to-many field="books" target-entity="Doctrine\Tests\Models\CustomCollection\Book" mapped-by="library" fetch="EXTRA_LAZY" collection-class="Doctrine\Tests\Models\CustomCollection\BookList" orphan-removal="true">
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+        </one-to-many>
+
+        <many-to-many field="tags" target-entity="Doctrine\Tests\Models\CustomCollection\Tag" index-by="name" collection-class="Doctrine\Tests\Models\CustomCollection\TagCollection">
+            <cascade>
+                <cascade-persist/>
+            </cascade>
+            <join-table name="customcollection_library_tag">
+                <join-columns>
+                    <join-column name="library_id" referenced-column-name="id"/>
+                </join-columns>
+                <inverse-join-columns>
+                    <join-column name="tag_id" referenced-column-name="id"/>
+                </inverse-join-columns>
+            </join-table>
+        </many-to-many>
+
+    </entity>
+
+</doctrine-mapping>

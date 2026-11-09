@@ -1024,3 +1024,141 @@ been associated with an EntityManager yet:
     $group = new Group();
     $user = new User();
     $user->getGroups()->add($group);
+
+.. _custom_collection_classes:
+
+Custom Collection Classes
+-------------------------
+
+.. versionadded:: 3.8
+
+By default, the ORM exposes to-many associations as instances of
+``Doctrine\ORM\PersistentCollection``, an implementation of the
+``Collection`` interface that takes care of lazy loading and change
+tracking. An association can instead be exposed through a collection class
+of your own that carries domain-specific methods:
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\Common\Collections\ArrayCollection;
+    use Doctrine\Common\Collections\Collection;
+    use Doctrine\ORM\Collection\DelegateCollection;
+
+    final class BookList implements DelegateCollection, IteratorAggregate, Countable
+    {
+        public function __construct(private Collection $books = new ArrayCollection())
+        {
+        }
+
+        public function getDoctrineCollection(): Collection
+        {
+            return $this->books;
+        }
+
+        public function getIterator(): Traversable
+        {
+            return $this->books->getIterator();
+        }
+
+        public function count(): int
+        {
+            return $this->books->count();
+        }
+
+        public function addBook(Book $book): void
+        {
+            $this->books->add($book);
+        }
+
+        /** @return list<string> */
+        public function titles(): array
+        {
+            return $this->books->map(static fn (Book $book) => $book->getTitle())->getValues();
+        }
+    }
+
+    #[Entity]
+    class Library
+    {
+        #[OneToMany(targetEntity: Book::class, mappedBy: 'library')]
+        private BookList $books;
+
+        public function __construct()
+        {
+            $this->books = new BookList();
+        }
+
+        public function getBooks(): BookList
+        {
+            return $this->books;
+        }
+    }
+
+The custom class is inferred from the property type when it is a class
+implementing ``DelegateCollection``, whatever the mapping driver. Declare it
+with the ``collectionClass`` mapping option when the property has a broader
+type, for instance ``Collection`` with a custom class extending
+``AbstractDelegateCollection``. The equivalent XML mapping uses the
+``collection-class`` attribute on ``<one-to-many />`` and ``<many-to-many />``
+elements.
+
+The property always holds a ``BookList``, including for entities loaded from
+the database, so getters can be typed against it. Only the collection inside
+it is replaced: the ORM injects a ``PersistentCollection`` there, as it does
+in a property typed ``Collection``. Because every operation of the custom
+class goes through the underlying collection, lazy loading, ``EXTRA_LAZY``
+behavior, change tracking, orphan removal and cascades keep working exactly
+as with plain collections.
+
+A custom collection class must follow these rules:
+
+- It must implement ``Doctrine\ORM\Collection\DelegateCollection`` (which
+  extends ``IteratorAggregate``, so custom collections are always iterable).
+- It must declare exactly one non-static, non-readonly property whose type is
+  exactly ``Collection`` (nullable allowed): the
+  ORM injects the managed collection into that property through reflection.
+- That property is the single source of truth for the elements: every read
+  and write performed by the class must go through it, and
+  ``getDoctrineCollection()`` must return it. State kept outside of it (plain
+  arrays, cached copies of ``toArray()`` results, ...) is invisible to the
+  ORM and will not be persisted.
+- Like entities, it is instantiated without calling its constructor when the
+  ORM creates an instance during hydration: state initialized only in the
+  constructor is not available then.
+- It must read the underlying collection from the property on each call: do
+  not keep it in another property or a closure, as the ORM replaces it on the
+  first flush and on refresh.
+
+The custom class is deliberately **not** required to implement the
+``Collection`` interface: it is free to expose only the API that makes sense
+for your domain. If you do want the full ``Collection`` API without writing
+forwarding methods, extend the convenience base class
+``Doctrine\ORM\Collection\AbstractDelegateCollection``, which implements both
+``DelegateCollection`` and ``Collection`` and forwards every method. Its
+mutating methods are ``final`` and always write to the underlying collection;
+put domain rules in your own methods, such as ``addComment()``:
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\ORM\Collection\AbstractDelegateCollection;
+
+    /** @template-extends AbstractDelegateCollection<int, Comment> */
+    final class CommentCollection extends AbstractDelegateCollection
+    {
+        public function enabled(): Collection
+        {
+            return $this->filter(static fn (Comment $comment) => $comment->isEnabled());
+        }
+    }
+
+Known limitations:
+
+- ``matching()``, ``filter()``, ``map()`` and similar operations return plain
+  collections, never an instance of the custom class.
+- Listeners and the ``UnitOfWork`` API (change sets, ``PreUpdateEventArgs``,
+  original entity data, scheduled collection updates) see the underlying
+  ``PersistentCollection``, exactly as for plain collections; read the
+  property of the owner (``$collection->getOwner()``) to get the custom
+  object.

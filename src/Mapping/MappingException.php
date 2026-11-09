@@ -550,6 +550,17 @@ class MappingException extends PersistenceMappingException implements ORMExcepti
         return new self("Entity '" . $className . "' has a mapping with invalid fetch mode '" . $fetchMode . "'");
     }
 
+    public static function invalidCollectionClass(string $entityName, string $fieldName, string $collectionClass, string $reason): self
+    {
+        return new self(sprintf(
+            "Invalid collection class '%s' on association '%s#%s': %s.",
+            $collectionClass,
+            $entityName,
+            $fieldName,
+            $reason,
+        ));
+    }
+
     public static function invalidGeneratedMode(int|string $generatedMode): self
     {
         return new self("Invalid generated mode '" . $generatedMode . "'");

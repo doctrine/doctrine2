@@ -16,6 +16,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\TypeProvider;
 use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
+use Doctrine\ORM\Collection\DelegateCollection;
 use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnClearEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
@@ -3339,6 +3340,10 @@ class UnitOfWork implements PropertyChangedListener
             $obj->__load();
 
             return;
+        }
+
+        if ($obj instanceof DelegateCollection) {
+            $obj = $obj->getDoctrineCollection();
         }
 
         if ($obj instanceof PersistentCollection) {
