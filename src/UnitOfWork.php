@@ -30,6 +30,7 @@ use Doctrine\ORM\Event\PreRemoveEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Exception\EntityIdentityCollisionException;
 use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\Exception\SharedCollection;
 use Doctrine\ORM\Exception\UnexpectedAssociationValue;
 use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Internal\HydrationCompleteHandler;
@@ -639,6 +640,10 @@ class UnitOfWork implements PropertyChangedListener
             if ($class->isCollectionValuedAssociation($name) && $value !== null) {
                 if ($value instanceof PersistentCollection) {
                     if ($value->getOwner() === $entity) {
+                        if ($value->getMapping()->fieldName !== $name) {
+                            throw SharedCollection::betweenAssociations($class->name, $name, $value->getMapping()->fieldName);
+                        }
+
                         $actualData[$name] = $value;
                         continue;
                     }
