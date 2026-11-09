@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Tools\Pagination;
 
+use Doctrine\DBAL\Platforms\DB2Platform;
+use Doctrine\DBAL\Platforms\OraclePlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\Query\AST\ComparisonExpression;
 use Doctrine\ORM\Query\AST\ConditionalExpression;
 use Doctrine\ORM\Query\AST\ConditionalPrimary;
 use Doctrine\ORM\Query\AST\ConditionalTerm;
 use Doctrine\ORM\Query\AST\InputParameter;
+use Doctrine\ORM\Query\AST\Literal;
+use Doctrine\ORM\Query\AST\Node;
+use Doctrine\ORM\Query\AST\NullComparisonExpression;
 use Doctrine\ORM\Query\AST\OrderByClause;
 use Doctrine\ORM\Query\AST\OrderByItem;
 use Doctrine\ORM\Query\AST\PathExpression;
@@ -19,6 +25,7 @@ use Doctrine\ORM\Query\TreeWalkerAdapter;
 use LogicException;
 
 use function array_unshift;
+use function assert;
 use function count;
 use function reset;
 
@@ -89,14 +96,15 @@ class CursorWalker extends TreeWalkerAdapter
             return;
         }
 
-        $condition = $this->buildCursorCondition($orderByItems, $cursorParameters);
+        $nullsSortLast = $this->nullsSortLast();
+        $condition     = $this->buildCursorCondition($orderByItems, $cursorParameters, $nullsSortLast);
 
         if ($condition === null) {
             return;
         }
 
         if (count($orderByItems) > 1) {
-            $condition = $this->prependLeadingBound($orderByItems[0], $condition);
+            $condition = $this->prependLeadingBound($orderByItems[0], $cursorParameters[$orderByItems[0]->paramKey] ?? null, $condition, $nullsSortLast);
         }
 
         $conditionalPrimary                        = new ConditionalPrimary();
@@ -139,26 +147,23 @@ class CursorWalker extends TreeWalkerAdapter
      * Recursively builds a cursor condition:
      * (col1 > :val1) OR (col1 = :val1 AND col2 > :val2) OR ...
      *
+     * A NULL boundary value and a nullable column are spelled out with IS NULL and
+     * IS NOT NULL, since a comparison with NULL is never true; see beyondBoundary().
+     *
      * @param list<CursorOrderByItem> $orderByItems
      * @param array<string, mixed>    $cursorParameters
      *
      * @throws QueryException
      */
-    private function buildCursorCondition(array $orderByItems, array $cursorParameters, int $index = 0): ConditionalExpression|null
+    private function buildCursorCondition(array $orderByItems, array $cursorParameters, bool $nullsSortLast, int $index = 0): ConditionalExpression|null
     {
         if (! isset($orderByItems[$index])) {
             return null;
         }
 
         $orderByItem = $orderByItems[$index];
-        $expression  = $orderByItem->expression;
-        $direction   = $orderByItem->direction;
-        $paramKey    = $orderByItem->paramKey;
-
-        $operator = $direction->exclusiveOperator();
-
-        $paramName  = $this->parameterName($index);
-        $paramValue = $cursorParameters[$paramKey] ?? null;
+        $paramName   = $this->parameterName($index);
+        $paramValue  = $cursorParameters[$orderByItem->paramKey] ?? null;
 
         // Security note: $paramKey is derived from the DQL ORDER BY AST, not from the
         // cursor payload. A tampered cursor can only influence the *values* used as pivot
@@ -166,44 +171,127 @@ class CursorWalker extends TreeWalkerAdapter
         // so SQL injection is not possible. The worst a user can do is navigate to an
         // arbitrary position in the result set, while remaining bound by the original
         // query's WHERE constraints.
-        $this->_getQuery()->setParameter($paramName, $paramValue);
-
-        $comparisonExpr = new ComparisonExpression(
-            $expression,
-            $operator,
-            new InputParameter(':' . $paramName),
-        );
-
-        $comparisonPrimary                              = new ConditionalPrimary();
-        $comparisonPrimary->simpleConditionalExpression = $comparisonExpr;
-
-        if ($index === count($orderByItems) - 1) {
-            return new ConditionalExpression([new ConditionalTerm([$comparisonPrimary])]);
+        if ($paramValue !== null) {
+            $this->_getQuery()->setParameter($paramName, $paramValue);
         }
 
-        $nextCondition = $this->buildCursorCondition($orderByItems, $cursorParameters, $index + 1);
+        $terms  = [];
+        $beyond = $this->beyondBoundary($orderByItem, $orderByItem->direction->exclusiveOperator(), $paramName, $paramValue, $nullsSortLast);
 
-        $equalityExpr = new ComparisonExpression(
-            $expression,
-            '=',
-            new InputParameter(':' . $paramName),
-        );
+        if ($beyond !== null) {
+            $terms[] = new ConditionalTerm([$beyond]);
+        }
 
-        $equalityPrimary                              = new ConditionalPrimary();
-        $equalityPrimary->simpleConditionalExpression = $equalityExpr;
+        if ($index < count($orderByItems) - 1) {
+            $nextCondition = $this->buildCursorCondition($orderByItems, $cursorParameters, $nullsSortLast, $index + 1);
+            assert($nextCondition !== null);
 
-        $nextPrimary                        = new ConditionalPrimary();
-        $nextPrimary->conditionalExpression = $nextCondition;
+            $equality = $paramValue === null
+                ? new NullComparisonExpression($orderByItem->expression)
+                : new ComparisonExpression($orderByItem->expression, '=', new InputParameter(':' . $paramName));
 
-        $andPrimary                        = new ConditionalPrimary();
-        $andPrimary->conditionalExpression = new ConditionalExpression([
-            new ConditionalTerm([$equalityPrimary, $nextPrimary]),
+            $nextPrimary                        = new ConditionalPrimary();
+            $nextPrimary->conditionalExpression = $nextCondition;
+
+            $andPrimary                        = new ConditionalPrimary();
+            $andPrimary->conditionalExpression = new ConditionalExpression([
+                new ConditionalTerm([$this->simplePrimary($equality), $nextPrimary]),
+            ]);
+
+            $terms[] = new ConditionalTerm([$andPrimary]);
+        }
+
+        if ($terms === []) {
+            // The boundary is a NULL on the last column, and every row beyond it would be
+            // past the NULLs: there is none.
+            $terms[] = new ConditionalTerm([
+                $this->simplePrimary(new ComparisonExpression(new Literal(Literal::NUMERIC, '1'), '=', new Literal(Literal::NUMERIC, '0'))),
+            ]);
+        }
+
+        return new ConditionalExpression($terms);
+    }
+
+    /**
+     * The rows past the boundary on one column, or null if there are none:
+     *
+     * | boundary | rows beyond lie toward the NULLs | rows beyond lie away from them |
+     * | -------- | -------------------------------- | ------------------------------ |
+     * | NULL     | none                             | col IS NOT NULL                |
+     * | :val     | col > :val OR col IS NULL        | col > :val                     |
+     *
+     * NULLs keep the platform's own position, so the ORDER BY stays a plain column order: after
+     * every value on PostgreSQL, Oracle and DB2, before every value on the other platforms.
+     * The IS NULL branch is only added for a column that can hold NULL.
+     *
+     * @throws QueryException
+     */
+    private function beyondBoundary(CursorOrderByItem $orderByItem, string $operator, string $paramName, mixed $paramValue, bool $nullsSortLast): ConditionalPrimary|null
+    {
+        $towardNulls = $nullsSortLast === ($orderByItem->direction === OrderDirection::Ascending);
+
+        if ($paramValue === null) {
+            return $towardNulls ? null : $this->simplePrimary(new NullComparisonExpression($orderByItem->expression, true));
+        }
+
+        $comparison = $this->simplePrimary(new ComparisonExpression($orderByItem->expression, $operator, new InputParameter(':' . $paramName)));
+
+        if (! $towardNulls || ! $this->isNullable($orderByItem)) {
+            return $comparison;
+        }
+
+        $primary                        = new ConditionalPrimary();
+        $primary->conditionalExpression = new ConditionalExpression([
+            new ConditionalTerm([$comparison]),
+            new ConditionalTerm([$this->simplePrimary(new NullComparisonExpression($orderByItem->expression))]),
         ]);
 
-        return new ConditionalExpression([
-            new ConditionalTerm([$comparisonPrimary]),
-            new ConditionalTerm([$andPrimary]),
-        ]);
+        return $primary;
+    }
+
+    /**
+     * Whether the column can hold NULL: a field or a join column the mapping allows to be
+     * null, and anything on a joined alias, which an outer join can leave empty.
+     */
+    private function isNullable(CursorOrderByItem $orderByItem): bool
+    {
+        if (! $orderByItem->expression instanceof PathExpression || $orderByItem->metadata === null || $orderByItem->associationPath !== []) {
+            return true;
+        }
+
+        $field    = $orderByItem->expression->field;
+        $metadata = $orderByItem->metadata;
+
+        if (isset($metadata->fieldMappings[$field])) {
+            return $metadata->fieldMappings[$field]->nullable === true;
+        }
+
+        if (isset($metadata->associationMappings[$field]) && $metadata->associationMappings[$field]->isToOneOwningSide()) {
+            foreach ($metadata->associationMappings[$field]->joinColumns as $joinColumn) {
+                if ($joinColumn->nullable !== false) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function nullsSortLast(): bool
+    {
+        $platform = $this->_getQuery()->getEntityManager()->getConnection()->getDatabasePlatform();
+
+        return $platform instanceof PostgreSQLPlatform || $platform instanceof OraclePlatform || $platform instanceof DB2Platform;
+    }
+
+    private function simplePrimary(Node $expression): ConditionalPrimary
+    {
+        $primary                              = new ConditionalPrimary();
+        $primary->simpleConditionalExpression = $expression;
+
+        return $primary;
     }
 
     private function parameterName(int $index): string
@@ -218,20 +306,25 @@ class CursorWalker extends TreeWalkerAdapter
      * It does not change which rows match, since every row matching the OR chain already
      * satisfies it. Some platforms (PostgreSQL among them) cannot derive an index range from
      * the OR chain and filter rows one by one instead, so a page's cost grows with its
-     * depth; the bound gives them a range to seek to.
+     * depth; the bound gives them a range to seek to. A NULL boundary bounds the rows to
+     * the NULLs when they lie beyond it, and is left out when every value does.
      *
      * @see https://use-the-index-luke.com/sql/partial-results/fetch-next-page#sb-equivalent-logic
      *
      * @throws QueryException
      */
-    private function prependLeadingBound(CursorOrderByItem $orderByItem, ConditionalExpression $condition): ConditionalExpression
+    private function prependLeadingBound(CursorOrderByItem $orderByItem, mixed $paramValue, ConditionalExpression $condition, bool $nullsSortLast): ConditionalExpression
     {
-        $boundPrimary                              = new ConditionalPrimary();
-        $boundPrimary->simpleConditionalExpression = new ComparisonExpression(
-            $orderByItem->expression,
-            $orderByItem->direction->inclusiveOperator(),
-            new InputParameter(':' . $this->parameterName(0)),
-        );
+        if ($paramValue === null) {
+            if ($nullsSortLast !== ($orderByItem->direction === OrderDirection::Ascending)) {
+                return $condition;
+            }
+
+            $boundPrimary = $this->simplePrimary(new NullComparisonExpression($orderByItem->expression));
+        } else {
+            $boundPrimary = $this->beyondBoundary($orderByItem, $orderByItem->direction->inclusiveOperator(), $this->parameterName(0), $paramValue, $nullsSortLast);
+            assert($boundPrimary !== null);
+        }
 
         $conditionPrimary                        = new ConditionalPrimary();
         $conditionPrimary->conditionalExpression = $condition;

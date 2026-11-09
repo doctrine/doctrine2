@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Tools\Pagination;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Tools\Pagination\CursorWalker;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class CursorWalkerTest extends PaginationTestCase
 {
@@ -258,6 +262,111 @@ class CursorWalkerTest extends PaginationTestCase
         self::assertSame([3], $result->getSqlParameterPositions('dctrn_cursor_1'));
         self::assertSame('Test', $query->getParameter('dctrn_cursor_0')?->getValue());
         self::assertSame(10, $query->getParameter('dctrn_cursor_1')?->getValue());
+    }
+
+    /**
+     * A nullable column (here a nullable join column) keeps the NULLs beyond the boundary when
+     * the walk heads toward them: before every value on SQLite, after every value on PostgreSQL.
+     *
+     * @param array<string, mixed> $parameters
+     */
+    #[DataProvider('nullableCursorConditions')]
+    public function testCursorConditionOnANullableColumn(AbstractPlatform $platform, string $direction, array $parameters, string $where): void
+    {
+        $query = $this->createTestEntityManagerWithPlatform($platform)->createQuery(
+            'SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p ORDER BY p.author ' . $direction . ', p.id ' . $direction,
+        );
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [CursorWalker::class]);
+        $query->setHint(CursorWalker::HINT_CURSOR_REVERSE, false);
+        $query->setHint(CursorWalker::HINT_CURSOR_PARAMETERS, $parameters);
+
+        self::assertEquals(
+            'SELECT b0_.id AS id_0, b0_.author_id AS author_id_1, b0_.category_id AS category_id_2 FROM BlogPost b0_ WHERE (' . $where . ') ORDER BY b0_.author_id ' . $direction . ', b0_.id ' . $direction,
+            $query->getSQL(),
+        );
+    }
+
+    /** @return iterable<string, array{AbstractPlatform, string, array<string, mixed>, string}> */
+    public static function nullableCursorConditions(): iterable
+    {
+        yield 'NULLs first, ascending: away from them' => [
+            new SQLitePlatform(),
+            'ASC',
+            ['p.author' => 5, 'p.id' => 10],
+            'b0_.author_id >= ? AND (b0_.author_id > ? OR (b0_.author_id = ? AND (b0_.id > ?)))',
+        ];
+
+        yield 'NULLs first, descending: toward them' => [
+            new SQLitePlatform(),
+            'DESC',
+            ['p.author' => 5, 'p.id' => 10],
+            '(b0_.author_id <= ? OR b0_.author_id IS NULL) AND ((b0_.author_id < ? OR b0_.author_id IS NULL) OR (b0_.author_id = ? AND (b0_.id < ?)))',
+        ];
+
+        yield 'NULLs last, ascending: toward them' => [
+            new PostgreSQLPlatform(),
+            'ASC',
+            ['p.author' => 5, 'p.id' => 10],
+            '(b0_.author_id >= ? OR b0_.author_id IS NULL) AND ((b0_.author_id > ? OR b0_.author_id IS NULL) OR (b0_.author_id = ? AND (b0_.id > ?)))',
+        ];
+
+        yield 'NULL boundary, NULLs first, ascending: every value lies beyond' => [
+            new SQLitePlatform(),
+            'ASC',
+            ['p.author' => null, 'p.id' => 10],
+            'b0_.author_id IS NOT NULL OR (b0_.author_id IS NULL AND (b0_.id > ?))',
+        ];
+
+        yield 'NULL boundary, NULLs first, descending: only NULLs lie beyond' => [
+            new SQLitePlatform(),
+            'DESC',
+            ['p.author' => null, 'p.id' => 10],
+            'b0_.author_id IS NULL AND ((b0_.author_id IS NULL AND (b0_.id < ?)))',
+        ];
+
+        yield 'NULL boundary, NULLs last, ascending: only NULLs lie beyond' => [
+            new PostgreSQLPlatform(),
+            'ASC',
+            ['p.author' => null, 'p.id' => 10],
+            'b0_.author_id IS NULL AND ((b0_.author_id IS NULL AND (b0_.id > ?)))',
+        ];
+
+        yield 'NULL boundary, NULLs last, descending: every value lies beyond' => [
+            new PostgreSQLPlatform(),
+            'DESC',
+            ['p.author' => null, 'p.id' => 10],
+            'b0_.author_id IS NOT NULL OR (b0_.author_id IS NULL AND (b0_.id < ?))',
+        ];
+    }
+
+    public function testNoParameterIsBoundForANullBoundary(): void
+    {
+        $query = $this->entityManager->createQuery(
+            'SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p ORDER BY p.author ASC, p.id ASC',
+        );
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [CursorWalker::class]);
+        $query->setHint(CursorWalker::HINT_CURSOR_REVERSE, false);
+        $query->setHint(CursorWalker::HINT_CURSOR_PARAMETERS, ['p.author' => null, 'p.id' => 10]);
+
+        (new Parser($query))->parse();
+
+        self::assertNull($query->getParameter('dctrn_cursor_0'));
+        self::assertSame(10, $query->getParameter('dctrn_cursor_1')?->getValue());
+    }
+
+    public function testANullBoundaryOnTheLastColumnWithNothingBeyondMatchesNoRow(): void
+    {
+        $query = $this->entityManager->createQuery(
+            'SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p ORDER BY p.author DESC',
+        );
+        $query->setHint(Query::HINT_CUSTOM_TREE_WALKERS, [CursorWalker::class]);
+        $query->setHint(CursorWalker::HINT_CURSOR_REVERSE, false);
+        $query->setHint(CursorWalker::HINT_CURSOR_PARAMETERS, ['p.author' => null]);
+
+        self::assertEquals(
+            'SELECT b0_.id AS id_0, b0_.author_id AS author_id_1, b0_.category_id AS category_id_2 FROM BlogPost b0_ WHERE (1 = 0) ORDER BY b0_.author_id DESC',
+            $query->getSQL(),
+        );
     }
 
     public function testNoExceptionWithToManyJoinWhenQueryProducesDuplicatesIsTrue(): void
