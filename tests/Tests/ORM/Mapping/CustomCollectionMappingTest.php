@@ -108,10 +108,10 @@ final class CustomCollectionMappingTest extends TestCase
         $this->mapBooksWithCollectionClass(RequiresConstructorArgumentsCollection::class);
     }
 
-    public function testCollectionClassMustDeclareACollectionTypedProperty(): void
+    public function testCollectionClassMustDeclareACollectionProperty(): void
     {
         $this->expectException(MappingException::class);
-        $this->expectExceptionMessage('exactly one property typed as Doctrine\Common\Collections\Collection');
+        $this->expectExceptionMessage('the class must declare a $collection property typed as Doctrine\Common\Collections\Collection');
 
         $this->mapBooksWithCollectionClass(ArrayBackedCollection::class);
     }
@@ -119,15 +119,14 @@ final class CustomCollectionMappingTest extends TestCase
     public function testCollectionClassInnerPropertyMustAcceptPersistentCollection(): void
     {
         $this->expectException(MappingException::class);
-        $this->expectExceptionMessage('exactly one property typed as Doctrine\Common\Collections\Collection');
+        $this->expectExceptionMessage('the $collection property must be non-static and typed as Doctrine\Common\Collections\Collection');
 
         $this->mapBooksWithCollectionClass(ArrayCollectionPropertyCollection::class);
     }
 
-    public function testCollectionClassMustNotDeclareMultipleCollectionTypedProperties(): void
+    public function testCollectionClassMayDeclareOtherCollectionProperties(): void
     {
-        $this->expectException(MappingException::class);
-        $this->expectExceptionMessage('exactly one property typed as Doctrine\Common\Collections\Collection');
+        $this->expectNotToPerformAssertions();
 
         $this->mapBooksWithCollectionClass(TwoCollectionPropertiesCollection::class);
     }

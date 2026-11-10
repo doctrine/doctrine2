@@ -8,7 +8,7 @@ use IteratorAggregate;
 
 /**
  * Marks a custom collection class for to-many associations: the ORM stores the
- * managed collection in its single property typed {@see \Doctrine\Common\Collections\Collection}.
+ * managed collection in its $collection property, typed {@see \Doctrine\Common\Collections\Collection}.
  *
  * @see https://www.doctrine-project.org/projects/doctrine-orm/en/latest/reference/association-mapping.html#custom-collection-classes
  *

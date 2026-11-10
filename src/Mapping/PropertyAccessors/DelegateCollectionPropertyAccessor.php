@@ -9,13 +9,10 @@ use Doctrine\ORM\Collection\DelegateCollection;
 use Doctrine\ORM\PersistentCollection;
 use LogicException;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionNamedType;
 use ReflectionProperty;
 
-use function array_keys;
-use function count;
-use function current;
-use function implode;
 use function sprintf;
 
 /**
@@ -84,54 +81,36 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     }
 
     /**
-     * Resolves the single Collection-typed property holding the managed collection.
+     * Resolves the $collection property holding the managed collection.
      *
      * @param class-string $collectionClass
      *
-     * @throws LogicException When the class does not declare exactly one
-     *                        writable Collection-typed property.
+     * @throws LogicException When the class does not declare a non-static,
+     *                        non-readonly $collection property typed as Collection.
      */
     public static function resolveInnerProperty(string $collectionClass): ReflectionProperty
     {
-        $candidates = [];
-
-        $reflection = new ReflectionClass($collectionClass);
-
-        while ($reflection !== false) {
-            foreach ($reflection->getProperties() as $property) {
-                if ($property->isStatic() || isset($candidates[$property->getName()])) {
-                    continue;
-                }
-
-                $type = $property->getType();
-
-                // Exactly Collection: a narrower type such as ArrayCollection cannot hold the PersistentCollection
-                if (! $type instanceof ReflectionNamedType || $type->getName() !== Collection::class) {
-                    continue;
-                }
-
-                $candidates[$property->getName()] = $property;
-            }
-
-            $reflection = $reflection->getParentClass();
+        try {
+            $property = new ReflectionProperty($collectionClass, 'collection');
+        } catch (ReflectionException $e) {
+            throw new LogicException(sprintf(
+                'the class must declare a $collection property typed as %s to hold the underlying collection',
+                Collection::class,
+            ), previous: $e);
         }
 
-        if (count($candidates) !== 1) {
+        $type = $property->getType();
+
+        // Exactly Collection: a narrower type such as ArrayCollection cannot hold the PersistentCollection
+        if ($property->isStatic() || ! $type instanceof ReflectionNamedType || $type->getName() !== Collection::class) {
             throw new LogicException(sprintf(
-                'the class must declare exactly one property typed as %s to hold the underlying collection, %s found%s',
+                'the $collection property must be non-static and typed as %s',
                 Collection::class,
-                count($candidates),
-                $candidates === [] ? '' : ' ($' . implode(', $', array_keys($candidates)) . ')',
             ));
         }
-
-        $property = current($candidates);
 
         if ($property->isReadOnly()) {
-            throw new LogicException(sprintf(
-                'the property $%s holding the underlying collection must not be readonly',
-                $property->getName(),
-            ));
+            throw new LogicException('the $collection property must not be readonly');
         }
 
         return $property;

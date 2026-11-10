@@ -1047,29 +1047,29 @@ of your own that carries domain-specific methods:
 
     final class BookList implements DelegateCollection, IteratorAggregate, Countable
     {
-        public function __construct(private Collection $books = new ArrayCollection())
+        public function __construct(private Collection $collection = new ArrayCollection())
         {
         }
 
         public function getIterator(): Traversable
         {
-            return $this->books->getIterator();
+            return $this->collection->getIterator();
         }
 
         public function count(): int
         {
-            return $this->books->count();
+            return $this->collection->count();
         }
 
         public function addBook(Book $book): void
         {
-            $this->books->add($book);
+            $this->collection->add($book);
         }
 
         /** @return list<string> */
         public function titles(): array
         {
-            return $this->books->map(static fn (Book $book) => $book->getTitle())->getValues();
+            return $this->collection->map(static fn (Book $book) => $book->getTitle())->getValues();
         }
     }
 
@@ -1113,9 +1113,10 @@ A custom collection class must follow these rules:
 - It must implement the ``Doctrine\ORM\Collection\DelegateCollection``
   marker interface (which extends ``IteratorAggregate``, so custom
   collections are always iterable).
-- It must declare exactly one non-static, non-readonly property whose type is
-  exactly ``Collection`` (nullable allowed): the ORM reads and writes the
-  managed collection in that property through reflection.
+- It must declare a non-static, non-readonly ``$collection`` property whose
+  type is exactly ``Collection`` (nullable allowed): the ORM reads and writes
+  the managed collection in that property through reflection. The class may
+  declare other properties for its own state.
 - That property is the single source of truth for the elements: every read
   and write performed by the class must go through it. State kept outside of
   it (plain arrays, cached copies of ``toArray()`` results, ...) is invisible
