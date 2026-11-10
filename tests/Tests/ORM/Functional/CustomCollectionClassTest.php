@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Tools\DebugUnitOfWorkListener;
 use Doctrine\Tests\Models\CustomCollection\Book;
@@ -17,6 +20,7 @@ use Doctrine\Tests\Models\CustomCollection\TagCollection;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
 use function assert;
+use function current;
 use function file_get_contents;
 use function serialize;
 use function sys_get_temp_dir;
@@ -505,5 +509,40 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         $inner = $loaded->tags->getDelegatee();
         assert($inner instanceof PersistentCollection);
         self::assertFalse($inner->isInitialized(), 'Dumping the identity map must not initialize the collection.');
+    }
+
+    public function testListenersSeeTheManagedCollection(): void
+    {
+        $library = $this->createLibrary();
+
+        $listener = new class {
+            /** @var array<int, PersistentCollection<array-key, mixed>> */
+            public array $scheduledUpdates = [];
+
+            /** @var list<object> */
+            public array $preUpdateEntities = [];
+
+            public function onFlush(OnFlushEventArgs $args): void
+            {
+                $this->scheduledUpdates = $args->getObjectManager()->getUnitOfWork()->getScheduledCollectionUpdates();
+            }
+
+            public function preUpdate(PreUpdateEventArgs $args): void
+            {
+                $this->preUpdateEntities[] = $args->getObject();
+            }
+        };
+        $this->_em->getEventManager()->addEventListener([Events::onFlush, Events::preUpdate], $listener);
+
+        $library->addTag(new Tag('python'));
+        $this->_em->flush();
+
+        self::assertCount(1, $listener->scheduledUpdates);
+        $collection = current($listener->scheduledUpdates);
+        self::assertSame($library->getTags()->getDelegatee(), $collection);
+        self::assertSame($library, $collection->getOwner());
+        self::assertSame('tags', $collection->getMapping()->fieldName);
+
+        self::assertSame([$library], $listener->preUpdateEntities);
     }
 }
