@@ -1108,6 +1108,14 @@ type, for instance ``Collection`` with a custom class extending
 ``collection-class`` attribute on ``<one-to-many />`` and ``<many-to-many />``
 elements.
 
+.. note::
+
+    The ``collectionClass`` option and the ``collection-class`` attribute have
+    the same names as in Doctrine MongoDB ODM, but work differently: ODM
+    requires the class to implement ``Collection`` and generates a persistent
+    subclass of it, while the ORM puts the managed collection inside an
+    instance of your class, through the ``DelegateCollection`` contract.
+
 A custom collection class must follow these rules:
 
 - It must implement the ``Doctrine\ORM\Collection\DelegateCollection``
