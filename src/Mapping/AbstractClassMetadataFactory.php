@@ -21,8 +21,9 @@ use Doctrine\ORM\Mapping\Exception\InvalidCustomGenerator;
 use Doctrine\ORM\Mapping\Exception\UnknownGeneratorType;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Utility\OwningSideResolver;
-use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
+use Doctrine\Persistence\Mapping\ClassMetadata as PersistenceClassMetadata;
 use Doctrine\Persistence\Mapping\ClassMetadataFactory as PersistenceClassMetadataFactory;
+use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory as PersistenceAbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Persistence\Mapping\ProxyClassNameResolver;
 use Doctrine\Persistence\Mapping\ReflectionService;
@@ -55,9 +56,9 @@ use const PHP_VERSION_ID;
  * Shared driver access, inheritance resolution and embedded-class handling for the "lazy"
  * {@see ClassMetadataFactory}, {@see ClassMetadataBagCompiler} and {@see CompiledClassMetadataFactory}.
  */
-abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataFactory, ClassMetadataFactoryInterface
+abstract class AbstractClassMetadataFactory extends PersistenceAbstractClassMetadataFactory implements ClassMetadataFactoryInterface
 {
-    protected bool $initialized = false;
+    //protected bool $initialized = false;
 
     private ReflectionService|null $reflectionService = null;
 
@@ -241,8 +242,8 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
      * @param list<class-string>         $nonSuperclassParents All parent class names that are not marked as mapped superclasses, with the direct parent class being the first and the root entity class the last element.
      */
     protected function doLoadMetadata(
-        ClassMetadata $class,
-        ClassMetadata|null $parent,
+        PersistenceClassMetadata $class,
+        PersistenceClassMetadata|null $parent,
         bool $rootEntityFound,
         array $nonSuperclassParents,
     ): void {
@@ -868,7 +869,7 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
     }
 
     /** @param ClassMetadata<object> $class */
-    protected function wakeupReflection(ClassMetadata $class, ReflectionService $reflService): void
+    protected function wakeupReflection(PersistenceClassMetadata $class, ReflectionService $reflService): void
     {
         $class->wakeupReflection($reflService);
 
@@ -886,7 +887,7 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
     }
 
     /** @param ClassMetadata<object> $class */
-    protected function initializeReflection(ClassMetadata $class, ReflectionService $reflService): void
+    protected function initializeReflection(PersistenceClassMetadata $class, ReflectionService $reflService): void
     {
         $class->initializeReflection($reflService);
     }
@@ -899,7 +900,7 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
     }
 
     /** @param ClassMetadata<object> $class */
-    protected function isEntity(ClassMetadata $class): bool
+    protected function isEntity(PersistenceClassMetadata $class): bool
     {
         return ! $class->isMappedSuperclass;
     }
@@ -914,7 +915,7 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
     }
 
     /** @return list<ClassMetadata<object>> */
-    abstract public function getAllMetadata(): array;
+    // abstract public function getAllMetadata(): array;
 
     /**
      * @param class-string $className
@@ -922,24 +923,24 @@ abstract class AbstractClassMetadataFactory implements PersistenceClassMetadataF
      * @throws ReflectionException
      * @throws MappingException
      */
-    abstract public function getMetadataFor(string $className): ClassMetadata;
+//    abstract public function getMetadataFor(string $className): ClassMetadata;
 
     /** @param class-string $className */
-    abstract public function hasMetadataFor(string $className): bool;
+//    abstract public function hasMetadataFor(string $className): bool;
 
     /**
      * Sets the metadata descriptor for a specific class.
      *
      * @param class-string $className
      */
-    abstract public function setMetadataFor(string $className, ClassMetadataInterface $class): void;
+//    abstract public function setMetadataFor(string $className, ClassMetadataInterface $class): void;
 
     /** @param class-string $className */
-    abstract public function isTransient(string $className): bool;
+//    abstract public function isTransient(string $className): bool;
 
     /** @param class-string $className */
     abstract public function isMapped(string $className): bool;
 
     /** @return array<class-string, ClassMetadata<object>> */
-    abstract public function getLoadedMetadata(): array;
+    // abstract public function getLoadedMetadata(): array;
 }

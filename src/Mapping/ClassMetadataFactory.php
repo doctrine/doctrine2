@@ -25,7 +25,7 @@ use function str_replace;
 class ClassMetadataFactory extends AbstractClassMetadataFactory
 {
     /** Salt used when computing a cache key for a class's metadata. */
-    protected string $cacheSalt = '__CLASSMETADATA__';
+    //protected string $cacheSalt = '__CLASSMETADATA__';
 
     private CacheItemPoolInterface|null $cache = null;
 
@@ -40,10 +40,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         $this->cache = $cache;
     }
 
-    protected function getCache(): CacheItemPoolInterface|null
-    {
-        return $this->cache;
-    }
+//    protected function getCache(): CacheItemPoolInterface|null
+//    {
+//        return $this->cache;
+//    }
 
     /** @return array<class-string, ClassMetadata<object>> */
     public function getLoadedMetadata(): array
@@ -225,7 +225,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      *
      * @return list<string>
      */
-    private function loadMetadata(string $name): array
+    /*private*/ protected function loadMetadata(string $name): array
     {
         if (! $this->initialized) {
             $this->initialize();
