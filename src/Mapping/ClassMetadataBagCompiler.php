@@ -137,31 +137,34 @@ final class ClassMetadataBagCompiler extends AbstractClassMetadataFactory implem
 
         $this->building[$className] = true;
 
-        $parent          = null;
-        $rootEntityFound = false;
-        $visited         = [];
+        try {
+            $parent = null;
+            $rootEntityFound = false;
+            $visited = [];
 
-        foreach ($this->getParentClasses($className) as $ancestorClassName) {
-            $parent = $this->buildOne($ancestorClassName);
+            foreach ($this->getParentClasses($className) as $ancestorClassName) {
+                $parent = $this->buildOne($ancestorClassName);
 
-            if ($this->isEntity($parent)) {
-                $rootEntityFound = true;
-                array_unshift($visited, $ancestorClassName);
+                if ($this->isEntity($parent)) {
+                    $rootEntityFound = true;
+                    array_unshift($visited, $ancestorClassName);
+                }
             }
+
+            $reflService = $this->getReflectionService();
+            $class = $this->newClassMetadataInstance($className);
+            $this->initializeReflection($class, $reflService);
+
+            $this->doLoadMetadata($class, $parent, $rootEntityFound, $visited);
+
+            $this->built[$className] = $class;
+
+            $this->wakeupReflection($class, $reflService);
+
+            return $this->built[$className];
+        } finally {
+            unset($this->building[$className]);
         }
-
-        $reflService = $this->getReflectionService();
-        $class       = $this->newClassMetadataInstance($className);
-        $this->initializeReflection($class, $reflService);
-
-        $this->doLoadMetadata($class, $parent, $rootEntityFound, $visited);
-
-        $this->built[$className] = $class;
-        unset($this->building[$className]);
-
-        $this->wakeupReflection($class, $reflService);
-
-        return $this->built[$className];
     }
 
     private function unsupported(string $method): LogicException
