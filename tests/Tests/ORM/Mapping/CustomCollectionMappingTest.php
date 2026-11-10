@@ -18,6 +18,7 @@ use Doctrine\Tests\Models\CustomCollection\BookList;
 use Doctrine\Tests\Models\CustomCollection\Library;
 use Doctrine\Tests\Models\CustomCollection\Tag;
 use Doctrine\Tests\Models\CustomCollection\TagCollection;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 use Traversable;
 
@@ -133,10 +134,13 @@ final class CustomCollectionMappingTest extends TestCase
 
     public function testCollectionClassInnerPropertyMustNotBeReadonly(): void
     {
-        $this->expectException(MappingException::class);
-        $this->expectExceptionMessage('must not be readonly');
-
-        $this->mapBooksWithCollectionClass(ReadonlyPropertyCollection::class);
+        try {
+            $this->mapBooksWithCollectionClass(ReadonlyPropertyCollection::class);
+            self::fail('A MappingException was expected.');
+        } catch (MappingException $e) {
+            self::assertStringContainsString('must not be readonly', $e->getMessage());
+            self::assertInstanceOf(LogicException::class, $e->getPrevious());
+        }
     }
 
     public function testCollectionClassIsOnlyAllowedOnToManyAssociations(): void

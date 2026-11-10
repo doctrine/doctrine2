@@ -1455,7 +1455,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             try {
                 DelegateCollectionPropertyAccessor::resolveInnerProperty($mapping['collectionClass']);
             } catch (LogicException $e) {
-                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], $e->getMessage());
+                throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], $e->getMessage(), $e);
             }
         }
 
