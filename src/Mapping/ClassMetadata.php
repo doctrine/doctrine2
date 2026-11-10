@@ -919,7 +919,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 ? PropertyAccessorFactory::createPropertyAccessor($mapping->declared, $field)
                 : PropertyAccessorFactory::createPropertyAccessor($this->name, $field);
 
-            if (($mapping instanceof ToManyOwningSideMapping || $mapping instanceof ToManyInverseSideMapping) && $mapping->collectionClass !== null) {
+            if ($mapping->isToMany() && $mapping->collectionClass !== null) {
                 $this->propertyAccessors[$field] = new DelegateCollectionPropertyAccessor(
                     $this->propertyAccessors[$field],
                     $mapping->collectionClass,
