@@ -58,7 +58,7 @@ abstract class AbstractDelegateCollection extends AbstractLazyCollection impleme
 
     private function doAdd(mixed $value): void
     {
-        $this->getDelegatee()->add($value);
+        ($this->collection ?? $this->getDelegatee())->add($value);
     }
 
     /**
