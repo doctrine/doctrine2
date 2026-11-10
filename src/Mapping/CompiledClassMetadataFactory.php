@@ -19,8 +19,15 @@ use function str_contains;
  * Serves metadata from a {@see ReadonlyClassMetadataBag} snapshot. Once built or supplied,
  * the snapshot is complete and read-only; this class itself never touches
  * the mapping driver.
+ *
+ * @internal Extends {@see ClassMetadataFactory} instead of {@see AbstractClassMetadataFactory}
+ *     only so that {@see \Doctrine\ORM\EntityManagerInterface::getMetadataFactory()} can return an
+ *     instance without widening its return type, which would be a breaking change. Every public
+ *     method of {@see ClassMetadataFactory} is overridden; its own driver/PSR-6-cache machinery is
+ *     unused. Once that return type can widen to {@see ClassMetadataFactoryInterface} in a future
+ *     major version, this should extend {@see AbstractClassMetadataFactory} directly instead.
  */
-final class CompiledClassMetadataFactory extends AbstractClassMetadataFactory
+final class CompiledClassMetadataFactory extends ClassMetadataFactory
 {
     private ClassMetadataBag|null $classMetadatas = null;
 
@@ -39,7 +46,7 @@ final class CompiledClassMetadataFactory extends AbstractClassMetadataFactory
      * Without an injected cache, {@see getClassMetadatas()} builds its snapshot ad hoc on first
      * use and forgets it again once this factory instance is discarded.
      */
-    public function setCache(ClassMetadatasCache $cache): void
+    public function setSnapshotCache(ClassMetadatasCache $cache): void
     {
         $this->cache = $cache;
     }

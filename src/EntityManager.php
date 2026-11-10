@@ -18,8 +18,10 @@ use Doctrine\ORM\Exception\MissingMappingDriverImplementation;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Exception\UnrecognizedIdentifierFields;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
+use Doctrine\ORM\Mapping\Cache\FileClassMetadatasCache;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\CompiledClassMetadataFactory;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Query\Expr;
@@ -133,6 +135,7 @@ class EntityManager implements EntityManagerInterface
         $this->metadataFactory->setEntityManager($this);
 
         $this->configureMetadataCache();
+        $this->configureCompiledMetadataCache();
 
         $this->repositoryFactory = $config->getRepositoryFactory();
         $this->unitOfWork        = new UnitOfWork($this);
@@ -650,6 +653,16 @@ class EntityManager implements EntityManagerInterface
         }
 
         $this->metadataFactory->setCache($metadataCache);
+    }
+
+    private function configureCompiledMetadataCache(): void
+    {
+        $cacheDir = $this->config->getMetadataCacheDir();
+        if ($cacheDir === null || ! $this->metadataFactory instanceof CompiledClassMetadataFactory) {
+            return;
+        }
+
+        $this->metadataFactory->setSnapshotCache(new FileClassMetadatasCache($cacheDir));
     }
 
     private function createCustomHydrator(string $hydrationMode): AbstractHydrator
