@@ -1434,7 +1434,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
 
         if (isset($mapping['collectionClass'])) {
-            $mapping['collectionClass'] = ltrim($mapping['collectionClass'], '\\');
+            $mapping['collectionClass'] = ltrim($this->fullyQualifiedClassName((string) $mapping['collectionClass']), '\\');
 
             if (! ($mapping['type'] & self::TO_MANY)) {
                 throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'only to-many associations support a custom collection class');

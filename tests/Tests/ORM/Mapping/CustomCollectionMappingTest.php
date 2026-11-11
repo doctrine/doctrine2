@@ -69,6 +69,13 @@ final class CustomCollectionMappingTest extends TestCase
         self::assertSame(TagCollection::class, $resurrected->associationMappings['tags']->collectionClass);
     }
 
+    public function testRelativeCollectionClassIsResolvedInTheEntityNamespace(): void
+    {
+        $class = $this->mapBooksWithCollectionClass('BookList');
+
+        self::assertSame(BookList::class, $class->associationMappings['books']->collectionClass);
+    }
+
     public function testCollectionClassMustExist(): void
     {
         $this->expectException(MappingException::class);
@@ -185,7 +192,8 @@ final class CustomCollectionMappingTest extends TestCase
         );
     }
 
-    private function mapBooksWithCollectionClass(string $collectionClass): void
+    /** @return ClassMetadata<Library> */
+    private function mapBooksWithCollectionClass(string $collectionClass): ClassMetadata
     {
         $class = new ClassMetadata(Library::class);
         $class->initializeReflection(new RuntimeReflectionService());
@@ -198,6 +206,8 @@ final class CustomCollectionMappingTest extends TestCase
                 'collectionClass' => $collectionClass,
             ],
         );
+
+        return $class;
     }
 }
 
