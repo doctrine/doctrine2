@@ -79,6 +79,17 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         self::assertSame($collection, $holder->tags->getDelegatee());
     }
 
+    public function testSetValueAssignsACustomCollection(): void
+    {
+        $holder       = new TaggedHolder();
+        $holder->tags = new NamedTagCollection('old');
+        $new          = new NamedTagCollection('new');
+
+        $this->createAccessor()->setValue($holder, $new);
+
+        self::assertSame($new, $holder->tags);
+    }
+
     public function testSetValueRejectsAnotherCollectionClass(): void
     {
         $holder       = new CollectionTypedHolder();

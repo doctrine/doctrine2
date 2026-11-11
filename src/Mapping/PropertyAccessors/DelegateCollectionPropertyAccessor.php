@@ -53,14 +53,18 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
 
     public function setValue(object $object, mixed $value): void
     {
+        // A custom collection replaces the current one, e.g. through ClassMetadata::setFieldValue()
+        if ($value instanceof DelegateCollection) {
+            $this->assertMappedClass($value);
+            $this->parent->setValue($object, $value);
+
+            return;
+        }
+
         $current = $this->parent->getValue($object);
 
-        // The ORM instantiates the mapped class when loading the entity:
-        // another custom collection would only live until the entity is reloaded
-        if ($current instanceof DelegateCollection && ! $current instanceof $this->collectionClass->name) {
-            $property = $this->parent->getUnderlyingReflector();
-
-            throw ORMInvalidArgumentException::unexpectedCollectionClass($property->class, $property->name, $this->collectionClass->name, $current);
+        if ($current instanceof DelegateCollection) {
+            $this->assertMappedClass($current);
         }
 
         if ($current instanceof DelegateCollection && ! self::isOwnedByAnotherEntity($current, $object)) {
@@ -73,6 +77,23 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
         $delegate = $this->collectionClass->newInstanceWithoutConstructor();
         $this->innerProperty->setValue($delegate, $value);
         $this->parent->setValue($object, $delegate);
+    }
+
+    /**
+     * The ORM instantiates the mapped class when loading the entity:
+     * another custom collection would only live until the entity is reloaded.
+     *
+     * @param DelegateCollection<array-key, mixed> $collection
+     */
+    private function assertMappedClass(DelegateCollection $collection): void
+    {
+        if ($collection instanceof $this->collectionClass->name) {
+            return;
+        }
+
+        $property = $this->parent->getUnderlyingReflector();
+
+        throw ORMInvalidArgumentException::unexpectedCollectionClass($property->class, $property->name, $this->collectionClass->name, $collection);
     }
 
     public function getUnderlyingReflector(): ReflectionProperty
