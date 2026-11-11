@@ -109,6 +109,13 @@ final class CustomCollectionMappingTest extends TestCase
         $this->mapBooksWithCollectionClass(RequiresConstructorArgumentsCollection::class);
     }
 
+    public function testCollectionClassConstructorMayBePrivate(): void
+    {
+        $this->expectNotToPerformAssertions();
+
+        $this->mapBooksWithCollectionClass(PrivateConstructorCollection::class);
+    }
+
     public function testCollectionPropertyMayBeDeclaredPrivateByAParentClass(): void
     {
         $this->expectNotToPerformAssertions();
@@ -189,6 +196,20 @@ final class RequiresConstructorArgumentsCollection extends AbstractDelegateColle
     public function __construct(private readonly string $name)
     {
         parent::__construct();
+    }
+}
+
+/** @template-extends AbstractDelegateCollection<array-key, Tag> */
+final class PrivateConstructorCollection extends AbstractDelegateCollection
+{
+    private function __construct()
+    {
+        parent::__construct();
+    }
+
+    public static function empty(): self
+    {
+        return new self();
     }
 }
 

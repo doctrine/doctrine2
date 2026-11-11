@@ -1448,7 +1448,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], sprintf('the class does not implement the %s interface', DelegateCollection::class));
             }
 
-            if (! (new ReflectionClass($mapping['collectionClass']))->isInstantiable()) {
+            // Like entities, the class is instantiated without calling its constructor, which may be private
+            $collectionReflection = new ReflectionClass($mapping['collectionClass']);
+            if ($collectionReflection->isInterface() || $collectionReflection->isAbstract()) {
                 throw MappingException::invalidCollectionClass($this->name, $mapping['fieldName'], $mapping['collectionClass'], 'the class is not instantiable, declare a concrete class with the collectionClass mapping option');
             }
 
