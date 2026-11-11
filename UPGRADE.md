@@ -80,6 +80,16 @@ private Collection $phonenumbers;
 For a composite foreign key, only one of the `#[JoinColumn]` attributes may specify
 `foreignKeyName`.
 
+## Not using the schema editor API is deprecated
+
+When `doctrine/dbal` 4.5 or higher is installed, not using the schema editor
+API is deprecated and will not be possible in Doctrine ORM 4.0. You can enable
+it through configuration:
+
+```php
+$configuration->setUseSchemaEditorApi(true);
+```
+
 ## Deprecate custom column platform options in mapping `options`
 
 Any key of the `options` of a field, join column or discriminator column mapping

@@ -176,8 +176,18 @@ class Configuration extends \Doctrine\DBAL\Configuration
     public function setUseSchemaEditorApi(bool $useSchemaEditorApi): void
     {
         /** @phpstan-ignore function.alreadyNarrowedType (This API is not always available) */
-        if ($useSchemaEditorApi && ! method_exists(Schema::class, 'edit')) {
+        $schemaEditorApiIsAvailable = method_exists(Schema::class, 'edit');
+
+        if ($useSchemaEditorApi && ! $schemaEditorApiIsAvailable) {
             throw new LogicException('Using the schema editor API requires doctrine/dbal 4.5 or higher.');
+        }
+
+        if (! $useSchemaEditorApi && $schemaEditorApiIsAvailable) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/pull/12780',
+                'Disabling the schema editor API is deprecated and will be impossible in Doctrine ORM 4.0.',
+            );
         }
 
         $this->attributes['use_schema_editor_api'] = $useSchemaEditorApi;
