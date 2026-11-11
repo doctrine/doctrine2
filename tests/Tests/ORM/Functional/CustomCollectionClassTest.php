@@ -14,6 +14,7 @@ use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Tools\DebugUnitOfWorkListener;
+use Doctrine\Tests\Models\CustomCollection\Article;
 use Doctrine\Tests\Models\CustomCollection\Book;
 use Doctrine\Tests\Models\CustomCollection\BookList;
 use Doctrine\Tests\Models\CustomCollection\Library;
@@ -38,7 +39,7 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        $this->createSchemaForModels(Library::class, Book::class, Tag::class, Shelf::class);
+        $this->createSchemaForModels(Library::class, Book::class, Tag::class, Shelf::class, Article::class);
     }
 
     private function createLibrary(): Library
@@ -234,6 +235,29 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
 
         self::assertEqualsCanonicalizing([BookList::class, TagCollection::class], $factory->created);
         self::assertSame(['Astronomy', 'Zoology'], $loaded->getBooks()->titles());
+    }
+
+    public function testCustomCollectionDeclaredInAMappedSuperclass(): void
+    {
+        $article = new Article();
+        $article->getTags()->add(new Tag('php'));
+        $this->_em->persist($article);
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $loaded = $this->_em->find(Article::class, $article->id);
+        assert($loaded instanceof Article);
+
+        self::assertSame(['php'], $loaded->getTags()->names());
+
+        $loaded->getTags()->add(new Tag('js'));
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $reloaded = $this->_em->find(Article::class, $article->id);
+        assert($reloaded instanceof Article);
+
+        self::assertEqualsCanonicalizing(['php', 'js'], $reloaded->getTags()->names());
     }
 
     public function testInverseSideManyToManyUsesCustomCollection(): void
