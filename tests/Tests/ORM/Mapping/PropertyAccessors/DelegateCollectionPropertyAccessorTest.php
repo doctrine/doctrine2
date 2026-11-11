@@ -7,6 +7,9 @@ namespace Doctrine\Tests\ORM\Mapping\PropertyAccessors;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Collection\AbstractDelegateCollection;
+use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
+use Doctrine\ORM\Collection\DelegateCollection;
+use Doctrine\ORM\Collection\DelegateCollectionFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\ORMInvalidArgumentException;
@@ -108,6 +111,50 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         ));
 
         $accessor->setValue($holder, new ArrayCollection());
+    }
+
+    public function testSetValueCreatesTheInstanceThroughTheFactory(): void
+    {
+        $holder   = new TaggedHolder();
+        $created  = new NamedTagCollection('from factory');
+        $accessor = $this->createAccessor();
+        $accessor->setCollectionFactory(new class ($created) implements DelegateCollectionFactory {
+            public function __construct(private readonly DelegateCollection $created)
+            {
+            }
+
+            public function create(string $collectionClass): DelegateCollection
+            {
+                return $this->created;
+            }
+        });
+
+        $accessor->setValue($holder, new ArrayCollection());
+
+        self::assertSame($created, $holder->tags);
+    }
+
+    public function testSetValueRejectsAFactoryCreatingAnotherCollectionClass(): void
+    {
+        $accessor = $this->createAccessor();
+        $accessor->setCollectionFactory(new class implements DelegateCollectionFactory {
+            public function create(string $collectionClass): DelegateCollection
+            {
+                return new TagCollection();
+            }
+        });
+
+        $this->expectException(ORMInvalidArgumentException::class);
+
+        $accessor->setValue(new TaggedHolder(), new ArrayCollection());
+    }
+
+    public function testDefaultFactoryDoesNotCallTheConstructor(): void
+    {
+        self::assertInstanceOf(
+            NamedTagCollection::class,
+            (new DefaultDelegateCollectionFactory())->create(NamedTagCollection::class),
+        );
     }
 }
 

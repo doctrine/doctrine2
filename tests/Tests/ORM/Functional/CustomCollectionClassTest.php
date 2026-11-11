@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Collections\Criteria;
+use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
+use Doctrine\ORM\Collection\DelegateCollection;
+use Doctrine\ORM\Collection\DelegateCollectionFactory;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Events;
@@ -204,6 +208,32 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
 
         self::assertEqualsCanonicalizing(['php', 'js'], $loadedSource->getTags()->names());
         self::assertEqualsCanonicalizing(['php', 'js', 'rust'], $loadedCopy->getTags()->names());
+    }
+
+    public function testDelegateCollectionFactoryCreatesTheCollectionsOfLoadedEntities(): void
+    {
+        $library = $this->createLibrary();
+
+        $factory = new class implements DelegateCollectionFactory {
+            /** @var list<class-string> */
+            public array $created = [];
+
+            public function create(string $collectionClass): DelegateCollection
+            {
+                $this->created[] = $collectionClass;
+
+                return (new DefaultDelegateCollectionFactory())->create($collectionClass);
+            }
+        };
+        $config  = $this->_em->getConfiguration();
+        $config->setDelegateCollectionFactory($factory);
+        $em = new EntityManager($this->_em->getConnection(), $config, $this->_em->getEventManager());
+
+        $loaded = $em->find(Library::class, $library->id);
+        assert($loaded instanceof Library);
+
+        self::assertEqualsCanonicalizing([BookList::class, TagCollection::class], $factory->created);
+        self::assertSame(['Astronomy', 'Zoology'], $loaded->getBooks()->titles());
     }
 
     public function testInverseSideManyToManyUsesCustomCollection(): void

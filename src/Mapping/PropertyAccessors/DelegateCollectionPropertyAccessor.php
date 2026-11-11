@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping\PropertyAccessors;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
 use Doctrine\ORM\Collection\DelegateCollection;
+use Doctrine\ORM\Collection\DelegateCollectionFactory;
 use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
 use LogicException;
@@ -28,15 +30,19 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     /** @var array<class-string, ReflectionProperty> */
     private static array $innerProperties = [];
 
-    /** @var ReflectionClass<DelegateCollection<array-key, mixed>> */
-    private readonly ReflectionClass $collectionClass;
     private readonly ReflectionProperty $innerProperty;
+    private DelegateCollectionFactory $collectionFactory;
 
     /** @param class-string<DelegateCollection<array-key, mixed>> $collectionClass */
-    public function __construct(private readonly PropertyAccessor $parent, string $collectionClass)
+    public function __construct(private readonly PropertyAccessor $parent, private readonly string $collectionClass)
     {
-        $this->collectionClass = new ReflectionClass($collectionClass);
-        $this->innerProperty   = self::resolveInnerProperty($collectionClass);
+        $this->innerProperty     = self::resolveInnerProperty($collectionClass);
+        $this->collectionFactory = new DefaultDelegateCollectionFactory();
+    }
+
+    public function setCollectionFactory(DelegateCollectionFactory $collectionFactory): void
+    {
+        $this->collectionFactory = $collectionFactory;
     }
 
     public function getValue(object $object): mixed
@@ -75,8 +81,8 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
             return;
         }
 
-        // Like entities, the instance is created without calling its constructor
-        $delegate = $this->collectionClass->newInstanceWithoutConstructor();
+        $delegate = $this->collectionFactory->create($this->collectionClass);
+        $this->assertMappedClass($delegate);
         $this->innerProperty->setValue($delegate, $value);
         $this->parent->setValue($object, $delegate);
     }
@@ -89,13 +95,13 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
      */
     private function assertMappedClass(DelegateCollection $collection): void
     {
-        if ($collection instanceof $this->collectionClass->name) {
+        if ($collection instanceof $this->collectionClass) {
             return;
         }
 
         $property = $this->parent->getUnderlyingReflector();
 
-        throw ORMInvalidArgumentException::unexpectedCollectionClass($property->class, $property->name, $this->collectionClass->name, $collection);
+        throw ORMInvalidArgumentException::unexpectedCollectionClass($property->class, $property->name, $this->collectionClass, $collection);
     }
 
     public function getUnderlyingReflector(): ReflectionProperty

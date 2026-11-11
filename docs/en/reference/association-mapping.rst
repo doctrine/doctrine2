@@ -1131,7 +1131,8 @@ A custom collection class must follow these rules:
   and write performed by the class must go through it. State kept outside of
   it (plain arrays, cached copies of ``toArray()`` results, ...) is invisible
   to the ORM and will not be persisted. In particular, state initialized only
-  in the constructor is not available on loaded entities.
+  in the constructor is not available on loaded entities, unless a collection
+  factory initializes it (see below).
 - It must read the underlying collection from the property on each call: do
   not keep it in another property or a closure, as the ORM replaces it on the
   first flush and on refresh.
@@ -1178,3 +1179,56 @@ similar methods return a new plain collection, never a ``CommentCollection``.
     ``PersistentCollection``, exactly as for plain collections; read the
     property of the owner (``$collection->getOwner()``) to get the custom
     object.
+
+When a custom collection needs dependencies, for instance a class filtering
+the elements for the current tenant, configure a
+``Doctrine\ORM\Collection\DelegateCollectionFactory``. The ORM calls it
+whenever it creates a custom collection itself, when it loads an entity for
+instance; the instance created by the constructor of a new entity is kept as
+is. The default factory creates the instance without calling its constructor.
+Whatever the factory, the ORM then puts the managed collection in the
+``$collection`` property of the instance.
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\Common\Collections\ArrayCollection;
+    use Doctrine\Common\Collections\Collection;
+    use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
+    use Doctrine\ORM\Collection\DelegateCollection;
+    use Doctrine\ORM\Collection\DelegateCollectionFactory;
+
+    final class DocumentList implements DelegateCollection
+    {
+        public function __construct(
+            private readonly TenantContext $tenant,
+            private Collection $collection = new ArrayCollection(),
+        ) {
+        }
+
+        public function getIterator(): Traversable
+        {
+            return $this->collection
+                ->filter(fn (Document $document) => $document->getTenant() === $this->tenant->getCurrent())
+                ->getIterator();
+        }
+    }
+
+    final class TenantAwareCollectionFactory implements DelegateCollectionFactory
+    {
+        public function __construct(
+            private readonly TenantContext $tenant,
+            private readonly DelegateCollectionFactory $default = new DefaultDelegateCollectionFactory(),
+        ) {
+        }
+
+        public function create(string $collectionClass): DelegateCollection
+        {
+            return match ($collectionClass) {
+                DocumentList::class => new DocumentList($this->tenant),
+                default => $this->default->create($collectionClass),
+            };
+        }
+    }
+
+    $config->setDelegateCollectionFactory(new TenantAwareCollectionFactory($tenantContext));

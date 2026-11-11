@@ -9,6 +9,8 @@ use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Cache\SecondLevelCachePlugin;
+use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
+use Doctrine\ORM\Collection\DelegateCollectionFactory;
 use Doctrine\ORM\Exception\InvalidEntityRepository;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -584,6 +586,19 @@ class Configuration extends \Doctrine\DBAL\Configuration
     public function getRepositoryFactory(): RepositoryFactory
     {
         return $this->attributes['repositoryFactory'] ?? new DefaultRepositoryFactory();
+    }
+
+    /**
+     * Sets the factory creating the custom collections of loaded entities.
+     */
+    public function setDelegateCollectionFactory(DelegateCollectionFactory $delegateCollectionFactory): void
+    {
+        $this->attributes['delegateCollectionFactory'] = $delegateCollectionFactory;
+    }
+
+    public function getDelegateCollectionFactory(): DelegateCollectionFactory
+    {
+        return $this->attributes['delegateCollectionFactory'] ??= new DefaultDelegateCollectionFactory();
     }
 
     public function isSecondLevelCacheEnabled(): bool

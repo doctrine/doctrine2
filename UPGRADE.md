@@ -57,6 +57,11 @@ cascades keep working as with plain collections. See the "Custom Collection
 Classes" section of the association mapping documentation for details and
 limitations.
 
+When loading an entity, the ORM creates its custom collections without calling
+their constructor. To inject dependencies into them, configure a
+`Doctrine\ORM\Collection\DelegateCollectionFactory` with
+`Configuration::setDelegateCollectionFactory()`.
+
 ## BC BREAK: Second level cache requires `doctrine/orm-plugin-second-level-cache`
 
 To use the second level cache, you must now install an additional package:
