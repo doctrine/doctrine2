@@ -184,6 +184,28 @@ class CustomCollectionClassTest extends OrmFunctionalTestCase
         self::assertSame('sql', $reloaded->getTags()->get('sql')->name, 'indexBy must be honored.');
     }
 
+    public function testCustomCollectionWrappingAnotherEntityCollectionDoesNotShareIt(): void
+    {
+        $source = $this->createLibrary();
+
+        $copy = new Library('Copy');
+        $copy->replaceTags(new TagCollection($source->getTags()));
+        $this->_em->persist($copy);
+        $this->_em->flush();
+
+        $copy->addTag(new Tag('rust'));
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $loadedSource = $this->_em->find(Library::class, $source->id);
+        assert($loadedSource instanceof Library);
+        $loadedCopy = $this->_em->find(Library::class, $copy->id);
+        assert($loadedCopy instanceof Library);
+
+        self::assertEqualsCanonicalizing(['php', 'js'], $loadedSource->getTags()->names());
+        self::assertEqualsCanonicalizing(['php', 'js', 'rust'], $loadedCopy->getTags()->names());
+    }
+
     public function testInverseSideManyToManyUsesCustomCollection(): void
     {
         $library = $this->createLibrary();

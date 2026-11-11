@@ -41,7 +41,14 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     {
         $value = $this->parent->getValue($object);
 
-        return $value instanceof DelegateCollection ? self::readInnerCollection($value) : $value;
+        // A custom collection may wrap another one, e.g. new TagCollection($other->getTags()):
+        // expose the managed collection at the bottom, so that the UnitOfWork copies it when
+        // it belongs to another entity
+        while ($value instanceof DelegateCollection) {
+            $value = self::readInnerCollection($value);
+        }
+
+        return $value;
     }
 
     public function setValue(object $object, mixed $value): void

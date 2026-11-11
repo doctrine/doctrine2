@@ -63,6 +63,11 @@ class Library
         $this->books = $books;
     }
 
+    public function replaceTags(TagCollection $tags): void
+    {
+        $this->tags = $tags;
+    }
+
     public function addTag(Tag $tag): void
     {
         $this->tags->set($tag->name, $tag);
