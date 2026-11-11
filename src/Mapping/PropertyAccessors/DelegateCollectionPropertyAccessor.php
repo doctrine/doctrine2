@@ -9,7 +9,6 @@ use Doctrine\ORM\Collection\DelegateCollection;
 use Doctrine\ORM\PersistentCollection;
 use LogicException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionNamedType;
 use ReflectionProperty;
 
@@ -97,14 +96,21 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
      */
     public static function resolveInnerProperty(string $collectionClass): ReflectionProperty
     {
-        try {
-            $property = new ReflectionProperty($collectionClass, 'collection');
-        } catch (ReflectionException $e) {
+        $class = new ReflectionClass($collectionClass);
+
+        // A private property declared by a parent class is only visible from that class
+        while (! $class->hasProperty('collection') && $class->getParentClass() !== false) {
+            $class = $class->getParentClass();
+        }
+
+        if (! $class->hasProperty('collection')) {
             throw new LogicException(sprintf(
                 'the class must declare a $collection property typed as %s to hold the underlying collection',
                 Collection::class,
-            ), previous: $e);
+            ));
         }
+
+        $property = $class->getProperty('collection');
 
         $type = $property->getType();
 

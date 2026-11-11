@@ -16,6 +16,7 @@ use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\CustomCollection\Book;
 use Doctrine\Tests\Models\CustomCollection\BookList;
 use Doctrine\Tests\Models\CustomCollection\Library;
+use Doctrine\Tests\Models\CustomCollection\LibraryList;
 use Doctrine\Tests\Models\CustomCollection\Tag;
 use Doctrine\Tests\Models\CustomCollection\TagCollection;
 use LogicException;
@@ -106,6 +107,13 @@ final class CustomCollectionMappingTest extends TestCase
         $this->expectNotToPerformAssertions();
 
         $this->mapBooksWithCollectionClass(RequiresConstructorArgumentsCollection::class);
+    }
+
+    public function testCollectionPropertyMayBeDeclaredPrivateByAParentClass(): void
+    {
+        $this->expectNotToPerformAssertions();
+
+        $this->mapBooksWithCollectionClass(LibraryList::class);
     }
 
     public function testCollectionClassMustDeclareACollectionProperty(): void
