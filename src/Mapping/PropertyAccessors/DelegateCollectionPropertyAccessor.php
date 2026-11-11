@@ -15,6 +15,8 @@ use ReflectionProperty;
 
 use function sprintf;
 
+use const PHP_VERSION_ID;
+
 /**
  * Exposes the managed collection to the ORM while the entity holds its custom
  * collection object, which stays the same for the whole entity lifetime.
@@ -154,6 +156,11 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
 
         if ($property->isReadOnly()) {
             throw new LogicException('the $collection property must not be readonly');
+        }
+
+        // Reflection runs hooks, while the ORM must read and write the collection itself
+        if (PHP_VERSION_ID >= 80400 && $property->hasHooks()) {
+            throw new LogicException('the $collection property must not have hooks');
         }
 
         return $property;

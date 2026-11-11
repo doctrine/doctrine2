@@ -19,7 +19,9 @@ use Doctrine\Tests\Models\CustomCollection\Library;
 use Doctrine\Tests\Models\CustomCollection\LibraryList;
 use Doctrine\Tests\Models\CustomCollection\Tag;
 use Doctrine\Tests\Models\CustomCollection\TagCollection;
+use Doctrine\Tests\Models\PropertyHooks\HookedCollection;
 use LogicException;
+use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Traversable;
 
@@ -155,6 +157,15 @@ final class CustomCollectionMappingTest extends TestCase
             self::assertStringContainsString('must not be readonly', $e->getMessage());
             self::assertInstanceOf(LogicException::class, $e->getPrevious());
         }
+    }
+
+    #[RequiresPhp('>= 8.4.0')]
+    public function testCollectionClassInnerPropertyMustNotHaveHooks(): void
+    {
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage('the $collection property must not have hooks');
+
+        $this->mapBooksWithCollectionClass(HookedCollection::class);
     }
 
     public function testCollectionClassIsOnlyAllowedOnToManyAssociations(): void

@@ -1123,8 +1123,8 @@ A custom collection class must follow these rules:
 - It must implement the ``Doctrine\ORM\Collection\DelegateCollection``
   marker interface (which extends ``IteratorAggregate``, so custom
   collections are always iterable).
-- It must declare a non-static, non-readonly ``$collection`` property whose
-  type is exactly ``Collection`` (nullable allowed): the ORM reads and writes
+- It must declare a non-static, non-readonly ``$collection`` property without
+  hooks, whose type is exactly ``Collection`` (nullable allowed): the ORM reads and writes
   the managed collection in that property through reflection. The class may
   declare other properties for its own state.
 - That property is the single source of truth for the elements: every read
