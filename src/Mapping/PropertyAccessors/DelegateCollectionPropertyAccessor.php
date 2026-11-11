@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Mapping\PropertyAccessors;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Collection\DelegateCollection;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
 use LogicException;
 use ReflectionClass;
@@ -53,6 +54,14 @@ final class DelegateCollectionPropertyAccessor implements PropertyAccessor
     public function setValue(object $object, mixed $value): void
     {
         $current = $this->parent->getValue($object);
+
+        // The ORM instantiates the mapped class when loading the entity:
+        // another custom collection would only live until the entity is reloaded
+        if ($current instanceof DelegateCollection && ! $current instanceof $this->collectionClass->name) {
+            $property = $this->parent->getUnderlyingReflector();
+
+            throw ORMInvalidArgumentException::unexpectedCollectionClass($property->class, $property->name, $this->collectionClass->name, $current);
+        }
 
         if ($current instanceof DelegateCollection && ! self::isOwnedByAnotherEntity($current, $object)) {
             $this->innerProperty->setValue($current, $value);

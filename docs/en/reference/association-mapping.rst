@@ -1106,7 +1106,9 @@ with the ``collectionClass`` mapping option when the property has a broader
 type, for instance ``Collection`` with a custom class extending
 ``AbstractDelegateCollection``. The equivalent XML mapping uses the
 ``collection-class`` attribute on ``<one-to-many />`` and ``<many-to-many />``
-elements.
+elements. As the ORM instantiates that class when loading the entity, the
+property must hold an instance of it or of a subclass: any other custom
+collection is rejected on flush.
 
 .. note::
 

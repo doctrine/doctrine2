@@ -9,10 +9,14 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Collection\AbstractDelegateCollection;
 use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\Tests\Models\CustomCollection\Shelf;
 use Doctrine\Tests\Models\CustomCollection\Tag;
+use Doctrine\Tests\Models\CustomCollection\TagCollection;
 use Doctrine\Tests\OrmTestCase;
+
+use function sprintf;
 
 class DelegateCollectionPropertyAccessorTest extends OrmTestCase
 {
@@ -74,11 +78,37 @@ class DelegateCollectionPropertyAccessorTest extends OrmTestCase
         self::assertSame($owned, $shared->getDelegatee(), 'The other entity keeps its collection.');
         self::assertSame($collection, $holder->tags->getDelegatee());
     }
+
+    public function testSetValueRejectsAnotherCollectionClass(): void
+    {
+        $holder       = new CollectionTypedHolder();
+        $holder->tags = new TagCollection();
+        $accessor     = new DelegateCollectionPropertyAccessor(
+            PropertyAccessorFactory::createPropertyAccessor(CollectionTypedHolder::class, 'tags'),
+            NamedTagCollection::class,
+        );
+
+        $this->expectException(ORMInvalidArgumentException::class);
+        $this->expectExceptionMessage(sprintf(
+            'Expected value of type "%s" for association field "%s#$tags", got "%s" instead.',
+            NamedTagCollection::class,
+            CollectionTypedHolder::class,
+            TagCollection::class,
+        ));
+
+        $accessor->setValue($holder, new ArrayCollection());
+    }
 }
 
 class TaggedHolder
 {
     public NamedTagCollection $tags;
+}
+
+class CollectionTypedHolder
+{
+    /** @var Collection<array-key, Tag> */
+    public Collection $tags;
 }
 
 /** @template-extends AbstractDelegateCollection<array-key, Tag> */
