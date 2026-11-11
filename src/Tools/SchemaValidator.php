@@ -22,8 +22,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMapping;
-use Doctrine\ORM\Mapping\ToManyInverseSideMapping;
-use Doctrine\ORM\Mapping\ToManyOwningSideMapping;
 use ReflectionEnum;
 use ReflectionNamedType;
 
@@ -145,7 +143,7 @@ class SchemaValidator
                         'This effectively makes the association one-to-one; use a one-to-one association instead or add another identifier field.';
             }
 
-            if ($assoc instanceof ToManyOwningSideMapping || $assoc instanceof ToManyInverseSideMapping) {
+            if ($this->validatePropertyTypes && $assoc->isToMany()) {
                 array_push($ce, ...$this->validateCollectionPropertyType($class, $fieldName, $assoc->collectionClass));
             }
 

@@ -134,6 +134,14 @@ class SchemaValidatorTest extends OrmTestCase
         );
     }
 
+    public function testCollectionPropertyTypeIsNotCheckedWhenPropertyTypesAreSkipped(): void
+    {
+        $validator = new SchemaValidator($this->em, false);
+        $class     = $this->em->getClassMetadata(CustomCollectionWithIncompatibleProperty::class);
+
+        self::assertSame([], $validator->validateClass($class));
+    }
+
     public function testValidManyToOneAsPartOfCompositeIdentifier(): void
     {
         $class = $this->em->getClassMetadata(ValidCompositeIdentifier::class);
