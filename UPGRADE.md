@@ -29,6 +29,27 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## `PersistentCollection::set()` now removes the replaced element with orphan removal
+
+With `orphanRemoval: true`, replacing an element through `set()` now deletes
+the replaced element on the next flush, just like `remove()` does. Before, the
+replaced element was silently kept. It is not deleted when it is still part
+of the collection under another key, or when it is added to a collection
+again after the replacement.
+
+## Deletions colliding with insertions on a unique constraint run first
+
+When a single `flush()` deletes an entity and inserts another one with the
+same values for a unique constraint declared in the mapping, the deletion now
+runs before the insertions instead of failing with a unique constraint
+violation. This only happens when no insertion or update in the same flush
+still references the deleted entity. Deletions that reference it, for example
+cascade-removed children, run early together with it. All other deletions still
+run last.
+
+For these early deletions, `postRemove` is dispatched before the
+`postPersist` events of the same flush.
+
 ## BC BREAK: Second level cache requires `doctrine/orm-plugin-second-level-cache`
 
 To use the second level cache, you must now install an additional package:

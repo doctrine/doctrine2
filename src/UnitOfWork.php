@@ -35,6 +35,8 @@ use Doctrine\ORM\Internal\HydrationCompleteHandler;
 use Doctrine\ORM\Internal\StronglyConnectedComponents;
 use Doctrine\ORM\Internal\TopologicalSort;
 use Doctrine\ORM\Internal\TypeProviderLocator;
+use Doctrine\ORM\Internal\UnitOfWork\ConstraintEdgePlanner;
+use Doctrine\ORM\Internal\UnitOfWork\EarlyDeletionPlanner;
 use Doctrine\ORM\Internal\UnitOfWork\InsertBatch;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -369,11 +371,13 @@ class UnitOfWork implements PropertyChangedListener
      *
      * The operations are executed in the following order:
      *
-     * 1) All entity insertions
-     * 2) All entity updates
-     * 3) All collection deletions
-     * 4) All collection updates
-     * 5) All entity deletions
+     * 1) All collection deletions
+     * 2) Entity deletions colliding with a pending insertion on a unique constraint,
+     *    together with the deletions referencing them
+     * 3) All entity insertions
+     * 4) All entity updates, plus any extra updates requested by persisters
+     * 5) All collection updates
+     * 6) All entity deletions
      *
      * @throws Exception
      */
@@ -431,6 +435,11 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
+            $earlyDeletions = $this->computeEarlyDeletions();
+            if ($earlyDeletions !== []) {
+                $this->executeDeletions($earlyDeletions);
+            }
+
             if ($this->entityInsertions) {
                 // Perform entity insertions first, so that all new entities have their rows in the database
                 // and can be referred to by foreign keys. The commit order only needs to take new entities
@@ -464,7 +473,7 @@ class UnitOfWork implements PropertyChangedListener
             // Entity deletions come last. Their order only needs to take care of other deletions
             // (first delete entities depending upon others, before deleting depended-upon entities).
             if ($this->entityDeletions) {
-                $this->executeDeletions();
+                $this->executeDeletions($this->entityDeletions);
             }
 
             $commitFailed = false;
@@ -1296,12 +1305,59 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /**
-     * Executes all entity deletions
-     */
-    private function executeDeletions(): void
+    /** @return list<object> */
+    private function computeEarlyDeletions(): array
     {
-        $entities         = $this->computeDeleteExecutionOrder();
+        if ($this->entityDeletions === [] || $this->entityInsertions === []) {
+            return [];
+        }
+
+        $candidates = array_values($this->entityDeletions);
+
+        // Collection deletions are not considered, they already ran at the start of the commit.
+        $manyToManyTargetClasses = [];
+        $manyToManyOwnerIds      = [];
+        foreach ($this->collectionUpdates as $collection) {
+            $mapping = $collection->getMapping();
+            if (! $mapping->isManyToManyOwningSide()) {
+                continue;
+            }
+
+            $owner = $collection->getOwner();
+            if ($owner !== null) {
+                $manyToManyOwnerIds[spl_object_id($owner)] = true;
+            }
+
+            $manyToManyTargetClasses[$mapping->targetEntity] = true;
+        }
+
+        foreach (array_keys($manyToManyTargetClasses) as $targetClass) {
+            foreach ($this->em->getClassMetadata($targetClass)->subClasses as $subClass) {
+                $manyToManyTargetClasses[$subClass] = true;
+            }
+        }
+
+        $planner = new EarlyDeletionPlanner(
+            fn (string $class): ClassMetadata => $this->em->getClassMetadata($class),
+            $this->em->getConnection()->getDatabasePlatform(),
+        );
+
+        return $planner->planEarlyDeletions(
+            $candidates,
+            $this->entityInsertions,
+            $this->entityUpdates,
+            $this->entityDeletions,
+            $this->originalEntityData,
+            $this->entityChangeSets,
+            $manyToManyTargetClasses,
+            $manyToManyOwnerIds,
+        );
+    }
+
+    /** @param array<int, object> $deletions */
+    private function executeDeletions(array $deletions): void
+    {
+        $entities         = $this->computeDeleteExecutionOrder($deletions);
         $eventsToDispatch = [];
 
         foreach ($entities as $entity) {
@@ -1431,13 +1487,17 @@ class UnitOfWork implements PropertyChangedListener
         return $entities;
     }
 
-    /** @return list<object> */
-    private function computeDeleteExecutionOrder(): array
+    /**
+     * @param array<int, object> $deletions
+     *
+     * @return list<object>
+     */
+    private function computeDeleteExecutionOrder(array $deletions): array
     {
         $stronglyConnectedComponents = new StronglyConnectedComponents();
         $sort                        = new TopologicalSort();
 
-        foreach ($this->entityDeletions as $entity) {
+        foreach ($deletions as $entity) {
             $stronglyConnectedComponents->addNode($entity);
             $sort->addNode($entity);
         }
@@ -1447,7 +1507,7 @@ class UnitOfWork implements PropertyChangedListener
         // in such a group, _all_ of the other entities will be removed as well. So,
         // we need to treat those groups like a single entity when performing delete
         // order topological sorting.
-        foreach ($this->entityDeletions as $entity) {
+        foreach ($deletions as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
 
             foreach ($class->associationMappings as $assoc) {
@@ -1484,7 +1544,7 @@ class UnitOfWork implements PropertyChangedListener
         $stronglyConnectedComponents->findStronglyConnectedComponents();
 
         // Now do the actual topological sorting to find the delete order.
-        foreach ($this->entityDeletions as $entity) {
+        foreach ($deletions as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
 
             // Get the entities representing the SCC
