@@ -1243,6 +1243,25 @@ class ClassMetadataTest extends OrmTestCase
         self::assertSame(['username', 'name'], $cm->identifier);
         self::assertSame(['username' => 0, 'name' => 0], $cm->identifierPositions);
     }
+
+    public function testWakeupReflectionRestoresNamingStrategyAndTypedFieldMapper(): void
+    {
+        $cm = new ClassMetadata(UserTyped::class);
+        $cm->initializeReflection(new RuntimeReflectionService());
+        $cm->mapField(['fieldName' => 'id', 'id' => true]);
+
+        $cm = unserialize(serialize($cm));
+        assert($cm instanceof ClassMetadata);
+        $cm->wakeupReflection(new RuntimeReflectionService());
+
+        $cm->mapField(['fieldName' => 'username']);
+        $cm->mapManyToOne(['fieldName' => 'mainEmail']);
+
+        self::assertSame(Types::STRING, $cm->getTypeOfField('username'));
+        self::assertSame('username', $cm->getColumnName('username'));
+        self::assertSame(CmsEmail::class, $cm->getAssociationTargetClass('mainEmail'));
+        self::assertSame('mainEmail_id', $cm->getSingleAssociationJoinColumnName('mainEmail'));
+    }
 }
 
 #[MappedSuperclass]
