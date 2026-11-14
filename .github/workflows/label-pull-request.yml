@@ -1,0 +1,38 @@
+name: "Label pull request"
+
+# Runs with secrets against pull requests from forks, so it must never check
+# out or execute the pull request head. This action only reads the event
+# payload and installs its own pinned code.
+on:
+  pull_request_target:
+    types:
+      - "opened"
+  workflow_dispatch:
+    inputs:
+      number:
+        description: "Pull request number to label when triggering manually"
+        required: true
+        type: "string"
+
+permissions:
+  contents: "read"
+  issues: "write"
+  pull-requests: "read"
+
+concurrency:
+  group: "label-pull-request-${{ github.event.pull_request.number || inputs.number }}"
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: "Label pull request"
+    permissions:
+      contents: "read"
+      issues: "write"
+      pull-requests: "write"
+    uses: "doctrine/.github/.github/workflows/label-pull-request.yml@d478e0a0ed754f7078575aa686c617c28d054c40"
+    with:
+      number: "${{ inputs.number }}"
+      endpoint: "https://opencode.ai/inference/systemone/v1/systemone"
+    secrets:
+      JEV_API_KEY: "${{ secrets.JEV_API_KEY }}"
