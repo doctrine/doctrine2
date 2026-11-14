@@ -196,7 +196,7 @@ final class CursorPaginator implements PaginatorInterface
     {
         $em         = $query->getEntityManager();
         $connection = $em->getConnection();
-        $metadata   = $em->getMetadataFactory()->hasMetadataFor($item::class)
+        $metadata   = $em->getMetadataFactory()->isMapped($item::class)
             ? $em->getClassMetadata($item::class)
             : null;
 

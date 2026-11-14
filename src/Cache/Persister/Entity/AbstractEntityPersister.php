@@ -40,6 +40,11 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     use CompatOrderings;
 
     protected UnitOfWork $uow;
+
+    /**
+     * A future major version will widen this property's type to `ClassMetadataFactoryInterface`;
+     * subclasses redeclaring this property should prepare for that change.
+     */
     protected ClassMetadataFactory $metadataFactory;
 
     /** @var mixed[] */

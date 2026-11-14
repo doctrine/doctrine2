@@ -28,6 +28,11 @@ use function count;
 abstract class AbstractCollectionPersister implements CachedCollectionPersister
 {
     protected UnitOfWork $uow;
+
+    /**
+     * A future major version will widen this property's type to `ClassMetadataFactoryInterface`;
+     * subclasses redeclaring this property should prepare for that change.
+     */
     protected ClassMetadataFactory $metadataFactory;
     protected ClassMetadata $sourceEntity;
     protected ClassMetadata $targetEntity;

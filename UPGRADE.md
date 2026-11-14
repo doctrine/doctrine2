@@ -215,6 +215,29 @@ seen in an earlier row was yielded as an incomplete array without its own fields
 Subclasses of `ArrayHydrator` that override the deprecated `hydrateRowData()`
 keep the previous behavior.
 
+## New `Doctrine\ORM\Mapping\ClassMetadataFactoryInterface`
+
+`ClassMetadataFactory` now implements a new `ClassMetadataFactoryInterface`, the ORM-specific
+contract for a class metadata factory. `EntityManagerInterface::getMetadataFactory()` still
+declares a return type of the concrete `ClassMetadataFactory` class, but a future major version
+will widen it to `ClassMetadataFactoryInterface`. Code that calls `getMetadataFactory()` and
+type-hints the result can switch to `ClassMetadataFactoryInterface` now to prepare for that
+change.
+
+This also affects the (rare) case of custom persisters extending `AbstractEntityPersister` or
+`AbstractCollectionPersister`: their protected `$metadataFactory` property will widen to
+`ClassMetadataFactoryInterface` in a future major version. Methods receiving this property's
+value can accept `ClassMetadataFactoryInterface` already now. Subclasses that redeclare the
+property must keep `ClassMetadataFactory` until the parent property's type changes.
+
+## Deprecated `ClassMetadataFactory::getOwningSide()`
+
+Resolving an association's owning side moves out of the metadata factory and
+into a static helper. Use `Doctrine\ORM\Utility\OwningSideResolver::resolve()`
+instead, passing the metadata factory and the mapping:
+`OwningSideResolver::resolve($em->getMetadataFactory(), $mapping)` replaces
+`$em->getMetadataFactory()->getOwningSide($mapping)`.
+
 # Upgrade to 3.7
 
 ## `postLoad` is deferred until the outermost hydration has finished

@@ -43,6 +43,12 @@ interface EntityManagerInterface extends ObjectManager
      */
     public function getConnection(): Connection;
 
+    /**
+     * Gets the metadata factory used to gather the metadata of classes.
+     *
+     * A future major version will widen this method's return type to `ClassMetadataFactoryInterface`;
+     * type-hint against that interface instead to prepare for the change.
+     */
     public function getMetadataFactory(): ClassMetadataFactory;
 
     /**

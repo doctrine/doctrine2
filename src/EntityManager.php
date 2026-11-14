@@ -159,6 +159,13 @@ class EntityManager implements EntityManagerInterface
         return $this->conn;
     }
 
+    /**
+     * Gets the metadata factory used to gather the metadata of classes.
+     *
+     * A future major version will widen this method's return type to
+     * `ClassMetadataFactoryInterface`; type-hint against that interface instead to
+     * prepare for the change.
+     */
     public function getMetadataFactory(): ClassMetadataFactory
     {
         return $this->metadataFactory;
@@ -220,6 +227,8 @@ class EntityManager implements EntityManagerInterface
      * Internal note: Performance-sensitive method.
      *
      * {@inheritDoc}
+     *
+     * @param class-string $className
      */
     public function getClassMetadata(string $className): Mapping\ClassMetadata
     {
@@ -301,7 +310,7 @@ class EntityManager implements EntityManagerInterface
         foreach ($id as $i => $value) {
             if (is_object($value)) {
                 $className = DefaultProxyClassNameResolver::getClass($value);
-                if ($this->metadataFactory->hasMetadataFor($className)) {
+                if ($this->metadataFactory->isMapped($className)) {
                     $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
 
                     if ($id[$i] === null) {
