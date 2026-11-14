@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST\Functions;
 
 use Doctrine\ORM\Query\AST\AggregateExpression;
+use Doctrine\ORM\Query\AST\AggregateNode;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 
 /**
  * "SUM" "(" ["DISTINCT"] StringPrimary ")"
  */
-final class SumFunction extends FunctionNode
+final class SumFunction extends FunctionNode implements AggregateNode
 {
     private AggregateExpression $aggregateExpression;
 
