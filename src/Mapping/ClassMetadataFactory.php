@@ -19,6 +19,7 @@ use Doctrine\ORM\Id\IdentityGenerator;
 use Doctrine\ORM\Id\SequenceGenerator;
 use Doctrine\ORM\Mapping\Exception\InvalidCustomGenerator;
 use Doctrine\ORM\Mapping\Exception\UnknownGeneratorType;
+use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
@@ -729,6 +730,14 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
         $class->wakeupReflection($reflService);
+
+        $delegateCollectionFactory = $this->em->getConfiguration()->getDelegateCollectionFactory();
+
+        foreach ($class->propertyAccessors as $propertyAccessor) {
+            if ($propertyAccessor instanceof DelegateCollectionPropertyAccessor) {
+                $propertyAccessor->setCollectionFactory($delegateCollectionFactory);
+            }
+        }
 
         if (PHP_VERSION_ID < 80400) {
             return;

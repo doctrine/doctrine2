@@ -9,6 +9,7 @@ use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\Mapping\MappingException as PersistenceMappingException;
 use LibXMLError;
 use ReflectionException;
+use Throwable;
 use ValueError;
 
 use function array_keys;
@@ -548,6 +549,22 @@ class MappingException extends PersistenceMappingException implements ORMExcepti
     public static function invalidFetchMode(string $className, string $fetchMode): self
     {
         return new self("Entity '" . $className . "' has a mapping with invalid fetch mode '" . $fetchMode . "'");
+    }
+
+    public static function invalidCollectionClass(
+        string $entityName,
+        string $fieldName,
+        string $collectionClass,
+        string $reason,
+        Throwable|null $previous = null,
+    ): self {
+        return new self(sprintf(
+            "Invalid collection class '%s' on association '%s#%s': %s.",
+            $collectionClass,
+            $entityName,
+            $fieldName,
+            $reason,
+        ), previous: $previous);
     }
 
     public static function invalidGeneratedMode(int|string $generatedMode): self

@@ -33,6 +33,18 @@ class OneToManyAssociationBuilder extends AssociationBuilder
         return $this;
     }
 
+    /**
+     * @param class-string $className
+     *
+     * @return $this
+     */
+    public function setCollectionClass(string $className): static
+    {
+        $this->mapping['collectionClass'] = $className;
+
+        return $this;
+    }
+
     public function build(): ClassMetadataBuilder
     {
         $mapping = $this->mapping;

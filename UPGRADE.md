@@ -29,6 +29,39 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## Custom collection classes for to-many associations
+
+The new `collectionClass` mapping option on `#[OneToMany]` and `#[ManyToMany]`
+(`collection-class` in XML) allows exposing an association through a
+user-defined collection class carrying domain-specific methods. The class must
+implement the new `Doctrine\ORM\Collection\DelegateCollection` marker interface; the
+optional base class `Doctrine\ORM\Collection\AbstractDelegateCollection` can be
+extended to get the full `Collection` API for free. The option can be omitted when the property is typed with the custom class: the ORM infers it from the property type.
+
+```php
+#[Entity]
+class Library
+{
+    #[OneToMany(targetEntity: Book::class, mappedBy: 'library')]
+    private BookList $books;
+
+    public function getBooks(): BookList
+    {
+        return $this->books;
+    }
+}
+```
+
+Lazy loading, `EXTRA_LAZY` behavior, change tracking, orphan removal and
+cascades keep working as with plain collections. See the "Custom Collection
+Classes" section of the association mapping documentation for details and
+limitations.
+
+When loading an entity, the ORM creates its custom collections without calling
+their constructor. To inject dependencies into them, configure a
+`Doctrine\ORM\Collection\DelegateCollectionFactory` with
+`Configuration::setDelegateCollectionFactory()`.
+
 ## BC BREAK: Second level cache requires `doctrine/orm-plugin-second-level-cache`
 
 To use the second level cache, you must now install an additional package:

@@ -16,6 +16,7 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\TypeProvider;
 use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
+use Doctrine\ORM\Collection\DelegateCollection;
 use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnClearEventArgs;
 use Doctrine\ORM\Event\OnFlushEventArgs;
@@ -29,6 +30,7 @@ use Doctrine\ORM\Event\PreRemoveEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Exception\EntityIdentityCollisionException;
 use Doctrine\ORM\Exception\ORMException;
+use Doctrine\ORM\Exception\SharedCollection;
 use Doctrine\ORM\Exception\UnexpectedAssociationValue;
 use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Internal\HydrationCompleteHandler;
@@ -39,6 +41,7 @@ use Doctrine\ORM\Internal\UnitOfWork\InsertBatch;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\PropertyAccessors\DelegateCollectionPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\ReadonlyAccessor;
 use Doctrine\ORM\Mapping\ToManyInverseSideMapping;
@@ -637,6 +640,10 @@ class UnitOfWork implements PropertyChangedListener
             if ($class->isCollectionValuedAssociation($name) && $value !== null) {
                 if ($value instanceof PersistentCollection) {
                     if ($value->getOwner() === $entity) {
+                        if ($value->getMapping()->fieldName !== $name) {
+                            throw SharedCollection::betweenAssociations($class->name, $name, $value->getMapping()->fieldName);
+                        }
+
                         $actualData[$name] = $value;
                         continue;
                     }
@@ -3339,6 +3346,10 @@ class UnitOfWork implements PropertyChangedListener
             $obj->__load();
 
             return;
+        }
+
+        if ($obj instanceof DelegateCollection) {
+            $obj = DelegateCollectionPropertyAccessor::readInnerCollection($obj) ?? $obj;
         }
 
         if ($obj instanceof PersistentCollection) {

@@ -6,6 +6,7 @@ namespace Doctrine\Tests\ORM\Mapping;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
+use Doctrine\ORM\Collection\AbstractDelegateCollection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
@@ -397,6 +398,7 @@ abstract class MappingDriverTestCase extends OrmTestCase
         self::assertFalse($class->associationMappings['phonenumbers']->isCascadeRefresh());
         self::assertFalse($class->associationMappings['phonenumbers']->isCascadeDetach());
         self::assertTrue($class->associationMappings['phonenumbers']->orphanRemoval);
+        self::assertSame(PhonenumberCollection::class, $class->associationMappings['phonenumbers']->collectionClass);
 
         // Test Order By
         self::assertEquals(['number' => SortDirection::Ascending], $class->associationMappings['phonenumbers']->orderBy);
@@ -461,6 +463,7 @@ abstract class MappingDriverTestCase extends OrmTestCase
         self::assertTrue($class->associationMappings['groups']->isCascadeDetach());
 
         self::assertFalse($class->associationMappings['groups']->isOrdered());
+        self::assertNull($class->associationMappings['groups']->collectionClass);
 
         return $class;
     }
@@ -1056,7 +1059,7 @@ class User
     public $address;
 
     /** @var Collection<int, Phonenumber> */
-    #[ORM\OneToMany(targetEntity: 'Phonenumber', mappedBy: 'user', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: 'Phonenumber', mappedBy: 'user', cascade: ['persist'], orphanRemoval: true, collectionClass: PhonenumberCollection::class)]
     #[ORM\OrderBy(['number' => SortDirection::Ascending])]
     public $phonenumbers;
 
@@ -1172,6 +1175,7 @@ class User
                 'orphanRemoval' => true,
                 'orderBy' =>
                 ['number' => SortDirection::Ascending],
+                'collectionClass' => PhonenumberCollection::class,
             ],
         );
         $metadata->mapManyToMany(
@@ -1513,6 +1517,11 @@ class Address
 {
 }
 class Phonenumber
+{
+}
+
+/** @template-extends AbstractDelegateCollection<array-key, Phonenumber> */
+final class PhonenumberCollection extends AbstractDelegateCollection
 {
 }
 class Group

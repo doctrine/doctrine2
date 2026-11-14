@@ -1024,3 +1024,211 @@ been associated with an EntityManager yet:
     $group = new Group();
     $user = new User();
     $user->getGroups()->add($group);
+
+.. _custom_collection_classes:
+
+Custom Collection Classes
+-------------------------
+
+.. versionadded:: 3.8
+
+By default, the ORM exposes to-many associations as instances of
+``Doctrine\ORM\PersistentCollection``, an implementation of the
+``Collection`` interface that takes care of lazy loading and change
+tracking. An association can instead be exposed through a collection class
+of your own that carries domain-specific methods:
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\Common\Collections\ArrayCollection;
+    use Doctrine\Common\Collections\Collection;
+    use Doctrine\ORM\Collection\DelegateCollection;
+
+    final class BookList implements DelegateCollection, IteratorAggregate, Countable
+    {
+        public function __construct(private Collection $collection = new ArrayCollection())
+        {
+        }
+
+        public function getIterator(): Traversable
+        {
+            return $this->collection->getIterator();
+        }
+
+        public function count(): int
+        {
+            return $this->collection->count();
+        }
+
+        public function addBook(Book $book): void
+        {
+            $this->collection->add($book);
+        }
+
+        /** @return list<string> */
+        public function titles(): array
+        {
+            return $this->collection->map(static fn (Book $book) => $book->getTitle())->getValues();
+        }
+    }
+
+    #[Entity]
+    class Library
+    {
+        #[OneToMany(targetEntity: Book::class, mappedBy: 'library')]
+        private BookList $books;
+
+        public function __construct()
+        {
+            $this->books = new BookList();
+        }
+
+        public function getBooks(): BookList
+        {
+            return $this->books;
+        }
+    }
+
+The property always holds a ``BookList``, including for entities loaded from
+the database, so getters can be typed against it. The ORM only manages the
+collection inside it: on the first flush, it replaces the ``ArrayCollection``
+created by the constructor with a ``PersistentCollection``, and when it loads
+the entity, it creates the ``BookList`` without calling its constructor, like
+entities, and puts a ``PersistentCollection`` in it. Because every operation
+of the custom class goes through that collection, lazy loading,
+``EXTRA_LAZY`` behavior, change tracking, orphan removal and cascades keep
+working exactly as with plain collections.
+
+The custom class is inferred from the property type when it is a class
+implementing ``DelegateCollection``, whatever the mapping driver. Declare it
+with the ``collectionClass`` mapping option when the property has a broader
+type, for instance ``Collection`` with a custom class extending
+``AbstractDelegateCollection``. The equivalent XML mapping uses the
+``collection-class`` attribute on ``<one-to-many />`` and ``<many-to-many />``
+elements. As the ORM instantiates that class when loading the entity, the
+property must hold an instance of it or of a subclass: any other custom
+collection is rejected on flush.
+
+.. note::
+
+    The ``collectionClass`` option and the ``collection-class`` attribute have
+    the same names as in Doctrine MongoDB ODM, but work differently: ODM
+    requires the class to implement ``Collection`` and generates a persistent
+    subclass of it, while the ORM puts the managed collection inside an
+    instance of your class, through the ``DelegateCollection`` contract.
+
+A custom collection class must follow these rules:
+
+- It must implement the ``Doctrine\ORM\Collection\DelegateCollection``
+  marker interface (which extends ``IteratorAggregate``, so custom
+  collections are always iterable).
+- It must declare a non-static, non-readonly ``$collection`` property without
+  hooks, whose type is exactly ``Collection`` (nullable allowed): the ORM reads and writes
+  the managed collection in that property through reflection. The class may
+  declare other properties for its own state.
+- That property is the single source of truth for the elements: every read
+  and write performed by the class must go through it. State kept outside of
+  it (plain arrays, cached copies of ``toArray()`` results, ...) is invisible
+  to the ORM and will not be persisted. In particular, state initialized only
+  in the constructor is not available on loaded entities, unless a collection
+  factory initializes it (see below).
+- It must read the underlying collection from the property on each call: do
+  not keep it in another property or a closure, as the ORM replaces it on the
+  first flush and on refresh.
+
+The custom class is deliberately **not** required to implement the
+``Collection`` interface: it is free to expose only the API that makes sense
+for your domain. If you do want the full ``Collection`` API without writing
+forwarding methods, extend the convenience base class
+``Doctrine\ORM\Collection\AbstractDelegateCollection``, which implements both
+``DelegateCollection`` and ``Collection`` and forwards every method. Its
+mutating methods are ``final`` and always write to the underlying collection;
+put domain rules in your own methods, such as ``addComment()`` below:
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\ORM\Collection\AbstractDelegateCollection;
+
+    /** @template-extends AbstractDelegateCollection<int, Comment> */
+    final class CommentCollection extends AbstractDelegateCollection
+    {
+        public function addComment(Comment $comment): void
+        {
+            if ($comment->isSpam()) {
+                throw new InvalidArgumentException('Spam comments are rejected.');
+            }
+
+            $this->add($comment);
+        }
+
+        public function enabled(): Collection
+        {
+            return $this->filter(static fn (Comment $comment) => $comment->isEnabled());
+        }
+    }
+
+As with plain collections, ``filter()``, ``map()``, ``matching()`` and
+similar methods return a new plain collection, never a ``CommentCollection``.
+
+.. note::
+
+    Listeners and the ``UnitOfWork`` API (change sets, ``PreUpdateEventArgs``,
+    original entity data, scheduled collection updates) see the underlying
+    ``PersistentCollection``, exactly as for plain collections; read the
+    property of the owner (``$collection->getOwner()``) to get the custom
+    object.
+
+When a custom collection needs dependencies, for instance a class filtering
+the elements for the current tenant, configure a
+``Doctrine\ORM\Collection\DelegateCollectionFactory``. The ORM calls it
+whenever it creates a custom collection itself, when it loads an entity for
+instance; the instance created by the constructor of a new entity is kept as
+is. The default factory creates the instance without calling its constructor.
+Whatever the factory, the ORM then puts the managed collection in the
+``$collection`` property of the instance.
+
+.. code-block:: php
+
+    <?php
+    use Doctrine\Common\Collections\ArrayCollection;
+    use Doctrine\Common\Collections\Collection;
+    use Doctrine\ORM\Collection\DefaultDelegateCollectionFactory;
+    use Doctrine\ORM\Collection\DelegateCollection;
+    use Doctrine\ORM\Collection\DelegateCollectionFactory;
+
+    final class DocumentList implements DelegateCollection
+    {
+        public function __construct(
+            private readonly TenantContext $tenant,
+            private Collection $collection = new ArrayCollection(),
+        ) {
+        }
+
+        public function getIterator(): Traversable
+        {
+            return $this->collection
+                ->filter(fn (Document $document) => $document->getTenant() === $this->tenant->getCurrent())
+                ->getIterator();
+        }
+    }
+
+    final class TenantAwareCollectionFactory implements DelegateCollectionFactory
+    {
+        public function __construct(
+            private readonly TenantContext $tenant,
+            private readonly DelegateCollectionFactory $default = new DefaultDelegateCollectionFactory(),
+        ) {
+        }
+
+        public function create(string $collectionClass): DelegateCollection
+        {
+            return match ($collectionClass) {
+                DocumentList::class => new DocumentList($this->tenant),
+                default => $this->default->create($collectionClass),
+            };
+        }
+    }
+
+    $config->setDelegateCollectionFactory(new TenantAwareCollectionFactory($tenantContext));

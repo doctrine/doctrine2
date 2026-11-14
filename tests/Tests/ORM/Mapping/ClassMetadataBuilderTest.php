@@ -20,6 +20,7 @@ use Doctrine\ORM\Mapping\OneToOneOwningSideMapping;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\CMS\CmsGroup;
 use Doctrine\Tests\Models\CMS\CmsUser;
+use Doctrine\Tests\Models\CustomCollection\TagCollection;
 use Doctrine\Tests\Models\ValueObjects\Name;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Group;
@@ -626,6 +627,18 @@ class ClassMetadataBuilderTest extends OrmTestCase
             ],
             $this->cm->associationMappings,
         );
+    }
+
+    public function testCreateOneToManyWithCollectionClass(): void
+    {
+        $this->assertIsFluent(
+            $this->builder->createOneToMany('groups', CmsGroup::class)
+                        ->mappedBy('test')
+                        ->setCollectionClass(TagCollection::class)
+                        ->build(),
+        );
+
+        self::assertSame(TagCollection::class, $this->cm->associationMappings['groups']->collectionClass);
     }
 
     #[IgnoreDeprecations]

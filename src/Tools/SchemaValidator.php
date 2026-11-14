@@ -143,6 +143,10 @@ class SchemaValidator
                         'This effectively makes the association one-to-one; use a one-to-one association instead or add another identifier field.';
             }
 
+            if ($this->validatePropertyTypes && $assoc->isToMany()) {
+                array_push($ce, ...$this->validateCollectionPropertyType($class, $fieldName, $assoc->collectionClass));
+            }
+
             if (isset($assoc->id) && $targetMetadata->containsForeignIdentifier) {
                 $ce[] = "Cannot map association '" . $class->name . '#' . $fieldName . ' as identifier, because ' .
                         "the target entity '" . $targetMetadata->name . "' also maps an association as identifier.";
@@ -311,6 +315,27 @@ class SchemaValidator
         }
 
         return $ce;
+    }
+
+    /**
+     * @param class-string|null $collectionClass
+     * @phpstan-param ClassMetadata<object> $class
+     *
+     * @return list<string> containing the found issues
+     */
+    private function validateCollectionPropertyType(ClassMetadata $class, string $fieldName, string|null $collectionClass): array
+    {
+        $propertyType = $class->propertyAccessors[$fieldName]->getUnderlyingReflector()->getType();
+
+        if ($collectionClass === null || ! $propertyType instanceof ReflectionNamedType || $propertyType->isBuiltin()) {
+            return [];
+        }
+
+        $propertyType = $propertyType->getName();
+
+        return is_a($collectionClass, $propertyType, true)
+            ? []
+            : ["The property '" . $class->name . '#' . $fieldName . "' is typed '" . $propertyType . "', which does not accept its collection class '" . $collectionClass . "'."];
     }
 
     /**
