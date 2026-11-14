@@ -234,7 +234,7 @@ class DefaultCache implements Cache
     {
         if (is_object($identifier)) {
             $class = DefaultProxyClassNameResolver::getClass($identifier);
-            if ($this->em->getMetadataFactory()->hasMetadataFor($class)) {
+            if ($this->em->getMetadataFactory()->isMapped($class)) {
                 $identifier = $this->uow->getSingleIdentifierValue($identifier)
                     ?? throw ORMInvalidArgumentException::invalidIdentifierBindingEntity($class);
             }

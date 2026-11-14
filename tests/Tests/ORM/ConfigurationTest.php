@@ -11,6 +11,7 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Exception\InvalidEntityRepository;
 use Doctrine\ORM\Mapping as MappingNamespace;
+use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\DefaultTypedFieldMapper;
 use Doctrine\ORM\Mapping\EntityListenerResolver;
 use Doctrine\ORM\Mapping\NamingStrategy;
@@ -157,8 +158,8 @@ class ConfigurationTest extends TestCase
     public function testSetGetClassMetadataFactoryName(): void
     {
         self::assertSame(MappingNamespace\ClassMetadataFactory::class, $this->configuration->getClassMetadataFactoryName());
-        $this->configuration->setClassMetadataFactoryName(self::class);
-        self::assertSame(self::class, $this->configuration->getClassMetadataFactoryName());
+        $this->configuration->setClassMetadataFactoryName(CustomClassMetadataFactory::class);
+        self::assertSame(CustomClassMetadataFactory::class, $this->configuration->getClassMetadataFactoryName());
     }
 
     public function testAddGetFilters(): void
@@ -240,4 +241,8 @@ class ConfigurationTest extends TestCase
 
         $this->configuration->setUseSchemaEditorApi(false);
     }
+}
+
+class CustomClassMetadataFactory extends ClassMetadataFactory
+{
 }

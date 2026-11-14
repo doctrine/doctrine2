@@ -161,6 +161,8 @@
         <exclude-pattern>src/EntityManagerInterface.php</exclude-pattern>
         <!-- the Paginator name is taken by the deprecated class until its removal in 4.0 -->
         <exclude-pattern>src/Tools/Pagination/PaginatorInterface.php</exclude-pattern>
+        <!-- the ClassMetadataFactory name is taken by the concrete, lazy implementation -->
+        <exclude-pattern>src/Mapping/ClassMetadataFactoryInterface.php</exclude-pattern>
     </rule>
 
     <rule ref="SlevomatCodingStandard.Classes.SuperfluousTraitNaming.SuperfluousSuffix"/>

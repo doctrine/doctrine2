@@ -20,6 +20,7 @@ use Doctrine\ORM\Mapping\QuoteStrategy;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Utility\HierarchyDiscriminatorResolver;
+use Doctrine\ORM\Utility\OwningSideResolver;
 use Doctrine\ORM\Utility\PersisterHelper;
 use InvalidArgumentException;
 use LogicException;
@@ -961,7 +962,7 @@ class SqlWalker
         $sourceTableAlias = $this->getSQLTableAlias($sourceClass->getTableName(), $associationPathExpression->identificationVariable);
 
         // Ensure we got the owning side, since it has all mapping info
-        $assoc = $this->em->getMetadataFactory()->getOwningSide($relation);
+        $assoc = OwningSideResolver::resolve($this->em->getMetadataFactory(), $relation);
 
         if ($this->query->getHint(Query::HINT_INTERNAL_ITERATION) === true && (! $this->query->getHint(self::HINT_DISTINCT) || isset($this->selectedClasses[$joinedDqlAlias]))) {
             if ($relation->isToMany()) {
@@ -2041,7 +2042,7 @@ class SqlWalker
         } else { // many-to-many
             $targetClass = $this->em->getClassMetadata($assoc->targetEntity);
 
-            $owningAssoc = $this->em->getMetadataFactory()->getOwningSide($assoc);
+            $owningAssoc = OwningSideResolver::resolve($this->em->getMetadataFactory(), $assoc);
             assert($owningAssoc->isManyToManyOwningSide());
             $joinTable = $owningAssoc->joinTable;
 

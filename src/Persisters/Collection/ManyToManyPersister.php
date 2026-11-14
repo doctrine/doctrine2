@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping\ManyToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\SqlValueVisitor;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\Utility\OwningSideResolver;
 use Doctrine\ORM\Utility\PersisterHelper;
 use SortDirection;
 
@@ -118,7 +119,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         $mapping     = $this->getMapping($collection);
         $id          = $this->uow->getEntityIdentifier($collection->getOwner());
         $sourceClass = $this->em->getClassMetadata($mapping->sourceEntity);
-        $association = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $association = OwningSideResolver::resolve($this->em->getMetadataFactory(), $mapping);
 
         $joinTableName = $this->quoteStrategy->getJoinTableName($association, $sourceClass, $this->platform);
         $joinColumns   = ! $mapping->isOwningSide()
@@ -233,7 +234,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
             $sourceRelationMode     = 'relationToSourceKeyColumns';
         }
 
-        $mapping = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $mapping = OwningSideResolver::resolve($this->em->getMetadataFactory(), $mapping);
 
         foreach ($mapping->$sourceRelationMode as $key => $value) {
             $whereClauses[] = sprintf('t.%s = ?', $key);
@@ -361,7 +362,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
      */
     protected function getOnConditionSQL(AssociationMapping $mapping): array
     {
-        $association = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $association = OwningSideResolver::resolve($this->em->getMetadataFactory(), $mapping);
         $joinColumns = $mapping->isOwningSide()
             ? $association->joinTable->inverseJoinColumns
             : $association->joinTable->joinColumns;
@@ -686,7 +687,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
             $targetId    = $this->uow->getEntityIdentifier($element);
         }
 
-        $mapping = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $mapping = OwningSideResolver::resolve($this->em->getMetadataFactory(), $mapping);
 
         $quotedJoinTable = $this->quoteStrategy->getJoinTableName($mapping, $sourceClass, $this->platform);
         $whereClauses    = [];

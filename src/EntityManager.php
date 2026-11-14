@@ -18,8 +18,10 @@ use Doctrine\ORM\Exception\MissingMappingDriverImplementation;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Exception\UnrecognizedIdentifierFields;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
+use Doctrine\ORM\Mapping\Cache\FileClassMetadatasCache;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
+use Doctrine\ORM\Mapping\CompiledClassMetadataFactory;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Query\Expr;
@@ -133,6 +135,7 @@ class EntityManager implements EntityManagerInterface
         $this->metadataFactory->setEntityManager($this);
 
         $this->configureMetadataCache();
+        $this->configureCompiledMetadataCache();
 
         $this->repositoryFactory = $config->getRepositoryFactory();
         $this->unitOfWork        = new UnitOfWork($this);
@@ -159,6 +162,13 @@ class EntityManager implements EntityManagerInterface
         return $this->conn;
     }
 
+    /**
+     * Gets the metadata factory used to gather the metadata of classes.
+     *
+     * A future major version will widen this method's return type to
+     * `ClassMetadataFactoryInterface`; type-hint against that interface instead to
+     * prepare for the change.
+     */
     public function getMetadataFactory(): ClassMetadataFactory
     {
         return $this->metadataFactory;
@@ -220,6 +230,8 @@ class EntityManager implements EntityManagerInterface
      * Internal note: Performance-sensitive method.
      *
      * {@inheritDoc}
+     *
+     * @param class-string $className
      */
     public function getClassMetadata(string $className): Mapping\ClassMetadata
     {
@@ -301,7 +313,7 @@ class EntityManager implements EntityManagerInterface
         foreach ($id as $i => $value) {
             if (is_object($value)) {
                 $className = DefaultProxyClassNameResolver::getClass($value);
-                if ($this->metadataFactory->hasMetadataFor($className)) {
+                if ($this->metadataFactory->isMapped($className)) {
                     $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
 
                     if ($id[$i] === null) {
@@ -641,6 +653,16 @@ class EntityManager implements EntityManagerInterface
         }
 
         $this->metadataFactory->setCache($metadataCache);
+    }
+
+    private function configureCompiledMetadataCache(): void
+    {
+        $cacheDir = $this->config->getMetadataCacheDir();
+        if ($cacheDir === null || ! $this->metadataFactory instanceof CompiledClassMetadataFactory) {
+            return;
+        }
+
+        $this->metadataFactory->setSnapshotCache(new FileClassMetadatasCache($cacheDir));
     }
 
     private function createCustomHydrator(string $hydrationMode): AbstractHydrator
