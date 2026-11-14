@@ -15,8 +15,11 @@ use const PHP_VERSION_ID;
 /** @internal */
 class ReadonlyAccessor implements PropertyAccessor
 {
-    public function __construct(private PropertyAccessor $parent, private ReflectionProperty $reflectionProperty)
-    {
+    public function __construct(
+        private PropertyAccessor $parent,
+        private ReflectionProperty $reflectionProperty,
+        private bool $identifier = false,
+    ) {
         if (! $this->reflectionProperty->isReadOnly()) {
             throw new InvalidArgumentException(sprintf(
                 '%s::$%s must be readonly property',
@@ -36,6 +39,12 @@ class ReadonlyAccessor implements PropertyAccessor
         ) {
             $this->parent->setValue($object, $value);
 
+            return;
+        }
+
+        // The identifier of a managed entity never changes; hydrating it again, as initializing
+        // a lazy object does, would only replace it with an equal but not identical instance.
+        if ($this->identifier) {
             return;
         }
 

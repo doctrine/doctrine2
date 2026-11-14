@@ -893,8 +893,8 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             }
 
             $this->propertyAccessors[$field] = isset($mapping->declared)
-                ? PropertyAccessorFactory::createPropertyAccessor($mapping->declared, $field)
-                : PropertyAccessorFactory::createPropertyAccessor($this->name, $field);
+                ? PropertyAccessorFactory::createPropertyAccessor($mapping->declared, $field, $mapping->id === true)
+                : PropertyAccessorFactory::createPropertyAccessor($this->name, $field, $mapping->id === true);
 
             if ($mapping->enumType !== null) {
                 $this->propertyAccessors[$field] = new EnumPropertyAccessor(

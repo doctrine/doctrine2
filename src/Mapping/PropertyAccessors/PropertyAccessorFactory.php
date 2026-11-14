@@ -11,8 +11,11 @@ use const PHP_VERSION_ID;
 class PropertyAccessorFactory
 {
     /** @phpstan-param class-string $className */
-    public static function createPropertyAccessor(string $className, string $propertyName): PropertyAccessor
-    {
+    public static function createPropertyAccessor(
+        string $className,
+        string $propertyName,
+        bool $identifier = false,
+    ): PropertyAccessor {
         $reflectionProperty = new ReflectionProperty($className, $propertyName);
 
         $accessor = PHP_VERSION_ID >= 80400
@@ -24,7 +27,7 @@ class PropertyAccessorFactory
         }
 
         if ($reflectionProperty->isReadOnly()) {
-            $accessor = new ReadonlyAccessor($accessor, $reflectionProperty);
+            $accessor = new ReadonlyAccessor($accessor, $reflectionProperty, $identifier);
         }
 
         return $accessor;
