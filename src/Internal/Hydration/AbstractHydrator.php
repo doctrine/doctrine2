@@ -12,6 +12,7 @@ use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
+use Doctrine\ORM\HydrationObserver;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query;
@@ -179,6 +180,22 @@ abstract class AbstractHydrator
      */
     final public function toIterable(Result $stmt, ResultSetMapping $resultSetMapping, array $hints = []): Generator
     {
+        $configuration = $this->em->getConfiguration();
+        $observer      = $configuration->getHydrationObserver();
+        $results       = $this->iterateRows($stmt, $resultSetMapping, $hints);
+
+        return $observer === null
+            ? $results
+            : $this->observeIteration($results, $observer, $resultSetMapping);
+    }
+
+    /**
+     * @param array<string, mixed> $hints
+     *
+     * @return Generator<array-key, mixed>
+     */
+    private function iterateRows(Result $stmt, ResultSetMapping $resultSetMapping, array $hints): Generator
+    {
         $this->stmt      = $stmt;
         $this->rsm       = $resultSetMapping;
         $this->hints     = [Query::HINT_INTERNAL_ITERATION => true] + $hints;
@@ -232,6 +249,41 @@ abstract class AbstractHydrator
         } finally {
             $this->uow->enterHydration();
             $this->finishHydration();
+        }
+    }
+
+    /**
+     * @param Generator<array-key, mixed> $results
+     *
+     * @return Generator<array-key, mixed>
+     */
+    private function observeIteration(Generator $results, HydrationObserver $observer, ResultSetMapping $resultSetMapping): Generator
+    {
+        $entityClasses = $resultSetMapping->aliasMap;
+        $first         = true;
+
+        while (true) {
+            $observer->start(static::class, $entityClasses);
+
+            $resultCount = null;
+
+            try {
+                if (! $first) {
+                    $results->next();
+                }
+
+                $resultCount = (int) $results->valid();
+            } finally {
+                $observer->end($resultCount);
+            }
+
+            if ($resultCount === 0) {
+                return;
+            }
+
+            $first = false;
+
+            yield $results->key() => $results->current();
         }
     }
 
@@ -305,6 +357,9 @@ abstract class AbstractHydrator
      */
     public function hydrateAll(Result $stmt, ResultSetMapping $resultSetMapping, array $hints = []): mixed
     {
+        $configuration = $this->em->getConfiguration();
+        $observer      = $configuration->getHydrationObserver();
+
         $this->stmt  = $stmt;
         $this->rsm   = $resultSetMapping;
         $this->hints = $hints;
@@ -317,9 +372,24 @@ abstract class AbstractHydrator
         $this->uow->enterHydration();
 
         try {
-            $result = $this->hydrateAllData();
+            return $observer === null
+                ? $this->hydrateAllData()
+                : $this->hydrateAllDataWithObserver($observer, $resultSetMapping);
         } finally {
             $this->finishHydration();
+        }
+    }
+
+    private function hydrateAllDataWithObserver(HydrationObserver $observer, ResultSetMapping $resultSetMapping): mixed
+    {
+        $observer->start(static::class, $resultSetMapping->aliasMap);
+
+        $result = null;
+
+        try {
+            $result = $this->hydrateAllData();
+        } finally {
+            $observer->end(is_array($result) ? count($result) : null);
         }
 
         return $result;
