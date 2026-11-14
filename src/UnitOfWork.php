@@ -2529,6 +2529,40 @@ class UnitOfWork implements PropertyChangedListener
                 );
             }
 
+            // A *readonly* identifier field found in the identity map already carries a correct
+            // value: either the entity is a lazy ghost, whose identifier was assigned eagerly
+            // when the reference was created (see ProxyFactory::getProxy()), or it is already a
+            // fully loaded, live entity. In both cases $data — this exact row — was found BY
+            // that identifier, so the freshly hydrated value can never legitimately disagree
+            // with what a *readonly* property already holds (nothing else could have changed
+            // it). Treat such identifier fields as already known and skip re-assigning them
+            // below — PropertyAccessor\ReadonlyAccessor::setValue() rejects a second assignment
+            // via strict !==, which is never true for two distinct object instances (e.g.
+            // Symfony's Uuid) representing an identical value — see GH9505. Without this, merely
+            // accessing a lazily-loaded to-one association whose target uses such an identifier
+            // throws LogicException("Attempting to change readonly property ...").
+            //
+            // Restricted to ReadonlyAccessor: a *mutable* identifier field has no such hazard —
+            // plain re-assignment never throws — and, unlike a readonly one, may legitimately
+            // have been changed on the in-memory entity by application code in the meantime (see
+            // ProxiesLikeEntitiesTest::testPersistUpdate(), which manually resets a proxy's
+            // mutable $id to null and relies on lazy initialization to load the real value back).
+            //
+            // This mirrors what the legacy (non-native-lazy) proxy initializer has always done
+            // for identifier fields, unconditionally, see ProxyFactory::createLazyInitializer()'s
+            // `if (isset($identifier[$name])) { continue; }` — except legacy proxies are never
+            // constructed for an entity that already has a live, non-proxy instance in the
+            // identity map, so narrowing this to ReadonlyAccessor here is what keeps this new
+            // code's blast radius equally small.
+            foreach ($class->identifier as $idField) {
+                if (
+                    $class->propertyAccessors[$idField] instanceof ReadonlyAccessor
+                    && array_key_exists($idField, $data)
+                ) {
+                    $existingData[$idField] = $data[$idField];
+                }
+            }
+
             if ($this->isUninitializedObject($entity)) {
                 if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled()) {
                     $class->reflClass->markLazyObjectAsInitialized($entity);
