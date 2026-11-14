@@ -2506,6 +2506,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public function setVersionMapping(array &$mapping): void
     {
+        if (! empty($mapping['id'])) {
+            throw MappingException::cannotVersionIdField($this->name, $mapping['fieldName']);
+        }
+
         $this->isVersioned              = true;
         $this->versionField             = $mapping['fieldName'];
         $this->requiresFetchAfterChange = true;
@@ -2519,6 +2523,16 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 throw MappingException::unsupportedOptimisticLockingType($this->name, $mapping['fieldName'], $mapping['type']);
             }
         }
+    }
+
+    /**
+     * Configures versioning using an already mapped field.
+     */
+    public function setVersionMappingFromFieldMapping(FieldMapping $mapping): void
+    {
+        $versionMapping = (array) $mapping;
+        $this->setVersionMapping($versionMapping);
+        $mapping->options = $versionMapping['options'] ?? null;
     }
 
     /**
