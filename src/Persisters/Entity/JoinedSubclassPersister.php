@@ -19,6 +19,7 @@ use function array_combine;
 use function array_keys;
 use function array_values;
 use function implode;
+use function spl_object_id;
 
 /**
  * The joined subclass persister maps a single entity instance to several tables in the
@@ -509,11 +510,14 @@ class JoinedSubclassPersister extends AbstractEntityInheritancePersister
     protected function assignDefaultVersionAndUpsertableValues(object $entity, array $id): void
     {
         $values = $this->fetchVersionAndNotUpsertableValues($this->getVersionedClassMetadata(), $id);
+        $uow    = $this->em->getUnitOfWork();
+        $oid    = spl_object_id($entity);
 
         foreach ($values as $field => $value) {
             $value = Type::getType($this->class->fieldMappings[$field]->type)->convertToPHPValue($value, $this->platform);
 
             $this->class->setFieldValue($entity, $field, $value);
+            $uow->setOriginalEntityProperty($oid, $field, $value);
         }
     }
 

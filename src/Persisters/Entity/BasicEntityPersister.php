@@ -290,11 +290,14 @@ class BasicEntityPersister implements EntityPersister
     protected function assignDefaultVersionAndUpsertableValues(object $entity, array $id): void
     {
         $values = $this->fetchVersionAndNotUpsertableValues($this->class, $id);
+        $uow    = $this->em->getUnitOfWork();
+        $oid    = spl_object_id($entity);
 
         foreach ($values as $field => $value) {
             $value = Type::getType($this->class->fieldMappings[$field]->type)->convertToPHPValue($value, $this->platform);
 
             $this->class->setFieldValue($entity, $field, $value);
+            $uow->setOriginalEntityProperty($oid, $field, $value);
         }
     }
 
