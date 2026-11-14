@@ -304,14 +304,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
         $this->changed();
 
-        if (
-            $this->association !== null &&
-            $this->association->isToMany() &&
-            $this->owner &&
-            $this->getMapping()->orphanRemoval
-        ) {
-            $this->getUnitOfWork()->scheduleOrphanRemoval($removed);
-        }
+        $this->orphanRemovedElement($removed);
 
         return $removed;
     }
@@ -326,16 +319,51 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
         $this->changed();
 
-        if (
-            $this->association !== null &&
-            $this->association->isToMany() &&
-            $this->owner &&
-            $this->getMapping()->orphanRemoval
-        ) {
-            $this->getUnitOfWork()->scheduleOrphanRemoval($element);
-        }
+        $this->orphanRemovedElement($element);
 
         return $removed;
+    }
+
+    /**
+     * Schedules the element dropped by a remove() or removeElement() call
+     * for orphan removal.
+     *
+     * The scheduling only happens when the element left the collection
+     * entirely. An element that keeps its membership under another key or
+     * another occurrence — an indexBy second key, a duplicated add() — stays
+     * a member of the association and has to survive the flush (#12642).
+     */
+    private function orphanRemovedElement(mixed $removed): void
+    {
+        if (! is_object($removed)) {
+            // The key held no entity (or no value at all): no orphan to schedule.
+            return;
+        }
+
+        if (! $this->managesOrphanRemoval()) {
+            return;
+        }
+
+        if ($this->unwrap()->contains($removed)) {
+            // The removed element is still a member of the collection.
+            return;
+        }
+
+        $this->getUnitOfWork()->scheduleOrphanRemoval($removed);
+    }
+
+    /**
+     * Tells whether elements dropped from this collection are subject to
+     * orphan removal: a to-many association bound to an owner with
+     * orphanRemoval enabled — the condition under which remove() orphans
+     * an element as well.
+     */
+    private function managesOrphanRemoval(): bool
+    {
+        return $this->association !== null
+            && $this->association->isToMany()
+            && $this->owner
+            && $this->getMapping()->orphanRemoval;
     }
 
     public function containsKey(mixed $key): bool

@@ -85,6 +85,15 @@ Both now do nothing, which is consistent with `EntityManager::refresh()` and
 `Query::setLockMode()`. If you relied on `find()` reloading the entity, call
 `EntityManager::refresh()` explicitly.
 
+## Scheduled deletion getters see orphan removals
+
+`UnitOfWork::isScheduledForDelete()`, `getScheduledEntityDeletions()` and
+`isEntityScheduled()` now answer for the orphan removals planned by
+orphanRemoval collection mutations before the flush, not only for explicit
+`EntityManager::remove()` calls. As a consequence,
+`EntityManager::contains()` returns `false` for an entity orphaned by a
+collection mutation before the removal has been flushed.
+
 ## Deprecated passing `null` as lock mode
 
 Since `LockMode::NONE` is now a no-op, passing `null` as lock mode to
