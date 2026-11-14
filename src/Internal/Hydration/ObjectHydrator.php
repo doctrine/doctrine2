@@ -541,10 +541,6 @@ class ObjectHydrator extends AbstractHydrator
                     $resultKey                 = $index;
                 }
             }
-
-            if (isset($this->hints[Query::HINT_INTERNAL_ITERATION]) && $this->hints[Query::HINT_INTERNAL_ITERATION]) {
-                $this->uow->hydrationComplete();
-            }
         }
 
         if (! isset($resultKey)) {

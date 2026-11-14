@@ -142,6 +142,77 @@ class HydrationCompleteHandlerTest extends TestCase
         $this->handler->hydrationComplete();
     }
 
+    public function testDoesNotFirePostLoadWhileHydrationIsInProgress(): void
+    {
+        $this->deferPostLoad();
+
+        $this->listenersInvoker->expects(self::never())->method('invoke');
+
+        $this->handler->enterHydration();
+        $this->handler->hydrationComplete();
+    }
+
+    public function testFiresPostLoadOnlyWhenOutermostHydrationIsLeft(): void
+    {
+        $this->deferPostLoad();
+
+        $fired = 0;
+        $this->listenersInvoker
+            ->method('invoke')
+            ->willReturnCallback(static function () use (&$fired): void {
+                $fired++;
+            });
+
+        $this->handler->enterHydration();
+        $this->handler->enterHydration();
+        $this->handler->hydrationComplete();
+        $this->handler->leaveHydration();
+        $this->handler->hydrationComplete();
+
+        self::assertSame(0, $fired);
+
+        $this->handler->leaveHydration();
+
+        self::assertSame(1, $fired);
+    }
+
+    public function testHydrationStartedByPostLoadListenerFiresItsOwnPostLoad(): void
+    {
+        $outer = new stdClass();
+        $inner = new stdClass();
+        $fired = [];
+
+        $metadata = $this->createStub(ClassMetadata::class);
+        $this->listenersInvoker->method('getSubscribedSystems')->willReturn(ListenersInvoker::INVOKE_LISTENERS);
+        $this->listenersInvoker
+            ->method('invoke')
+            ->willReturnCallback(function (ClassMetadata $class, string $event, object $entity) use (&$fired, $outer, $inner, $metadata): void {
+                $fired[] = $entity;
+
+                if ($entity !== $outer) {
+                    return;
+                }
+
+                $this->handler->enterHydration();
+                $this->handler->deferPostLoadInvoking($metadata, $inner);
+                $this->handler->leaveHydration();
+
+                self::assertSame([$outer, $inner], $fired);
+            });
+
+        $this->handler->deferPostLoadInvoking($metadata, $outer);
+        $this->handler->hydrationComplete();
+
+        self::assertSame([$outer, $inner], $fired);
+    }
+
+    private function deferPostLoad(): void
+    {
+        $this->listenersInvoker->method('getSubscribedSystems')->willReturn(ListenersInvoker::INVOKE_LISTENERS);
+
+        $this->handler->deferPostLoadInvoking($this->createStub(ClassMetadata::class), new stdClass());
+    }
+
     /** @phpstan-return list<array{int}> */
     public static function invocationFlagProvider(): array
     {

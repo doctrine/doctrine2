@@ -14,6 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryWalker;
 use Doctrine\ORM\UnitOfWork;
@@ -180,7 +181,7 @@ abstract class AbstractHydrator
     {
         $this->stmt      = $stmt;
         $this->rsm       = $resultSetMapping;
-        $this->hints     = $hints;
+        $this->hints     = [Query::HINT_INTERNAL_ITERATION => true] + $hints;
         $this->iterating = true;
 
         $this->detectLegacyOverrides();
@@ -199,16 +200,23 @@ abstract class AbstractHydrator
                     break;
                 }
 
-                if ($this->legacyHydrateRowData) {
-                    $result = [];
-                    /** @phpstan-ignore method.deprecated */
-                    $this->hydrateRowData($row, $result);
-                } else {
-                    $this->hydrateRow($row);
-                    $result = $this->takeResult();
+                $this->uow->enterHydration();
+
+                try {
+                    if ($this->legacyHydrateRowData) {
+                        $result = [];
+                        /** @phpstan-ignore method.deprecated */
+                        $this->hydrateRowData($row, $result);
+                    } else {
+                        $this->hydrateRow($row);
+                        $result = $this->takeResult();
+                    }
+
+                    $this->cleanupAfterRowIteration();
+                } finally {
+                    $this->uow->leaveHydration();
                 }
 
-                $this->cleanupAfterRowIteration();
                 if (count($result) === 1) {
                     if (count($resultSetMapping->indexByMap) === 0) {
                         yield end($result);
@@ -222,7 +230,8 @@ abstract class AbstractHydrator
                 }
             }
         } finally {
-            $this->cleanup();
+            $this->uow->enterHydration();
+            $this->finishHydration();
         }
     }
 
@@ -305,13 +314,28 @@ abstract class AbstractHydrator
         $this->em->getEventManager()->addEventListener([Events::onClear], $this);
         $this->prepare();
 
+        $this->uow->enterHydration();
+
         try {
             $result = $this->hydrateAllData();
         } finally {
-            $this->cleanup();
+            $this->finishHydration();
         }
 
         return $result;
+    }
+
+    /**
+     * Runs the cleanup, which can load further entities, as part of the hydration
+     * and leaves it, so that deferred events fire even if the cleanup fails.
+     */
+    private function finishHydration(): void
+    {
+        try {
+            $this->cleanup();
+        } finally {
+            $this->uow->leaveHydration();
+        }
     }
 
     /**
