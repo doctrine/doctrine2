@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
-use Doctrine\DBAL\Schema\DefaultExpression;
 use Doctrine\DBAL\Schema\DefaultExpression\CurrentDate;
 use Doctrine\DBAL\Schema\DefaultExpression\CurrentTime;
 use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
@@ -15,17 +14,12 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Tests\OrmFunctionalTestCase;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
-use PHPUnit\Framework\Attributes\RequiresMethod;
-
-use function interface_exists;
+use LogicException;
 
 class DefaultTimeExpressionTest extends OrmFunctionalTestCase
 {
     use VerifyDeprecations;
 
-    #[IgnoreDeprecations]
-    #[RequiresMethod(DefaultExpression::class, 'toSQL')]
     public function testUsingTimeRelatedDefaultExpressionCausesAnOrmDeprecationAndNoDbalDeprecation(): void
     {
         $platform = $this->_em->getConnection()->getDatabasePlatform();
@@ -46,51 +40,10 @@ class DefaultTimeExpressionTest extends OrmFunctionalTestCase
             );
         }
 
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/12252');
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/7195');
-
+        $this->expectException(LogicException::class);
         $this->createSchemaForModels(LegacyTimeEntity::class);
-        $this->_em->persist($entity = new LegacyTimeEntity());
-        $this->_em->flush();
-        $this->_em->find(LegacyTimeEntity::class, $entity->id);
     }
 
-    public function testNoDeprecationsAreTrownWhenTheyCannotBeAddressed(): void
-    {
-        if (interface_exists(DefaultExpression::class)) {
-            $this->markTestSkipped(
-                'This test requires Doctrine DBAL 4.3 or lower.',
-            );
-        }
-
-        $platform = $this->_em->getConnection()->getDatabasePlatform();
-
-        if (
-            $platform->getCurrentTimestampSQL() !== 'CURRENT_TIMESTAMP'
-            || $platform->getCurrentTimeSQL() !== 'CURRENT_TIME'
-            || $platform->getCurrentDateSQL() !== 'CURRENT_DATE'
-        ) {
-            $this->markTestSkipped(
-                'This test requires platforms to support exactly CURRENT_TIMESTAMP, CURRENT_TIME and CURRENT_DATE.',
-            );
-        }
-
-        if ($platform instanceof AbstractMySQLPlatform) {
-            $this->markTestSkipped(
-                'MySQL platform does not support CURRENT_TIME or CURRENT_DATE as default expression.',
-            );
-        }
-
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/12252');
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/7195');
-
-        $this->createSchemaForModels(LegacyTimeEntity::class);
-        $this->_em->persist($entity = new LegacyTimeEntity());
-        $this->_em->flush();
-        $this->_em->find(LegacyTimeEntity::class, $entity->id);
-    }
-
-    #[RequiresMethod(DefaultExpression::class, 'toSQL')]
     public function testUsingDefaultExpressionInstancesCausesNoDeprecation(): void
     {
         $platform = $this->_em->getConnection()->getDatabasePlatform();
@@ -99,7 +52,6 @@ class DefaultTimeExpressionTest extends OrmFunctionalTestCase
             $this->markTestSkipped('MySQL platform does not support CURRENT_TIME or CURRENT_DATE as default expression.');
         }
 
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/12252');
         $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/7195');
 
         $this->createSchemaForModels(TimeEntity::class);

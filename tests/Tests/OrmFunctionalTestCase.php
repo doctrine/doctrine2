@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests;
 
 use Doctrine\Common\EventManager;
+use Doctrine\DBAL\Configuration as DBALConfiguration;
 use Doctrine\DBAL\Exception\DatabaseObjectNotFoundException;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\OraclePlatform;

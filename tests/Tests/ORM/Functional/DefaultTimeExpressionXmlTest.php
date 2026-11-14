@@ -7,20 +7,18 @@ namespace Doctrine\Tests\ORM\Functional;
 use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
-use Doctrine\DBAL\Schema\DefaultExpression;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Tests\OrmFunctionalTestCase;
+use LogicException;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
-use PHPUnit\Framework\Attributes\RequiresMethod;
 
 class DefaultTimeExpressionXmlTest extends OrmFunctionalTestCase
 {
     use VerifyDeprecations;
 
     #[IgnoreDeprecations]
-    #[RequiresMethod(DefaultExpression::class, 'toSQL')]
     public function testUsingTimeRelatedDefaultExpressionCausesAnOrmDeprecationAndNoDbalDeprecation(): void
     {
         $platform = $this->_em->getConnection()->getDatabasePlatform();
@@ -44,16 +42,11 @@ class DefaultTimeExpressionXmlTest extends OrmFunctionalTestCase
         );
         $this->_schemaTool = new SchemaTool($this->_em);
 
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/12252');
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/7195');
+        $this->expectException(LogicException::class);
 
         $this->createSchemaForModels(XmlLegacyTimeEntity::class);
-        $this->_em->persist($entity = new XmlLegacyTimeEntity());
-        $this->_em->flush();
-        $this->_em->find(XmlLegacyTimeEntity::class, $entity->id);
     }
 
-    #[RequiresMethod(DefaultExpression::class, 'toSQL')]
     public function testUsingDefaultExpressionInstancesCausesNoDeprecationXmlDriver(): void
     {
         $platform = $this->_em->getConnection()->getDatabasePlatform();
