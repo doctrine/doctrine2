@@ -133,7 +133,7 @@ class ArrayHydrator extends AbstractHydrator
      */
     protected function hydrateRow(array $row): void
     {
-        $rowData            = $this->gatherRow($row);
+        $rowData            = $this->gatherRowWithLazyEntityData($row);
         $id                 = $this->gatheredRowId;
         $nonemptyComponents = $this->gatheredNonemptyComponents;
 
@@ -177,6 +177,7 @@ class ArrayHydrator extends AbstractHydrator
                             $indexIsValid = $index !== false ? isset($this->nodes[$baseNode][$relationAlias][$index]) : false;
 
                             if (! $indexExists || ! $indexIsValid) {
+                                $data  ??= $this->gatherEntityRowData($row, $dqlAlias);
                                 $element = isset($this->nodeAliases[$dqlAlias]) ? $this->createNode($data, $dqlAlias) : $data;
 
                                 if (isset($this->resultSetMapping()->indexByMap[$dqlAlias])) {
@@ -206,8 +207,8 @@ class ArrayHydrator extends AbstractHydrator
                         if (! isset($this->nodes[$baseNode][$relationAlias])) {
                             $this->nodes[$baseNode][$relationAlias] = match (true) {
                                 ! isset($nonemptyComponents[$dqlAlias]) => null,
-                                isset($this->nodeAliases[$dqlAlias]) => $this->createNode($data, $dqlAlias),
-                                default => $data,
+                                isset($this->nodeAliases[$dqlAlias]) => $this->createNode($data ?? $this->gatherEntityRowData($row, $dqlAlias), $dqlAlias),
+                                default => $data ?? $this->gatherEntityRowData($row, $dqlAlias),
                             };
                         }
 
@@ -234,6 +235,7 @@ class ArrayHydrator extends AbstractHydrator
 
                     // Check for an existing element
                     if ($this->isSimpleQuery || ! isset($this->identifierMap[$dqlAlias][$id[$dqlAlias]])) {
+                        $data  ??= $this->gatherEntityRowData($row, $dqlAlias);
                         $node    = isset($this->nodeAliases[$dqlAlias]) ? $this->createNode($data, $dqlAlias) : null;
                         $element = $node ?? $data;
 
@@ -539,9 +541,9 @@ class ArrayHydrator extends AbstractHydrator
      * with an empty relation in their parent, and then attached to their parent in
      * reverse row order, which completes each element before it is attached.
      *
-     * @param mixed[]                $row
-     * @param array<string, mixed[]> $data
-     * @param array<string, bool>    $nonemptyComponents
+     * @param mixed[]                     $row
+     * @param array<string, mixed[]|null> $data
+     * @param array<string, bool>         $nonemptyComponents
      *
      * @return array-key|null The result key of the last root element.
      */
@@ -557,7 +559,7 @@ class ArrayHydrator extends AbstractHydrator
                 $rootAliases[] = $dqlAlias;
 
                 if (isset($nonemptyComponents[$dqlAlias])) {
-                    $elements[$dqlAlias] = $elementData;
+                    $elements[$dqlAlias] = $elementData ?? $this->gatherEntityRowData($row, $dqlAlias);
                 }
 
                 continue;
@@ -582,7 +584,7 @@ class ArrayHydrator extends AbstractHydrator
                 continue;
             }
 
-            $elements[$dqlAlias] = $elementData;
+            $elements[$dqlAlias] = $elementData ?? $this->gatherEntityRowData($row, $dqlAlias);
             $joinedAliases[]     = $dqlAlias;
         }
 
