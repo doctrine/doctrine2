@@ -781,6 +781,12 @@ parameters:
 			path: src/Internal/HydrationCompleteHandler.php
 
 		-
+			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\<string, mixed\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Internal/Query/TemporaryIdTable.php
+
+		-
 			message: '#^Offset int\|null might not exist on array\<int, object\>\.$#'
 			identifier: offsetAccess.notFound
 			count: 1
@@ -1855,12 +1861,6 @@ parameters:
 			path: src/Persisters/Collection/OneToManyPersister.php
 
 		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Persisters/Collection/OneToManyPersister.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Entity\\AbstractEntityInheritancePersister\:\:getSelectColumnSQL\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2311,12 +2311,6 @@ parameters:
 			path: src/Query/Exec/MultiTableDeleteExecutor.php
 
 		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Query/Exec/MultiTableDeleteExecutor.php
-
-		-
 			message: '#^Argument of an invalid type list\<string\>\|string supplied for foreach, only iterables are supported\.$#'
 			identifier: foreach.nonIterable
 			count: 1
@@ -2325,12 +2319,6 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Query\\Exec\\MultiTableUpdateExecutor\:\:execute\(\) should return int but returns int\|string\.$#'
 			identifier: return.type
-			count: 1
-			path: src/Query/Exec/MultiTableUpdateExecutor.php
-
-		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/Query/Exec/MultiTableUpdateExecutor.php
 

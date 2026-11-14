@@ -12,6 +12,7 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\QueryException;
 use RuntimeException;
@@ -84,11 +85,28 @@ class PersisterHelper
     /** @throws RuntimeException */
     public static function getTypeOfColumn(string $columnName, ClassMetadata $class, EntityManagerInterface $em): string
     {
+        return self::getFieldMappingOfColumn($columnName, $class, $em)->type;
+    }
+
+    /**
+     * Finds the mapping of the field that defines a column of the table of the given class.
+     *
+     * The join columns of an association are not mapped as a field. They are resolved to the
+     * mapping of the field that holds the column they reference.
+     *
+     * @internal
+     *
+     * @param ClassMetadata<object> $class
+     *
+     * @throws RuntimeException
+     */
+    public static function getFieldMappingOfColumn(string $columnName, ClassMetadata $class, EntityManagerInterface $em): FieldMapping
+    {
         if (isset($class->fieldNames[$columnName])) {
             $fieldName = $class->fieldNames[$columnName];
 
             if (isset($class->fieldMappings[$fieldName])) {
-                return $class->fieldMappings[$fieldName]->type;
+                return $class->fieldMappings[$fieldName];
             }
         }
 
@@ -103,7 +121,7 @@ class PersisterHelper
                     $targetColumnName = $joinColumn->referencedColumnName;
                     $targetClass      = $em->getClassMetadata($assoc->targetEntity);
 
-                    return self::getTypeOfColumn($targetColumnName, $targetClass, $em);
+                    return self::getFieldMappingOfColumn($targetColumnName, $targetClass, $em);
                 }
             }
         }
@@ -119,7 +137,7 @@ class PersisterHelper
                     $targetColumnName = $joinColumn->referencedColumnName;
                     $targetClass      = $em->getClassMetadata($assoc->targetEntity);
 
-                    return self::getTypeOfColumn($targetColumnName, $targetClass, $em);
+                    return self::getFieldMappingOfColumn($targetColumnName, $targetClass, $em);
                 }
             }
         }

@@ -7,8 +7,8 @@ namespace Doctrine\ORM\Persisters\Collection;
 use BadMethodCallException;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityNotFoundException;
+use Doctrine\ORM\Internal\Query\TemporaryIdTable;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
@@ -215,21 +215,11 @@ class OneToManyPersister extends AbstractCollectionPersister
         $rootClass   = $this->em->getClassMetadata($targetClass->rootEntityName);
 
         // 1) Build temporary table DDL
-        $tempTable         = $this->platform->getTemporaryTableName($rootClass->getTemporaryIdTableName());
-        $idColumnNames     = $rootClass->getIdentifierColumnNames();
-        $idColumnList      = implode(', ', $idColumnNames);
-        $columnDefinitions = [];
+        $tempTable     = $this->platform->getTemporaryTableName($rootClass->getTemporaryIdTableName());
+        $idColumnNames = $rootClass->getIdentifierColumnNames();
+        $idColumnList  = implode(', ', $idColumnNames);
 
-        foreach ($idColumnNames as $idColumnName) {
-            $columnDefinitions[$idColumnName] = [
-                'name'    => $idColumnName,
-                'notnull' => true,
-                'type'    => Type::getType(PersisterHelper::getTypeOfColumn($idColumnName, $rootClass, $this->em)),
-            ];
-        }
-
-        $statement = $this->platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable
-            . ' (' . $this->platform->getColumnDeclarationListSQL($columnDefinitions) . ')';
+        $statement = TemporaryIdTable::getCreateSQL($tempTable, $rootClass, $this->em);
 
         $this->conn->executeStatement($statement);
 

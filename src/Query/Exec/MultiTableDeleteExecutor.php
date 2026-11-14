@@ -6,11 +6,10 @@ namespace Doctrine\ORM\Query\Exec;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
-use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Internal\Query\TemporaryIdTable;
 use Doctrine\ORM\Query\AST;
 use Doctrine\ORM\Query\AST\DeleteStatement;
 use Doctrine\ORM\Query\SqlWalker;
-use Doctrine\ORM\Utility\PersisterHelper;
 use Throwable;
 
 use function array_reverse;
@@ -85,17 +84,7 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
         }
 
         // 4. Store DDL for temporary identifier table.
-        $columnDefinitions = [];
-        foreach ($idColumnNames as $idColumnName) {
-            $columnDefinitions[$idColumnName] = [
-                'name'    => $idColumnName,
-                'notnull' => true,
-                'type'    => Type::getType(PersisterHelper::getTypeOfColumn($idColumnName, $rootClass, $em)),
-            ];
-        }
-
-        $this->createTempTableSql = $platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable . ' ('
-                . $platform->getColumnDeclarationListSQL($columnDefinitions) . ', PRIMARY KEY(' . implode(',', $idColumnNames) . '))';
+        $this->createTempTableSql = TemporaryIdTable::getCreateSQL($tempTable, $rootClass, $em);
         $this->dropTempTableSql   = $platform->getDropTemporaryTableSQL($tempTable);
     }
 

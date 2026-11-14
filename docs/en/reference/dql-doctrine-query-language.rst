@@ -772,6 +772,10 @@ as the following example shows:
 References to related entities are only possible in the WHERE
 clause and using sub-selects.
 
+For entities of a Class Table Inheritance hierarchy, a temporary table is used
+to update the rows of all the tables involved, see
+:ref:`Bulk UPDATE and DELETE statements <inheritance_mapping_cti_bulk_statements>`.
+
 .. warning::
 
     DQL UPDATE statements are ported directly into a
@@ -794,6 +798,9 @@ as simple as the UPDATE syntax:
     DELETE MyProject\Model\User u WHERE u.id = 4
 
 The same restrictions apply for the reference of related entities.
+As with UPDATE queries, a temporary table is used for entities of a Class Table
+Inheritance hierarchy, see
+:ref:`Bulk UPDATE and DELETE statements <inheritance_mapping_cti_bulk_statements>`.
 
 .. warning::
 

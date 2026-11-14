@@ -351,6 +351,51 @@ or auto-increment details). Furthermore each child table has to
 have a foreign key pointing from the id column to the root table id
 column and cascading on delete.
 
+.. _inheritance_mapping_cti_bulk_statements:
+
+Bulk UPDATE and DELETE statements
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The rows of an entity are spread over several tables, so a DQL ``UPDATE`` or
+``DELETE`` statement on an entity of a Class Table Inheritance hierarchy cannot
+be executed as a single SQL statement. Instead, the ORM
+
+1. creates a temporary table for the identifiers of the affected rows,
+2. copies the identifiers of the rows matching the ``WHERE`` clause into it,
+3. updates or deletes the rows in each table of the hierarchy that is concerned,
+   using these identifiers, and
+4. drops the temporary table.
+
+The same happens when the whole collection of a one-to-many association with
+``orphanRemoval`` is replaced by a new one and the target entity is part of a
+Class Table Inheritance hierarchy. The database user therefore needs the
+privilege to create temporary tables.
+
+The identifier columns of the temporary table are declared from the mapping of
+the identifier of the root entity, so that their values can be compared with the
+ones of the actual tables. The type, the ``length``, ``precision`` and ``scale``
+and the ``fixed``, ``unsigned``, ``charset`` and ``collation`` options of the
+column are taken over. A ``string`` identifier without ``length`` gets the same
+default length as in the SchemaTool (see :doc:`/reference/advanced-configuration`).
+A ``columnDefinition`` is not used.
+
+.. note::
+
+    MySQL and MariaDB usually refuse to compare string columns of different
+    collations ("Illegal mix of collations"). Besides, the primary key of a
+    temporary table with a case insensitive collation cannot hold identifiers
+    that differ only in case, although your tables can when their collation is
+    case sensitive. A temporary table would get the default character set and
+    collation of the database, which are not necessarily the ones of your
+    tables. For identifiers of a string type, the temporary table is therefore
+    created with the character set and collation of the root table: the
+    ``charset`` and ``collation`` entries of the ``options`` of its ``#[Table]``
+    attribute take precedence over the ``defaultTableOptions`` of the
+    connection, and the ``charset`` parameter of the connection is used as a
+    last resort. If your tables were created with other options than the ones
+    configured for the ORM, the statements can fail with the errors mentioned
+    above.
+
 .. _inheritence_mapping_overrides:
 
 Overrides
