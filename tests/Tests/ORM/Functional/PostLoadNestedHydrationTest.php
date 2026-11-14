@@ -605,9 +605,9 @@ class HookedObjectHydrator extends ObjectHydrator
     public static Closure|null $onCleanup = null;
 
     /** {@inheritDoc} */
-    protected function hydrateRowData(array $row, array &$result): void
+    protected function hydrateRow(array $row): void
     {
-        parent::hydrateRowData($row, $result);
+        parent::hydrateRow($row);
 
         if (self::$afterRow !== null) {
             (self::$afterRow)();
@@ -629,21 +629,17 @@ class RowCompletingHydrator extends AbstractHydrator
     /** {@inheritDoc} */
     protected function hydrateAllData(): array
     {
-        $result = [];
+        $this->hydrateAllRows();
 
-        while ($row = $this->statement()->fetchAssociative()) {
-            $this->hydrateRowData($row, $result);
-        }
-
-        return $result;
+        return $this->takeResult();
     }
 
     /** {@inheritDoc} */
-    protected function hydrateRowData(array $row, array &$result): void
+    protected function hydrateRow(array $row): void
     {
         [$id, $name] = array_values($row);
 
-        $result[] = $this->uow->createEntity(CmsGroup::class, ['id' => $id, 'name' => $name], $this->hints);
+        $this->hydrationResult[] = $this->uow->createEntity(CmsGroup::class, ['id' => $id, 'name' => $name], $this->hints);
 
         $this->uow->hydrationComplete();
     }
