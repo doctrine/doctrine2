@@ -344,7 +344,13 @@ class SchemaValidator
             array_filter(
                 array_map(
                     function (FieldMapping $fieldMapping) use ($class, $typeProvider): string|null {
-                        $fieldName    = $fieldMapping->fieldName;
+                        $fieldName = $fieldMapping->fieldName;
+
+                        // Dynamic properties are stored in an array, there is no property type to compare with
+                        if ($fieldMapping->dynamicProperty !== null) {
+                            return null;
+                        }
+
                         $propertyType = $class->propertyAccessors[$fieldName]->getUnderlyingReflector()->getType();
 
                         // If the field type is not a built-in type, we cannot check it

@@ -142,6 +142,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             $this->addInheritedFields($class, $parent);
             $this->addInheritedRelations($class, $parent);
             $this->addInheritedEmbeddedClasses($class, $parent);
+            $this->addInheritedDynamicProperties($class, $parent);
             $class->setIdentifier($parent->identifier, $parent->identifierPositions);
             $class->setVersioned($parent->isVersioned);
             $class->setVersionField($parent->versionField);
@@ -266,6 +267,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
         $class->validateIdentifier();
         $class->validateAssociations();
+        $class->validateDynamicProperties();
         $class->validateLifecycleCallbacks($this->getReflectionService());
 
         // verify inheritance
@@ -418,7 +420,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      * and embedded classes.
      */
     private function addMappingInheritanceInformation(
-        AssociationMapping|EmbeddedClassMapping|FieldMapping $mapping,
+        AssociationMapping|DynamicPropertiesMapping|EmbeddedClassMapping|FieldMapping $mapping,
         ClassMetadata $parentClass,
     ): void {
         if (! isset($mapping->inherited) && ! $parentClass->isMappedSuperclass) {
@@ -476,6 +478,19 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             $subClassMapping = clone $embeddedClass;
             $this->addMappingInheritanceInformation($subClassMapping, $parentClass);
             $subClass->embeddedClasses[$field] = $subClassMapping;
+        }
+    }
+
+    /**
+     * @param ClassMetadata<object> $subClass
+     * @param ClassMetadata<object> $parentClass
+     */
+    private function addInheritedDynamicProperties(ClassMetadata $subClass, ClassMetadata $parentClass): void
+    {
+        foreach ($parentClass->dynamicProperties as $field => $dynamicProperties) {
+            $subClassMapping = clone $dynamicProperties;
+            $this->addMappingInheritanceInformation($subClassMapping, $parentClass);
+            $subClass->dynamicProperties[$field] = $subClassMapping;
         }
     }
 

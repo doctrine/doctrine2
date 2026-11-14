@@ -15,6 +15,7 @@ use Doctrine\Instantiator\InstantiatorInterface;
 use Doctrine\ORM\Cache\Exception\NonCacheableEntityAssociation;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Id\AbstractIdGenerator;
+use Doctrine\ORM\Mapping\PropertyAccessors\DynamicPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\EmbeddablePropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\EnumPropertyAccessor;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessor;
@@ -32,6 +33,7 @@ use Stringable;
 use function array_column;
 use function array_count_values;
 use function array_diff;
+use function array_diff_key;
 use function array_filter;
 use function array_flip;
 use function array_intersect;
@@ -52,10 +54,13 @@ use function func_num_args;
 use function implode;
 use function in_array;
 use function interface_exists;
+use function is_array;
 use function is_string;
 use function is_subclass_of;
 use function ltrim;
 use function method_exists;
+use function preg_match;
+use function property_exists;
 use function spl_object_id;
 use function sprintf;
 use function str_contains;
@@ -334,6 +339,14 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public array $embeddedClasses = [];
 
     /**
+     * READ-ONLY: The dynamic properties containers (array properties whose keys
+     * are mapped to columns), indexed by property name.
+     *
+     * @phpstan-var array<string, DynamicPropertiesMapping>
+     */
+    public array $dynamicProperties = [];
+
+    /**
      * READ-ONLY: The field names of all fields that are part of the identifier/primary key
      * of the mapped entity class.
      *
@@ -569,6 +582,20 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /** @var array<string, PropertyAccessor> */
     public array $propertyAccessors = [];
 
+    /**
+     * The accessor of each dynamic properties container. Built by {@see wakeupReflection()}, not serialized.
+     *
+     * @var array<string, PropertyAccessor>
+     */
+    private array $dynamicContainerAccessors = [];
+
+    /**
+     * The keys mapped in each dynamic properties container. Built by {@see wakeupReflection()}, not serialized.
+     *
+     * @var array<string, array<string, true>>
+     */
+    private array $dynamicPropertyKeys = [];
+
     private InstantiatorInterface|null $instantiator = null;
 
     private readonly TypedFieldMapper $typedFieldMapper;
@@ -791,6 +818,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             $serialized[] = 'isEmbeddedClass';
         }
 
+        if ($this->dynamicProperties) {
+            $serialized[] = 'dynamicProperties';
+        }
+
         if ($this->containsForeignIdentifier) {
             $serialized[] = 'containsForeignIdentifier';
         }
@@ -850,7 +881,17 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $this->reflFields   = new LegacyReflectionFields($this, $reflService);
         $this->instantiator = $this->instantiator ?: new Instantiator();
 
-        $parentAccessors = [];
+        $parentAccessors                 = [];
+        $this->dynamicContainerAccessors = [];
+        $this->dynamicPropertyKeys       = [];
+
+        foreach ($this->dynamicProperties as $property => $dynamicProperties) {
+            $this->dynamicContainerAccessors[$property] = PropertyAccessorFactory::createPropertyAccessor(
+                $dynamicProperties->declared ?? $this->name,
+                $property,
+            );
+            $this->dynamicPropertyKeys[$property]       = [];
+        }
 
         foreach ($this->embeddedClasses as $property => $embeddedClass) {
             if (isset($embeddedClass->declaredField)) {
@@ -879,6 +920,23 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
 
         foreach ($this->fieldMappings as $field => $mapping) {
+            if (isset($mapping->dynamicProperty)) {
+                $this->dynamicPropertyKeys[$mapping->dynamicProperty][$field] = true;
+                $this->propertyAccessors[$field]                              = new DynamicPropertyAccessor(
+                    $this->dynamicContainerAccessors[$mapping->dynamicProperty],
+                    $field,
+                );
+
+                if ($mapping->enumType !== null) {
+                    $this->propertyAccessors[$field] = new EnumPropertyAccessor(
+                        $this->propertyAccessors[$field],
+                        $mapping->enumType,
+                    );
+                }
+
+                continue;
+            }
+
             if (isset($mapping->declaredField) && isset($parentAccessors[$mapping->declaredField])) {
                 assert($mapping->originalField !== null);
                 assert($mapping->originalClass !== null);
@@ -912,6 +970,16 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
 
         foreach ($this->associationMappings as $field => $mapping) {
+            if (isset($mapping->dynamicProperty)) {
+                $this->dynamicPropertyKeys[$mapping->dynamicProperty][$field] = true;
+                $this->propertyAccessors[$field]                              = new DynamicPropertyAccessor(
+                    $this->dynamicContainerAccessors[$mapping->dynamicProperty],
+                    $field,
+                );
+
+                continue;
+            }
+
             $this->propertyAccessors[$field] = isset($mapping->declared)
                 ? PropertyAccessorFactory::createPropertyAccessor($mapping->declared, $field)
                 : PropertyAccessorFactory::createPropertyAccessor($this->name, $field);
@@ -1225,7 +1293,17 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             throw MappingException::missingFieldName($this->name);
         }
 
-        if ($this->isTypedProperty($mapping['fieldName'])) {
+        if (isset($mapping['dynamicProperty'])) {
+            $this->validateDynamicPropertyMapping($mapping['dynamicProperty'], $mapping['fieldName']);
+
+            if (! empty($mapping['id']) || ! empty($mapping['version']) || $this->versionField === $mapping['fieldName']) {
+                throw MappingException::illegalDynamicPropertyMapping(
+                    $this->name,
+                    $mapping['fieldName'],
+                    'dynamic properties cannot be identifiers or version fields',
+                );
+            }
+        } elseif ($this->isTypedProperty($mapping['fieldName'])) {
             $mapping = $this->validateAndCompleteTypedFieldMapping($mapping);
         }
 
@@ -1237,6 +1315,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         // Complete fieldName and columnName mapping
         if (! isset($mapping['columnName'])) {
             $mapping['columnName'] = $this->namingStrategy->propertyToColumnName($mapping['fieldName'], $this->name);
+        }
+
+        if (isset($mapping['dynamicProperty'])) {
+            $mapping['columnName'] = $this->prefixDynamicColumnName($mapping['dynamicProperty'], $mapping['columnName']);
         }
 
         $mapping = FieldMapping::fromMappingArray($mapping);
@@ -1336,7 +1418,41 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         // the sourceEntity.
         $mapping['sourceEntity'] = $this->name;
 
-        if ($this->isTypedProperty($mapping['fieldName'])) {
+        if (isset($mapping['dynamicProperty'])) {
+            $this->validateDynamicPropertyMapping($mapping['dynamicProperty'], $mapping['fieldName'] ?? '');
+
+            if (! empty($mapping['id'])) {
+                throw MappingException::illegalDynamicPropertyMapping(
+                    $this->name,
+                    $mapping['fieldName'],
+                    'dynamic properties cannot be identifiers or version fields',
+                );
+            }
+
+            if ($mapping['type'] === self::ONE_TO_ONE && isset($mapping['mappedBy'])) {
+                throw MappingException::illegalDynamicPropertyMapping(
+                    $this->name,
+                    $mapping['fieldName'],
+                    'inverse side one-to-one associations are not supported',
+                );
+            }
+
+            if (($mapping['type'] & self::TO_ONE) !== 0 && $this->dynamicProperties[$mapping['dynamicProperty']]->columnPrefix) {
+                // An empty join column is completed with the default names, like a missing one.
+                $joinColumns = $mapping['joinColumns'] ?? [[]];
+
+                foreach ($joinColumns as $index => $joinColumn) {
+                    $joinColumns[$index]['name'] = $this->prefixDynamicColumnName(
+                        $mapping['dynamicProperty'],
+                        empty($joinColumn['name'])
+                            ? $this->namingStrategy->joinColumnName($mapping['fieldName'], $this->name)
+                            : $joinColumn['name'],
+                    );
+                }
+
+                $mapping['joinColumns'] = $joinColumns;
+            }
+        } elseif ($this->isTypedProperty($mapping['fieldName'])) {
             $mapping = $this->validateAndCompleteTypedAssociationMapping($mapping);
         }
 
@@ -2718,13 +2834,214 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
     }
 
+    /**
+     * Maps an array property as a container for dynamic properties.
+     *
+     * Fields and associations can then be stored in it with {@see mapDynamicField()},
+     * {@see mapDynamicManyToOne()} and {@see mapDynamicOneToOne()}.
+     *
+     * @phpstan-param array{
+     *     fieldName: string,
+     *     columnPrefix?: string|null,
+     *     declared?: class-string|null,
+     *     inherited?: class-string|null,
+     * } $mapping
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicProperties(array $mapping): void
+    {
+        if (! isset($mapping['fieldName']) || $mapping['fieldName'] === '') {
+            throw MappingException::missingFieldName($this->name);
+        }
+
+        if ($this->isEmbeddedClass) {
+            throw MappingException::invalidDynamicPropertiesContainer(
+                $this->name,
+                $mapping['fieldName'],
+                'dynamic properties are not supported on embeddables',
+            );
+        }
+
+        $this->assertFieldNotMapped($mapping['fieldName']);
+
+        $this->dynamicProperties[$mapping['fieldName']] = DynamicPropertiesMapping::fromMappingArray($mapping);
+    }
+
+    /**
+     * Adds a field mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The field mapping, see {@see mapField()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicField(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapField($mapping);
+    }
+
+    /**
+     * Adds a many-to-one mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapManyToOne()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicManyToOne(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapManyToOne($mapping);
+    }
+
+    /**
+     * Adds an owning side one-to-one mapping that is stored under its field name in the given
+     * dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapOneToOne()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicOneToOne(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapOneToOne($mapping);
+    }
+
+    /**
+     * Adds a one-to-many mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapOneToMany()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicOneToMany(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapOneToMany($mapping);
+    }
+
+    /**
+     * Adds a many-to-many mapping that is stored under its field name in the given dynamic properties container.
+     *
+     * @param array<string, mixed> $mapping The association mapping, see {@see mapManyToMany()}.
+     *
+     * @throws MappingException
+     */
+    public function mapDynamicManyToMany(string $container, array $mapping): void
+    {
+        $mapping['dynamicProperty'] = $container;
+
+        $this->mapManyToMany($mapping);
+    }
+
+    /**
+     * Checks whether the given field or association is stored in a dynamic properties container.
+     */
+    public function isDynamicProperty(string $fieldName): bool
+    {
+        return isset($this->fieldMappings[$fieldName]->dynamicProperty)
+            || isset($this->associationMappings[$fieldName]->dynamicProperty);
+    }
+
+    /**
+     * Returns the keys of the entity's dynamic properties containers that are not mapped, indexed by container.
+     *
+     * @internal
+     *
+     * @return array<string, non-empty-list<int|string>>
+     */
+    public function getUnmappedDynamicPropertyKeys(object $entity): array
+    {
+        $unmapped = [];
+
+        foreach ($this->dynamicContainerAccessors as $property => $accessor) {
+            $values = $accessor->getValue($entity);
+
+            if (! is_array($values)) {
+                continue;
+            }
+
+            $keys = array_keys(array_diff_key($values, $this->dynamicPropertyKeys[$property]));
+
+            if ($keys !== []) {
+                $unmapped[$property] = $keys;
+            }
+        }
+
+        return $unmapped;
+    }
+
+    /**
+     * Validates that the dynamic properties containers map to array properties that can be written to.
+     *
+     * @throws MappingException
+     */
+    public function validateDynamicProperties(): void
+    {
+        foreach ($this->dynamicProperties as $property => $mapping) {
+            $className = $mapping->declared ?? $this->name;
+
+            if (! property_exists($className, $property)) {
+                throw MappingException::invalidDynamicPropertiesContainer($this->name, $property, 'the property does not exist');
+            }
+
+            $reflectionProperty = new ReflectionProperty($className, $property);
+
+            if ($reflectionProperty->isStatic() || $reflectionProperty->isReadOnly()) {
+                throw MappingException::invalidDynamicPropertiesContainer($this->name, $property, 'the property must not be static or readonly');
+            }
+
+            $type = $reflectionProperty->getType();
+
+            if ($type !== null && ! ($type instanceof ReflectionNamedType && $type->getName() === 'array')) {
+                throw MappingException::invalidDynamicPropertiesContainer($this->name, $property, 'the property must be of type array');
+            }
+        }
+    }
+
+    /** Prepends the column prefix of the dynamic properties container, keeping quotes intact. */
+    private function prefixDynamicColumnName(string $container, string $columnName): string
+    {
+        $prefix = $this->dynamicProperties[$container]->columnPrefix;
+
+        if (! $prefix) {
+            return $columnName;
+        }
+
+        return $columnName[0] === '`'
+            ? '`' . $prefix . trim($columnName, '`') . '`'
+            : $prefix . $columnName;
+    }
+
+    /** @throws MappingException */
+    private function validateDynamicPropertyMapping(mixed $container, string $fieldName): void
+    {
+        if (! is_string($container) || ! isset($this->dynamicProperties[$container])) {
+            throw MappingException::dynamicPropertiesNotFound($this->name, (string) $container, $fieldName);
+        }
+
+        if (preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $fieldName) !== 1) {
+            throw MappingException::invalidDynamicPropertyKey($this->name, $fieldName);
+        }
+
+        if ($this->reflClass !== null && $this->reflClass->hasProperty($fieldName)) {
+            throw MappingException::dynamicPropertyCollidesWithProperty($this->name, $fieldName);
+        }
+    }
+
     /** @throws MappingException */
     private function assertFieldNotMapped(string $fieldName): void
     {
         if (
             isset($this->fieldMappings[$fieldName]) ||
             isset($this->associationMappings[$fieldName]) ||
-            isset($this->embeddedClasses[$fieldName])
+            isset($this->embeddedClasses[$fieldName]) ||
+            isset($this->dynamicProperties[$fieldName])
         ) {
             throw MappingException::duplicateFieldMapping($this->name, $fieldName);
         }

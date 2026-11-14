@@ -730,4 +730,52 @@ EXCEPTION
             $className,
         ));
     }
+
+    public static function dynamicPropertiesNotFound(string $className, string $container, string $fieldName): self
+    {
+        return new self(sprintf(
+            'Field "%s" of class "%s" references the dynamic properties container "%s", which is not mapped.',
+            $fieldName,
+            $className,
+            $container,
+        ));
+    }
+
+    public static function invalidDynamicPropertyKey(string $className, string $fieldName): self
+    {
+        return new self(sprintf(
+            'The dynamic property "%s" of class "%s" is invalid, keys must be valid identifiers matching [a-zA-Z_][a-zA-Z0-9_]*.',
+            $fieldName,
+            $className,
+        ));
+    }
+
+    public static function dynamicPropertyCollidesWithProperty(string $className, string $fieldName): self
+    {
+        return new self(sprintf(
+            'The dynamic property "%s" of class "%s" collides with a declared property of the same name.',
+            $fieldName,
+            $className,
+        ));
+    }
+
+    public static function illegalDynamicPropertyMapping(string $className, string $fieldName, string $reason): self
+    {
+        return new self(sprintf(
+            'The dynamic property "%s" of class "%s" is invalid: %s.',
+            $fieldName,
+            $className,
+            $reason,
+        ));
+    }
+
+    public static function invalidDynamicPropertiesContainer(string $className, string $container, string $reason): self
+    {
+        return new self(sprintf(
+            'The dynamic properties container "%s" of class "%s" is invalid: %s.',
+            $container,
+            $className,
+            $reason,
+        ));
+    }
 }

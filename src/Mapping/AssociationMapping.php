@@ -72,6 +72,12 @@ abstract class AssociationMapping implements ArrayAccess
     public bool|null $unique = null;
 
     /**
+     * The name of the dynamic properties container (an array property) this
+     * association is stored in, or null if the association is a regular property.
+     */
+    public string|null $dynamicProperty = null;
+
+    /**
      * @param string       $fieldName    The name of the field in the entity
      *                                   the association is mapped to.
      * @param class-string $sourceEntity The class name of the source entity.
@@ -112,6 +118,7 @@ abstract class AssociationMapping implements ArrayAccess
      *     originalField?: string|null,
      *     orphanRemoval?: bool,
      *     unique?: bool|null,
+     *     dynamicProperty?: string|null,
      *     joinTable?: mixed[]|null,
      *     type?: int,
      *     isOwningSide: bool,
@@ -347,6 +354,7 @@ abstract class AssociationMapping implements ArrayAccess
                 'cache',
                 'originalClass',
                 'originalField',
+                'dynamicProperty',
             ] as $stringOrArrayProperty
         ) {
             if ($this->$stringOrArrayProperty !== null) {

@@ -72,6 +72,11 @@ final class FieldMapping implements ArrayAccess
     public string|null $declaredField = null;
     public array|null $options        = null;
     public bool|null $version         = null;
+    /**
+     * The name of the dynamic properties container (an array property) this
+     * field is stored in, or null if the field is a regular property.
+     */
+    public string|null $dynamicProperty = null;
 
     /** @deprecated Use options with 'default' key instead */
     public string|int|null $default = null;
@@ -117,6 +122,7 @@ final class FieldMapping implements ArrayAccess
      *     options?: array<string, mixed>|null,
      *     version?: bool|null,
      *     default?: string|int|null,
+     *     dynamicProperty?: string|null,
      * } $mappingArray
      */
     public static function fromMappingArray(array $mappingArray): self
@@ -166,6 +172,7 @@ final class FieldMapping implements ArrayAccess
                 'declaredField',
                 'options',
                 'default',
+                'dynamicProperty',
             ] as $key
         ) {
             if ($this->$key !== null) {

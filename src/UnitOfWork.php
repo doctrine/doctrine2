@@ -629,6 +629,8 @@ class UnitOfWork implements PropertyChangedListener
             $this->listenersInvoker->invoke($class, Events::preFlush, $entity, new PreFlushEventArgs($this->em), $invoke);
         }
 
+        $this->assertDynamicPropertiesAreMapped($class, $entity);
+
         $actualData = [];
 
         foreach ($class->propertyAccessors as $name => $refProp) {
@@ -1055,6 +1057,25 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Ensures the dynamic properties containers of the entity only contain mapped keys,
+     * otherwise their values would silently be lost.
+     *
+     * @param ClassMetadata<object> $class
+     *
+     * @throws ORMInvalidArgumentException
+     */
+    private function assertDynamicPropertiesAreMapped(ClassMetadata $class, object $entity): void
+    {
+        if ($class->dynamicProperties === []) {
+            return;
+        }
+
+        foreach ($class->getUnmappedDynamicPropertyKeys($entity) as $container => $keys) {
+            throw ORMInvalidArgumentException::unmappedDynamicProperties($entity, $container, $keys);
+        }
+    }
+
+    /**
      * INTERNAL:
      * Computes the changeset of an individual entity, independently of the
      * computeChangeSets() routine that is used at the beginning of a UnitOfWork#commit().
@@ -1084,6 +1105,8 @@ class UnitOfWork implements PropertyChangedListener
         if (! $class->isInheritanceTypeNone()) {
             $class = $this->em->getClassMetadata($entity::class);
         }
+
+        $this->assertDynamicPropertiesAreMapped($class, $entity);
 
         $actualData = [];
 
