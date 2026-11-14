@@ -42,6 +42,7 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
         $em            = $sqlWalker->getEntityManager();
         $conn          = $em->getConnection();
         $platform      = $conn->getDatabasePlatform();
+        $sqlComments   = $sqlWalker->walkSqlComments();
         $quoteStrategy = $em->getConfiguration()->getQuoteStrategy();
 
         if ($conn instanceof PrimaryReadReplicaConnection) {
@@ -71,7 +72,7 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
             $insertSql .= $sqlWalker->walkWhereClause($AST->whereClause);
         }
 
-        $this->insertSql = $insertSql;
+        $this->insertSql = $sqlComments . $insertSql;
 
         // 2. Create ID subselect statement used in DELETE ... WHERE ... IN (subselect)
         $idSubselect = 'SELECT ' . $idColumnList . ' FROM ' . $tempTable;
@@ -80,7 +81,7 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
         $classNames = [...$primaryClass->parentClasses, ...[$primaryClass->name], ...$primaryClass->subClasses];
         foreach (array_reverse($classNames) as $className) {
             $tableName             = $quoteStrategy->getTableName($em->getClassMetadata($className), $platform);
-            $this->sqlStatements[] = 'DELETE FROM ' . $tableName
+            $this->sqlStatements[] = $sqlComments . 'DELETE FROM ' . $tableName
                     . ' WHERE (' . $idColumnList . ') IN (' . $idSubselect . ')';
         }
 
@@ -101,9 +102,9 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
             ];
         }
 
-        $this->createTempTableSql = $platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable . ' ('
+        $this->createTempTableSql = $sqlComments . $platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable . ' ('
                 . $platform->getColumnDeclarationListSQL($columnDefinitions) . ', PRIMARY KEY(' . implode(',', $idColumnNames) . '))';
-        $this->dropTempTableSql   = $platform->getDropTemporaryTableSQL($tempTable);
+        $this->dropTempTableSql   = $sqlComments . $platform->getDropTemporaryTableSQL($tempTable);
     }
 
     /**

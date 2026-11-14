@@ -115,6 +115,14 @@ class Query extends AbstractQuery
     public const HINT_LOCK_MODE = 'doctrine.lockMode';
 
     /**
+     * A list of comments to prepend, as SQL comments, to every SQL statement the query executes.
+     *
+     * Comments are part of the query cache key, so avoid putting values that change on every
+     * request (like request IDs) in them when using a query cache.
+     */
+    public const HINT_SQL_COMMENTS = 'doctrine.sqlComments';
+
+    /**
      * The current state of this query.
      *
      * @phpstan-var self::STATE_*

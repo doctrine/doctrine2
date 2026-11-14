@@ -131,6 +131,13 @@ class QueryBuilder implements Stringable
     private array $hints = [];
 
     /**
+     * The comments to prepend to the generated SQL.
+     *
+     * @var list<string>
+     */
+    private array $comments = [];
+
+    /**
      * Initializes a new <tt>QueryBuilder</tt> that uses the given <tt>EntityManager</tt>.
      *
      * @param EntityManagerInterface $em The EntityManager to use.
@@ -254,6 +261,29 @@ class QueryBuilder implements Stringable
         return $this;
     }
 
+    /**
+     * Adds a comment to the SQL generated for the query.
+     *
+     * Comments are rendered above the SQL, in the order they were added, using the double-hyphen
+     * syntax. A comment may span multiple lines: the delimiter is repeated on each of them, which
+     * is also what keeps the comment from escaping into the query as SQL.
+     *
+     * <code>
+     *     $qb = $em->createQueryBuilder()
+     *         ->select('u')
+     *         ->from('User', 'u')
+     *         ->addComment('Fetching users for the admin dashboard');
+     * </code>
+     *
+     * @return $this
+     */
+    public function addComment(string $comment): static
+    {
+        $this->comments[] = $comment;
+
+        return $this;
+    }
+
     /** @phpstan-return Cache::MODE_*|null */
     public function getCacheMode(): int|null
     {
@@ -336,6 +366,10 @@ class QueryBuilder implements Stringable
 
         foreach ($this->hints as $name => $value) {
             $query->setHint($name, $value);
+        }
+
+        if ($this->comments !== []) {
+            $query->setHint(Query::HINT_SQL_COMMENTS, $this->comments);
         }
 
         return $query;

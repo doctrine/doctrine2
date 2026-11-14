@@ -45,6 +45,7 @@ class MultiTableUpdateExecutor extends AbstractSqlExecutor
         $em                  = $sqlWalker->getEntityManager();
         $conn                = $em->getConnection();
         $platform            = $conn->getDatabasePlatform();
+        $sqlComments         = $sqlWalker->walkSqlComments();
         $quoteStrategy       = $em->getConfiguration()->getQuoteStrategy();
         $this->sqlStatements = [];
 
@@ -112,7 +113,7 @@ class MultiTableUpdateExecutor extends AbstractSqlExecutor
 
             if ($affected) {
                 $this->sqlParameters[] = $sqlParameters;
-                $this->sqlStatements[] = $updateSql . ' WHERE (' . $idColumnList . ') IN (' . $idSubselect . ')';
+                $this->sqlStatements[] = $sqlComments . $updateSql . ' WHERE (' . $idColumnList . ') IN (' . $idSubselect . ')';
             }
         }
 
@@ -121,7 +122,7 @@ class MultiTableUpdateExecutor extends AbstractSqlExecutor
             $insertSql .= $sqlWalker->walkWhereClause($AST->whereClause);
         }
 
-        $this->insertSql = $insertSql;
+        $this->insertSql = $sqlComments . $insertSql;
 
         // 4. Store DDL for temporary identifier table.
         $columnDefinitions = [];
@@ -141,10 +142,10 @@ class MultiTableUpdateExecutor extends AbstractSqlExecutor
             ];
         }
 
-        $this->createTempTableSql = $platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable . ' ('
+        $this->createTempTableSql = $sqlComments . $platform->getCreateTemporaryTableSnippetSQL() . ' ' . $tempTable . ' ('
                 . $platform->getColumnDeclarationListSQL($columnDefinitions) . ', PRIMARY KEY(' . implode(',', $idColumnNames) . '))';
 
-        $this->dropTempTableSql = $platform->getDropTemporaryTableSQL($tempTable);
+        $this->dropTempTableSql = $sqlComments . $platform->getDropTemporaryTableSQL($tempTable);
     }
 
     /**

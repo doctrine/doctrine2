@@ -1525,4 +1525,171 @@ class QueryBuilderTest extends OrmTestCase
 
         self::assertCount(5, $qb->getHints('foo'));
     }
+
+    public function testGetQueryWithoutCommentsDoesNotSetTheCommentsHint(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u')
+            ->from(CmsUser::class, 'u');
+
+        self::assertFalse($qb->getQuery()->hasHint(Query::HINT_SQL_COMMENTS));
+    }
+
+    public function testAddCommentSingleComment(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('This is a test query');
+
+        self::assertSame("-- This is a test query\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentMultipleCommentsInOrder(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('First comment')
+            ->where('u.id = :id')
+            ->addComment('Second comment');
+
+        $whereSql = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u')
+            ->where('u.id = :id')
+            ->getQuery()
+            ->getSQL();
+
+        self::assertNotSame($sql, $whereSql);
+        self::assertSame("-- First comment\n-- Second comment\n\n" . $whereSql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentEmptyComment(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('');
+
+        self::assertSame("-- \n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentSpecialCharacters(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Comment with \'quotes\', "double quotes" and a :placeholder?');
+
+        self::assertSame(
+            "-- Comment with 'quotes', \"double quotes\" and a :placeholder?\n\n" . $sql,
+            $qb->getQuery()->getSQL(),
+        );
+    }
+
+    #[DataProvider('lineTerminatorProvider')]
+    public function testAddCommentCommentsOutEveryLine(string $lineTerminator): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Comment' . $lineTerminator . 'DROP TABLE users; --');
+
+        self::assertSame("-- Comment\n-- DROP TABLE users; --\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function lineTerminatorProvider(): iterable
+    {
+        yield 'line feed' => ["\n"];
+        yield 'carriage return' => ["\r"];
+        yield 'carriage return and line feed' => ["\r\n"];
+    }
+
+    public function testAddCommentIsPrependedAfterLimitIsApplied(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u')
+            ->setMaxResults(10)
+            ->setFirstResult(5);
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Paginated');
+
+        self::assertSame("-- Paginated\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    #[IgnoreDeprecations]
+    public function testAddCommentWithLegacySqlWalker(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u')
+            ->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, Query\SqlWalker::class);
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Legacy walker');
+
+        self::assertSame("-- Legacy walker\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentUpdateQuery(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->update(CmsUser::class, 'u')
+            ->set('u.name', ':name')
+            ->where('u.id = :id');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Update operation');
+
+        self::assertSame("-- Update operation\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentDeleteQuery(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->delete(CmsUser::class, 'u')
+            ->where('u.id = :id');
+
+        $sql = $qb->getQuery()->getSQL();
+
+        $qb->addComment('Delete operation');
+
+        self::assertSame("-- Delete operation\n\n" . $sql, $qb->getQuery()->getSQL());
+    }
+
+    public function testAddCommentIsKeptByClone(): void
+    {
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('u.id')
+            ->from(CmsUser::class, 'u')
+            ->addComment('Original');
+
+        $clone = clone $qb;
+        $clone->addComment('Clone only');
+
+        self::assertSame(['Original'], $qb->getQuery()->getHint(Query::HINT_SQL_COMMENTS));
+        self::assertSame(['Original', 'Clone only'], $clone->getQuery()->getHint(Query::HINT_SQL_COMMENTS));
+    }
 }

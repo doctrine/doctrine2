@@ -28,7 +28,7 @@ class SingleSelectExecutor extends AbstractSqlExecutor
             self::class,
         );
 
-        $this->sqlStatements = $sqlWalker->walkSelectStatement($AST);
+        $this->sqlStatements = $sqlWalker->walkSqlComments() . $sqlWalker->walkSelectStatement($AST);
     }
 
     /**

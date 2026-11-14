@@ -15,7 +15,7 @@ class SqlOutputWalker extends SqlWalker implements OutputWalker
     {
         switch (true) {
             case $AST instanceof AST\SelectStatement:
-                return new SingleSelectSqlFinalizer($this->createSqlForFinalizer($AST));
+                return new SingleSelectSqlFinalizer($this->createSqlForFinalizer($AST), $this->walkSqlComments());
 
             case $AST instanceof AST\UpdateStatement:
                 return new PreparedExecutorFinalizer($this->createUpdateStatementExecutor($AST));

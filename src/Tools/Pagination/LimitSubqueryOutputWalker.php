@@ -175,7 +175,7 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
             $sql = $this->createSqlWithoutRowNumber($AST);
         }
 
-        return new SingleSelectSqlFinalizer($sql);
+        return new SingleSelectSqlFinalizer($sql, $this->walkSqlComments());
     }
 
     /**
