@@ -18,6 +18,8 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
 {
     private Closure|null $unsetter = null;
 
+    private bool $hasHooks;
+
     public function __construct(private PropertyAccessor $parent, private ReflectionProperty $reflectionProperty)
     {
         if (! $this->reflectionProperty->hasType()) {
@@ -35,6 +37,8 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
                 $this->reflectionProperty->getName(),
             ));
         }
+
+        $this->hasHooks = PHP_VERSION_ID >= 80400 && $this->reflectionProperty->hasHooks();
     }
 
     public function setValue(object $object, mixed $value): void
@@ -43,6 +47,13 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
             /* The property is not initialized yet on a lazy object, so it is already unset.
                Calling unset() on it would trigger the initialization of the whole object. */
             if (PHP_VERSION_ID >= 80400 && $this->reflectionProperty->isLazy($object)) {
+                return;
+            }
+
+            // A hooked property cannot be returned to its uninitialized state: unset() on one
+            // raises an Error, and null would violate the type. Leaving it alone keeps a property
+            // that was never written uninitialized, which is the state unset() produced here.
+            if ($this->hasHooks) {
                 return;
             }
 

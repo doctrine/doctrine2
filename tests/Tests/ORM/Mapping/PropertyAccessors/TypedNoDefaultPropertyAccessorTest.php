@@ -6,6 +6,7 @@ namespace Doctrine\Tests\ORM\Mapping\PropertyAccessors;
 
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\TypedNoDefaultPropertyAccessor;
+use Doctrine\Tests\Models\PropertyHooks\User;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\RequiresPhp;
 use ReflectionClass;
@@ -66,6 +67,32 @@ class TypedNoDefaultPropertyAccessorTest extends OrmTestCase
         self::assertTrue($reflection->isUninitializedLazyObject($object));
         $accessor->setValue($object, null);
         self::assertTrue($reflection->isUninitializedLazyObject($object), 'setValue(null) initialized the lazy object');
+    }
+
+    public function testSetNullOnHookedPropertyLeavesItUninitialized(): void
+    {
+        $accessor = PropertyAccessorFactory::createPropertyAccessor(User::class, 'first');
+
+        $object = new User();
+        $accessor->setValue($object, null);
+
+        $this->assertNull($accessor->getValue($object));
+    }
+
+    #[RequiresPhp('>= 8.4.0')]
+    public function testSetNullOnWrittenHookedPropertyDoesNotThrow(): void
+    {
+        $accessor = PropertyAccessorFactory::createPropertyAccessor(User::class, 'first');
+
+        $object        = new User();
+        $object->first = 'Benjamin';
+
+        // unset() on a hooked property is an Error and null would violate the type, so the
+        // value cannot be cleared. Not throwing is what matters: removing an entity whose
+        // identifier is hooked goes through here.
+        $accessor->setValue($object, null);
+
+        $this->assertSame('Benjamin', $accessor->getValue($object));
     }
 }
 
