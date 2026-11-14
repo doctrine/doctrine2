@@ -1344,8 +1344,15 @@ class SqlWalker
             case $expr instanceof AST\SimpleCaseExpression:
                 $columnAlias = $this->getSQLColumnAlias('sclr');
                 $resultAlias = $selectExpression->fieldIdentificationVariable ?: $this->scalarResultCounter++;
+                $exprSql     = $expr->dispatch($this);
 
-                $sql .= $expr->dispatch($this) . ' AS ' . $columnAlias;
+                // the result is selected like a column of its type, e.g. a geometry returned by a spatial function
+                if (! $hidden && $expr instanceof Query\AST\ExpressionWithReturnType) {
+                    $exprSql = $this->typeProvider->get($expr->getReturnTypeName())
+                        ->convertToPHPValueSQL($exprSql, $this->platform);
+                }
+
+                $sql .= $exprSql . ' AS ' . $columnAlias;
 
                 $this->scalarResultAliasMap[$resultAlias] = $columnAlias;
 

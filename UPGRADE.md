@@ -29,6 +29,14 @@ and directly start using native lazy objects.
 
 # Upgrade to 3.8
 
+## The results of functions declaring their return type are converted like columns
+
+The SQL of a select expression whose function implements `ExpressionWithReturnType` is now wrapped with the
+`convertToPHPValueSQL()` method of the declared type, like the SQL selecting a column of this type: for instance, a
+function returning a geometry is selected in the format that the `geometry` type converts. The built-in types do not
+modify this SQL. A custom function that converts its result in SQL while declaring a type that converts it too has to
+stop converting it. The results selected as `HIDDEN` are not converted.
+
 ## BC BREAK: Second level cache requires `doctrine/orm-plugin-second-level-cache`
 
 To use the second level cache, you must now install an additional package:
