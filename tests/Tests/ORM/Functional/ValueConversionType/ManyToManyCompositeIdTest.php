@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional\ValueConversionType;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\Tests\Models\ValueConversionType as Entity;
 use Doctrine\Tests\Models\ValueConversionType\InversedManyToManyCompositeIdEntity;
 use Doctrine\Tests\Models\ValueConversionType\OwningManyToManyCompositeIdEntity;
@@ -20,6 +21,36 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('DDC-3380')]
 class ManyToManyCompositeIdTest extends OrmFunctionalTestCase
 {
+    #[Group('non-cacheable')]
+    public function testEagerFetchOwningSideWithCompositeIdentifiers(): void
+    {
+        $query = $this->_em->createQuery('SELECT e FROM ' . OwningManyToManyCompositeIdEntity::class . ' e');
+        $query->setFetchMode(OwningManyToManyCompositeIdEntity::class, 'associatedEntities', ClassMetadata::FETCH_EAGER);
+        $this->getQueryLog()->reset()->enable();
+
+        $entities = $query->getResult();
+
+        self::assertCount(1, $entities);
+        self::assertTrue($entities[0]->associatedEntities->isInitialized());
+        self::assertCount(1, $entities[0]->associatedEntities);
+        $this->assertQueryCount(2);
+    }
+
+    #[Group('non-cacheable')]
+    public function testEagerFetchInverseSideWithCompositeIdentifiers(): void
+    {
+        $query = $this->_em->createQuery('SELECT e FROM ' . InversedManyToManyCompositeIdEntity::class . ' e');
+        $query->setFetchMode(InversedManyToManyCompositeIdEntity::class, 'associatedEntities', ClassMetadata::FETCH_EAGER);
+        $this->getQueryLog()->reset()->enable();
+
+        $entities = $query->getResult();
+
+        self::assertCount(1, $entities);
+        self::assertTrue($entities[0]->associatedEntities->isInitialized());
+        self::assertCount(1, $entities[0]->associatedEntities);
+        $this->assertQueryCount(2);
+    }
+
     protected function setUp(): void
     {
         $this->useModelSet('vct_manytomany_compositeid');
