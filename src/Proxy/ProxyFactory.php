@@ -237,7 +237,7 @@ EOPHP;
             if ($original === null) {
                 throw EntityNotFoundException::fromClassNameAndIdentifier(
                     $classMetadata->getName(),
-                    $identifierFlattener->flattenIdentifier($classMetadata, $entityIdentifier),
+                    $identifierFlattener->flattenFieldIdentifier($classMetadata, $entityIdentifier),
                 );
             }
         };
@@ -266,7 +266,7 @@ EOPHP;
                 if ($original === null) {
                     throw EntityNotFoundException::fromClassNameAndIdentifier(
                         $classMetadata->getName(),
-                        $identifierFlattener->flattenIdentifier($classMetadata, $identifier),
+                        $identifierFlattener->flattenFieldIdentifier($classMetadata, $identifier),
                     );
                 }
             }, ReflectionClass::SKIP_INITIALIZATION_ON_SERIALIZE);
@@ -341,7 +341,7 @@ EOPHP;
             if ($original === null) {
                 throw EntityNotFoundException::fromClassNameAndIdentifier(
                     $classMetadata->getName(),
-                    $identifierFlattener->flattenIdentifier($classMetadata, $identifier),
+                    $identifierFlattener->flattenFieldIdentifier($classMetadata, $identifier),
                 );
             }
 

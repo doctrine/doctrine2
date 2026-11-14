@@ -321,7 +321,7 @@ class BasicEntityPersister implements EntityPersister
             . ' FROM ' . $tableName
             . ' WHERE ' . implode(' = ? AND ', $identifier) . ' = ?';
 
-        $flatId = $this->identifierFlattener->flattenIdentifier($versionedClass, $id);
+        $flatId = $this->identifierFlattener->flattenFieldIdentifier($versionedClass, $id);
 
         $values = $this->conn->fetchNumeric(
             $sql,

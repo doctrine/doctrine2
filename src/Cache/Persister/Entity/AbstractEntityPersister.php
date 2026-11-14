@@ -28,6 +28,7 @@ use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\UnitOfWork;
+use Doctrine\ORM\Utility\IdentifierFlattener;
 use SortDirection;
 
 use function array_merge;
@@ -60,6 +61,8 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
      */
     protected array|null $joinedAssociations = null;
 
+    private readonly IdentifierFlattener $identifierFlattener;
+
     public function __construct(
         protected EntityPersister $persister,
         protected Region $region,
@@ -70,15 +73,16 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         $cacheConfig   = $configuration->getSecondLevelCacheConfiguration();
         $cacheFactory  = $cacheConfig->getCacheFactory();
 
-        $this->cache           = $em->getCache();
-        $this->filters         = $em->getFilters();
-        $this->regionName      = $region->getName();
-        $this->uow             = $em->getUnitOfWork();
-        $this->metadataFactory = $em->getMetadataFactory();
-        $this->cacheLogger     = $cacheConfig->getCacheLogger();
-        $this->timestampRegion = $cacheFactory->getTimestampRegion();
-        $this->hydrator        = $cacheFactory->buildEntityHydrator($em, $class);
-        $this->timestampKey    = new TimestampCacheKey($this->class->rootEntityName);
+        $this->cache               = $em->getCache();
+        $this->filters             = $em->getFilters();
+        $this->regionName          = $region->getName();
+        $this->uow                 = $em->getUnitOfWork();
+        $this->metadataFactory     = $em->getMetadataFactory();
+        $this->identifierFlattener = new IdentifierFlattener($this->uow, $this->metadataFactory);
+        $this->cacheLogger         = $cacheConfig->getCacheLogger();
+        $this->timestampRegion     = $cacheFactory->getTimestampRegion();
+        $this->hydrator            = $cacheFactory->buildEntityHydrator($em, $class);
+        $this->timestampKey        = new TimestampCacheKey($this->class->rootEntityName);
     }
 
     public function addInsert(object $entity): void
@@ -132,7 +136,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     public function exists(object $entity, Criteria|null $extraConditions = null): bool
     {
         if ($extraConditions === null) {
-            $key = new EntityCacheKey($this->class->rootEntityName, $this->class->getIdentifierValues($entity));
+            $key = new EntityCacheKey($this->class->rootEntityName, $this->flattenIdentifier($this->class->getIdentifierValues($entity)));
 
             if ($this->region->contains($key)) {
                 return true;
@@ -140,6 +144,20 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         }
 
         return $this->persister->exists($entity, $extraConditions);
+    }
+
+    /**
+     * Cache entries are keyed by flat identifiers, like the identity map.
+     *
+     * @param array<string, mixed> $identifier
+     *
+     * @return array<string, mixed>
+     */
+    private function flattenIdentifier(array $identifier): array
+    {
+        return $this->class->containsForeignIdentifier
+            ? $this->identifierFlattener->flattenFieldIdentifier($this->class, $identifier)
+            : $identifier;
     }
 
     public function getCacheRegion(): Region
@@ -378,7 +396,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
      */
     public function loadById(array $identifier, object|null $entity = null): object|null
     {
-        $cacheKey   = new EntityCacheKey($this->class->rootEntityName, $identifier);
+        $cacheKey   = new EntityCacheKey($this->class->rootEntityName, $this->flattenIdentifier($identifier));
         $cacheEntry = $this->region->get($cacheKey);
         $class      = $this->class;
 

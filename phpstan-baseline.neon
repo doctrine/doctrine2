@@ -2149,7 +2149,7 @@ parameters:
 			path: src/Proxy/ProxyFactory.php
 
 		-
-			message: '#^Parameter \#1 \$class of method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:flattenIdentifier\(\) expects Doctrine\\ORM\\Mapping\\ClassMetadata, Doctrine\\Persistence\\Mapping\\ClassMetadata given\.$#'
+			message: '#^Parameter \#1 \$class of method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:flattenFieldIdentifier\(\) expects Doctrine\\ORM\\Mapping\\ClassMetadata\<object\>, Doctrine\\Persistence\\Mapping\\ClassMetadata given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Proxy/ProxyFactory.php
