@@ -40,6 +40,8 @@ use RuntimeException;
 
 use function array_keys;
 use function array_map;
+use function array_merge;
+use function array_unshift;
 use function count;
 use function sprintf;
 
@@ -804,6 +806,51 @@ class PaginationTest extends OrmFunctionalTestCase
             ['topic21', 'topic22', 'topic30', 'topic31'],
             array_map(static fn (CmsArticle $article): string => $article->topic, $secondPage->getItems()),
         );
+    }
+
+    /**
+     * NULLs sort where the platform puts them, and the walk crosses them in both directions:
+     * forward it yields the query's own order, backward its exact inverse.
+     */
+    #[DataProvider('directions')]
+    public function testCursorPaginatorWalksANullableColumn(string $direction): void
+    {
+        $statuses = [null, 'b', 'a', null, 'b', null, 'a', 'c', null];
+        foreach ($this->_em->getRepository(CmsUser::class)->findBy([], ['id' => 'ASC']) as $i => $user) {
+            $user->status = $statuses[$i];
+        }
+
+        $this->_em->flush();
+        $this->_em->clear();
+
+        $dql       = 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.status ' . $direction . ', u.id ' . $direction;
+        $usernames = static fn (iterable $users): array => array_map(static fn (CmsUser $user): string => $user->username, [...$users]);
+        $expected  = $usernames($this->_em->createQuery($dql)->getResult());
+        $paginator = new CursorPaginator(2);
+
+        $page    = $paginator->paginate($this->_em->createQuery($dql));
+        $forward = [$usernames($page->getItems())];
+        while ($page->hasNextPage()) {
+            $page      = $paginator->paginate($this->_em->createQuery($dql), $page->getNextCursor()->encodeToString());
+            $forward[] = $usernames($page->getItems());
+        }
+
+        self::assertSame($expected, array_merge(...$forward));
+
+        $backward = [$usernames($page->getItems())];
+        while ($page->hasPreviousPage()) {
+            $page = $paginator->paginate($this->_em->createQuery($dql), $page->getPreviousCursor()->encodeToString());
+            array_unshift($backward, $usernames($page->getItems()));
+        }
+
+        self::assertSame($expected, array_merge(...$backward));
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function directions(): iterable
+    {
+        yield 'ascending' => ['ASC'];
+        yield 'descending' => ['DESC'];
     }
 
     #[DataProvider('useOutputWalkers')]
