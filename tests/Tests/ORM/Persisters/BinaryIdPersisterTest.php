@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Persisters;
 
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Schema\Schema;
-use Doctrine\DBAL\Types\Type as DbalType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMSetup;
@@ -82,9 +81,11 @@ final class BinaryIdPersisterTest extends OrmTestCase
             $config->setUseSchemaEditorApi(true);
         }
 
-        if (! DbalType::hasType(BinaryIdType::NAME)) {
-            DbalType::addType(BinaryIdType::NAME, BinaryIdType::class);
+        if (method_exists($config, 'setTypeProvider')) {
+            $config->setTypeProvider(self::getTypeRegistry());
         }
+
+        self::registerDbalType(BinaryIdType::NAME, BinaryIdType::class);
 
         $connection    = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
         $entityManager = new EntityManagerMock($connection, $config);

@@ -10,7 +10,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
@@ -36,17 +35,8 @@ class BasicEntityPersisterTypeValueSqlTest extends OrmTestCase
     {
         parent::setUp();
 
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
-
-        if (DBALType::hasType('upper_case_string')) {
-            DBALType::overrideType('upper_case_string', UpperCaseStringType::class);
-        } else {
-            DBALType::addType('upper_case_string', UpperCaseStringType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
+        self::registerDbalType(UpperCaseStringType::NAME, UpperCaseStringType::class);
 
         $this->entityManager = $this->getTestEntityManager();
 
@@ -74,7 +64,7 @@ class BasicEntityPersisterTypeValueSqlTest extends OrmTestCase
             ->willReturn(true);
 
         $connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([[], $driver])
+            ->setConstructorArgs([[], $driver, self::createDbalConfiguration()])
             ->onlyMethods(['executeStatement', 'getDatabasePlatform'])
             ->getMock();
         $connection->method('getDatabasePlatform')

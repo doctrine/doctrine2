@@ -9,7 +9,6 @@ use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\OraclePlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
@@ -1798,11 +1797,7 @@ class SelectSqlGenerationTest extends OrmTestCase
 
     public function testCustomTypeValueSql(): void
     {
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->assertSqlGeneration(
             'SELECT p.customInteger FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p WHERE p.id = 1',
@@ -1812,11 +1807,7 @@ class SelectSqlGenerationTest extends OrmTestCase
 
     public function testCustomTypeValueSqlIgnoresIdentifierColumn(): void
     {
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->assertSqlGeneration(
             'SELECT p.id FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p WHERE p.id = 1',
@@ -1826,11 +1817,7 @@ class SelectSqlGenerationTest extends OrmTestCase
 
     public function testCustomTypeValueSqlForFunctionReturnType(): void
     {
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->entityManager->getConfiguration()->addCustomNumericFunction(
             'NEGATIVE_ABS',
@@ -1852,11 +1839,7 @@ class SelectSqlGenerationTest extends OrmTestCase
 
     public function testCustomTypeValueSqlForAllFields(): void
     {
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->assertSqlGeneration(
             'SELECT p FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p',
@@ -1866,11 +1849,7 @@ class SelectSqlGenerationTest extends OrmTestCase
 
     public function testCustomTypeValueSqlForPartialObject(): void
     {
-        if (DBALType::hasType('negative_to_positive')) {
-            DBALType::overrideType('negative_to_positive', NegativeToPositiveType::class);
-        } else {
-            DBALType::addType('negative_to_positive', NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->assertSqlGeneration(
             'SELECT partial p.{id, customInteger} FROM Doctrine\Tests\Models\CustomType\CustomTypeParent p',

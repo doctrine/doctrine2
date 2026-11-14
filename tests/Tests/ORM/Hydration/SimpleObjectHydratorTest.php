@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Hydration;
 
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Internal\Hydration\HydrationException;
 use Doctrine\ORM\Internal\Hydration\SimpleObjectHydrator;
 use Doctrine\ORM\Mapping\MappingException;
@@ -130,8 +129,8 @@ class SimpleObjectHydratorTest extends HydrationTestCase
 
     public function testWrongValuesShouldNotBeConvertedToPhpValue(): void
     {
-        DBALType::addType(GH8565EmployeePayloadType::NAME, GH8565EmployeePayloadType::class);
-        DBALType::addType(GH8565ManagerPayloadType::NAME, GH8565ManagerPayloadType::class);
+        self::registerDbalType(GH8565EmployeePayloadType::NAME, GH8565EmployeePayloadType::class);
+        self::registerDbalType(GH8565ManagerPayloadType::NAME, GH8565ManagerPayloadType::class);
 
         $rsm = new ResultSetMapping();
         $rsm->addEntityResult(GH8565Person::class, 'p');
