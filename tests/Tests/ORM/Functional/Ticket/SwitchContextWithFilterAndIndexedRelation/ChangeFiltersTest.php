@@ -8,9 +8,9 @@ use Doctrine\Tests\OrmFunctionalTestCase;
 
 final class ChangeFiltersTest extends OrmFunctionalTestCase
 {
-    private const COMPANY_A = 'A';
-    private const CAT_BAR   = 'bar';
-    private const CAT_FOO   = 'foo';
+    private const string COMPANY_A = 'A';
+    private const string CAT_BAR   = 'bar';
+    private const string CAT_FOO   = 'foo';
 
     public function setUp(): void
     {

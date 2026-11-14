@@ -9,6 +9,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 use function assert;
 use function strcasecmp;
@@ -26,6 +27,7 @@ class TrimFunction extends FunctionNode
     public string|false $trimChar = false;
     public Node $stringPrimary;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         $stringPrimary = $sqlWalker->walkStringPrimary($this->stringPrimary);
@@ -43,6 +45,7 @@ class TrimFunction extends FunctionNode
         return $platform->getTrimExpression($stringPrimary, $trimMode);
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $lexer = $parser->getLexer();
@@ -68,8 +71,7 @@ class TrimFunction extends FunctionNode
         $parser->match(TokenType::T_CLOSE_PARENTHESIS);
     }
 
-    /** @phpstan-return TrimMode::* */
-    private function getTrimMode(): TrimMode|int
+    private function getTrimMode(): TrimMode
     {
         if ($this->leading) {
             return TrimMode::LEADING;

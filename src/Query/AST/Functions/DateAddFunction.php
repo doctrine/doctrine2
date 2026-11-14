@@ -10,6 +10,7 @@ use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 use function strtolower;
 
@@ -24,6 +25,7 @@ class DateAddFunction extends FunctionNode
     public Node $intervalExpression;
     public Node $unit;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return match (strtolower((string) $this->unit->value)) {
@@ -67,6 +69,7 @@ class DateAddFunction extends FunctionNode
         return $this->intervalExpression->dispatch($sqlWalker);
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\JsonType;
 
 class GH8565ManagerPayloadType extends JsonType
 {
-    public const NAME = 'GH8565ManagerPayloadType';
+    final public const string NAME = 'GH8565ManagerPayloadType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): string
     {

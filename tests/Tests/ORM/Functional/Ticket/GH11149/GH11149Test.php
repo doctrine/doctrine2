@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\Ticket\GH11149;
 
 use Doctrine\ORM\PersistentCollection;
-use Doctrine\Persistence\Proxy;
 use Doctrine\Tests\OrmFunctionalTestCase;
+use ReflectionClass;
 
 class GH11149Test extends OrmFunctionalTestCase
 {
@@ -42,6 +42,7 @@ class GH11149Test extends OrmFunctionalTestCase
         // Assert associated entity is indexed by given property
         $translation = $product->translations->get('fr_FR');
         static::assertInstanceOf(EagerProductTranslation::class, $translation);
-        static::assertNotInstanceOf(Proxy::class, $translation);
+        $reflection = new ReflectionClass($translation);
+        static::assertFalse($reflection->isUninitializedLazyObject($translation));
     }
 }

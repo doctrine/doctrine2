@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Override;
+
 use function preg_replace;
 use function str_contains;
 use function strrpos;
@@ -46,6 +48,7 @@ class UnderscoreNamingStrategy implements NamingStrategy
         $this->case = $case;
     }
 
+    #[Override]
     public function classToTableName(string $className): string
     {
         if (str_contains($className, '\\')) {
@@ -55,11 +58,13 @@ class UnderscoreNamingStrategy implements NamingStrategy
         return $this->underscore($className);
     }
 
+    #[Override]
     public function propertyToColumnName(string $propertyName, string $className): string
     {
         return $this->underscore($propertyName);
     }
 
+    #[Override]
     public function embeddedFieldToColumnName(
         string $propertyName,
         string $embeddedColumnName,
@@ -69,16 +74,19 @@ class UnderscoreNamingStrategy implements NamingStrategy
         return $this->underscore($propertyName) . '_' . $embeddedColumnName;
     }
 
+    #[Override]
     public function referenceColumnName(): string
     {
         return $this->case === CASE_UPPER ?  'ID' : 'id';
     }
 
+    #[Override]
     public function joinColumnName(string $propertyName, string $className): string
     {
         return $this->underscore($propertyName) . '_' . $this->referenceColumnName();
     }
 
+    #[Override]
     public function joinTableName(
         string $sourceEntity,
         string $targetEntity,
@@ -87,6 +95,7 @@ class UnderscoreNamingStrategy implements NamingStrategy
         return $this->classToTableName($sourceEntity) . '_' . $this->classToTableName($targetEntity);
     }
 
+    #[Override]
     public function joinKeyColumnName(
         string $entityName,
         string|null $referencedColumnName,

@@ -48,7 +48,7 @@ use function sprintf;
 class PaginationTest extends OrmFunctionalTestCase
 {
     /** Page size holding every row of the fixtures, for the single page scenarios. */
-    private const WHOLE_RESULT_SET = 9;
+    private const int WHOLE_RESULT_SET = 9;
 
     protected function setUp(): void
     {

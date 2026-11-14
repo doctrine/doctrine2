@@ -26,16 +26,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
-use function class_exists;
 use function filter_var;
 use function getenv;
 use function method_exists;
 use function sprintf;
 
 use const FILTER_VALIDATE_BOOLEAN;
-
-// DBAL 3 compatibility
-class_exists('Doctrine\\DBAL\\Platforms\\SqlitePlatform');
 
 /**
  * Base testcase class for all ORM testcases.
@@ -57,17 +53,13 @@ abstract class OrmTestCase extends TestCase
      */
     private static TypeRegistry|null $typeRegistry = null;
 
-    /** @var bool */
-    protected $isSecondLevelCacheEnabled = false;
+    protected bool $isSecondLevelCacheEnabled = false;
 
-    /** @var bool */
-    protected $isSecondLevelCacheLogEnabled = false;
+    protected bool $isSecondLevelCacheLogEnabled = false;
 
-    /** @var CacheFactory */
-    protected $secondLevelCacheFactory;
+    protected CacheFactory $secondLevelCacheFactory;
 
-    /** @var StatisticsCacheLogger */
-    protected $secondLevelCacheLogger;
+    protected StatisticsCacheLogger $secondLevelCacheLogger;
 
     private CacheItemPoolInterface|null $secondLevelCache = null;
 
@@ -126,7 +118,6 @@ abstract class OrmTestCase extends TestCase
             $config->setUseSchemaEditorApi(true);
         }
 
-        TestUtil::configureProxies($config);
         $config->setMetadataCache($metadataCache);
         $config->setQueryCache(self::getSharedQueryCache());
         $config->setMetadataDriverImpl(AttributeDriverFactory::createAttributeDriver([__DIR__ . '/Models/Cache']));
@@ -285,11 +276,6 @@ abstract class OrmTestCase extends TestCase
             ->willReturn($connection);
         $driver->method('getDatabasePlatform')
             ->willReturn($platform);
-
-        if (method_exists(Driver::class, 'getSchemaManager')) {
-            $driver->method('getSchemaManager')
-                ->willReturnCallback([$platform, 'createSchemaManager']);
-        }
 
         return $driver;
     }

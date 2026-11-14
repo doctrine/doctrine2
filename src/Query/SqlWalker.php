@@ -8,11 +8,9 @@ use BadMethodCallException;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\TypeProvider;
 use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\DBAL\Types\Types;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -54,12 +52,12 @@ use function trim;
  */
 class SqlWalker
 {
-    public const HINT_DISTINCT = 'doctrine.distinct';
+    final public const string HINT_DISTINCT = 'doctrine.distinct';
 
     /**
      * Used to mark a query as containing a PARTIAL expression, which needs to be known by SLC.
      */
-    public const HINT_PARTIAL = 'doctrine.partial';
+    final public const string HINT_PARTIAL = 'doctrine.partial';
 
     private readonly ResultSetMapping $rsm;
 
@@ -233,30 +231,7 @@ class SqlWalker
         $this->queryComponents[$dqlAlias] = $queryComponent;
     }
 
-    /**
-     * Gets an executor that can be used to execute the result of this walker.
-     *
-     * @deprecated Output walkers should no longer create the executor directly, but instead provide
-     *             a SqlFinalizer by implementing the `OutputWalker` interface. Thus, this method is
-     *             no longer needed and will be removed in 4.0.
-     */
-    public function getExecutor(AST\SelectStatement|AST\UpdateStatement|AST\DeleteStatement $statement): Exec\AbstractSqlExecutor
-    {
-        Deprecation::trigger(
-            'doctrine/orm',
-            'https://github.com/doctrine/orm/pull/11188/',
-            'Output walkers should implement %s. That way, the %s method is no longer needed and will be removed in 4.0',
-            OutputWalker::class,
-            __METHOD__,
-        );
-
-        return match (true) {
-            $statement instanceof AST\UpdateStatement => $this->createUpdateStatementExecutor($statement),
-            $statement instanceof AST\DeleteStatement => $this->createDeleteStatementExecutor($statement),
-            default => new Exec\SingleSelectExecutor($statement, $this),
-        };
-    }
-
+    /** @psalm-internal Doctrine\ORM */
     protected function createUpdateStatementExecutor(AST\UpdateStatement $AST): Exec\AbstractSqlExecutor
     {
         $primaryClass = $this->em->getClassMetadata($AST->updateClause->abstractSchemaName);
@@ -1362,23 +1337,6 @@ class SqlWalker
 
                 if ($expr instanceof Query\AST\ExpressionWithReturnType) {
                     $this->rsm->addScalarResult($columnAlias, $resultAlias, $expr->getReturnTypeName());
-
-                    break;
-                }
-
-                if ($expr instanceof Query\AST\TypedExpression) {
-                    Deprecation::trigger(
-                        'doctrine/orm',
-                        'https://github.com/doctrine/orm/pull/12543',
-                        'Implementing %s is deprecated, implement %s instead.',
-                        Query\AST\TypedExpression::class, // @phpstan-ignore classConstant.deprecatedInterface
-                        Query\AST\ExpressionWithReturnType::class,
-                    );
-
-                    // TypedExpression only exposes a Type instance, so the name has to be looked up.
-                    // This branch and Type::lookupName() are both deprecated and go away together.
-                    // @phpstan-ignore method.deprecatedInterface, staticMethod.deprecated
-                    $this->rsm->addScalarResult($columnAlias, $resultAlias, Type::lookupName($expr->getReturnType()));
 
                     break;
                 }

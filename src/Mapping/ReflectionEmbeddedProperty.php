@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping;
 
 use Doctrine\Instantiator\Instantiator;
+use Override;
 use ReflectionProperty;
 
 /**
@@ -33,6 +34,7 @@ final class ReflectionEmbeddedProperty extends ReflectionProperty
         parent::__construct($childProperty->getDeclaringClass()->name, $childProperty->getName());
     }
 
+    #[Override]
     public function getValue(object|null $object = null): mixed
     {
         $embeddedObject = $this->parentProperty->getValue($object);
@@ -44,6 +46,7 @@ final class ReflectionEmbeddedProperty extends ReflectionProperty
         return $this->childProperty->getValue($embeddedObject);
     }
 
+    #[Override]
     public function setValue(mixed $object, mixed $value = null): void
     {
         $embeddedObject = $this->parentProperty->getValue($object);

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use Doctrine\Deprecations\Deprecation;
+use Override;
 use RuntimeException;
 
 use function array_flip;
@@ -49,6 +49,7 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
      *     joinColumns?: mixed[]|null,
      * } $mappingArray
      */
+    #[Override]
     public static function fromMappingArray(array $mappingArray): static
     {
         $joinColumns = $mappingArray['joinColumns'] ?? [];
@@ -133,14 +134,7 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         foreach ($mapping->joinColumns as $joinColumn) {
             if ($mapping->id) {
                 if ($joinColumn->nullable !== null) {
-                    Deprecation::trigger(
-                        'doctrine/orm',
-                        'https://github.com/doctrine/orm/pull/12126',
-                        <<<'DEPRECATION'
-                        Specifying the "nullable" attribute for join columns in to-one associations (here, %s::$%s) that are part of the identifier is a no-op.
-                        The ORM will always set it to false.
-                        Doing so is deprecated and will be an error in 4.0.
-                        DEPRECATION,
+                    throw MappingException::cannotSetNullableOnToOneIdentifierJoinColumns(
                         $mapping->sourceEntity,
                         $mapping->fieldName,
                     );
@@ -192,6 +186,7 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         return $mapping;
     }
 
+    #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
         if ($offset === 'joinColumns') {
@@ -209,6 +204,7 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
     }
 
     /** @return array<string, mixed> */
+    #[Override]
     public function toArray(): array
     {
         $array = parent::toArray();
@@ -229,6 +225,7 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
     }
 
     /** @return list<string> */
+    #[Override]
     public function __sleep(): array
     {
         return [

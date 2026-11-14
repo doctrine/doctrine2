@@ -28,7 +28,6 @@ use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Exception\NotSupported as NotSupportedException;
 use Doctrine\ORM\Internal\Name\NameParser;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -69,7 +68,7 @@ use function strtolower;
  */
 final class ExperimentalSchemaTool
 {
-    private const KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
+    private const array KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
 
     private readonly AbstractPlatform $platform;
     private readonly QuoteStrategy $quoteStrategy;

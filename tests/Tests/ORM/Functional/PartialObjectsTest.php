@@ -22,10 +22,6 @@ class PartialObjectsTest extends OrmFunctionalTestCase
 
     public function testPartialObjectProxyLoadedChangeset(): void
     {
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            $this->markTestSkipped('Test requires native lazy objects to be enabled.');
-        }
-
         $user           = new CmsUser();
         $user->name     = 'Alice';
         $user->username = 'alice';
@@ -73,10 +69,6 @@ class PartialObjectsTest extends OrmFunctionalTestCase
 
     public function testPartialObjectLazyInitDoesNotOverwriteChangedProperty(): void
     {
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            $this->markTestSkipped('Test requires native lazy objects to be enabled.');
-        }
-
         $user           = new CmsUser();
         $user->name     = 'Alice';
         $user->username = 'alice';

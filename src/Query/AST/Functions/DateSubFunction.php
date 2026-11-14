@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Query\AST\Functions;
 use Doctrine\ORM\Query\AST\ASTException;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 use function strtolower;
 
@@ -17,6 +18,7 @@ use function strtolower;
  */
 class DateSubFunction extends DateAddFunction
 {
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return match (strtolower((string) $this->unit->value)) {

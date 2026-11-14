@@ -31,7 +31,6 @@ use PHPUnit\Framework\Attributes\Group;
 use SortDirection;
 
 use function array_values;
-use function defined;
 use function reset;
 
 class EntityRepositoryTest extends OrmFunctionalTestCase
@@ -693,7 +692,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $users      = $repository->matching(Criteria::create());
 
         self::assertCount(4, $users);
     }
@@ -704,7 +703,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('username', 'beberlei'),
         ));
 
@@ -717,7 +716,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->neq('username', 'beberlei'),
         ));
 
@@ -730,7 +729,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->in('username', ['beberlei', 'gblanco']),
         ));
 
@@ -743,7 +742,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->notIn('username', ['beberlei', 'gblanco', 'asm89']),
         ));
 
@@ -756,7 +755,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $firstUserId = $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->lt('id', $firstUserId + 1),
         ));
 
@@ -769,7 +768,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $firstUserId = $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->lte('id', $firstUserId + 1),
         ));
 
@@ -782,7 +781,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $firstUserId = $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->gt('id', $firstUserId),
         ));
 
@@ -795,7 +794,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $firstUserId = $this->loadFixture();
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $users      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->gte('id', $firstUserId),
         ));
 
@@ -809,7 +808,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
 
         $user = $this->_em->find(CmsUser::class, $userId);
 
-        $criteria = (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $criteria = Criteria::create()->where(
             Criteria::expr()->eq('user', $user),
         );
 
@@ -830,7 +829,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
 
         $user = $this->_em->find(CmsUser::class, $userId);
 
-        $criteria = (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $criteria = Criteria::create()->where(
             Criteria::expr()->in('user', [$user]),
         );
 
@@ -850,13 +849,13 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
 
         $repository = $this->_em->getRepository(CmsUser::class);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->contains('name', 'Foobar')));
+        $users = $repository->matching(Criteria::create()->where(Criteria::expr()->contains('name', 'Foobar')));
         self::assertCount(0, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->contains('name', 'Rom')));
+        $users = $repository->matching(Criteria::create()->where(Criteria::expr()->contains('name', 'Rom')));
         self::assertCount(1, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->contains('status', 'dev')));
+        $users = $repository->matching(Criteria::create()->where(Criteria::expr()->contains('status', 'dev')));
         self::assertCount(2, $users);
     }
 
@@ -866,17 +865,17 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
 
         $repository = $this->_em->getRepository(CmsUser::class);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->startsWith('name', 'Foo'),
         ));
         self::assertCount(0, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->startsWith('name', 'R'),
         ));
         self::assertCount(1, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->startsWith('status', 'de'),
         ));
         self::assertCount(2, $users);
@@ -888,17 +887,17 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
 
         $repository = $this->_em->getRepository(CmsUser::class);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->endsWith('name', 'foo'),
         ));
         self::assertCount(0, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->endsWith('name', 'oman'),
         ));
         self::assertCount(1, $users);
 
-        $users = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $users = $repository->matching(Criteria::create()->where(
             Criteria::expr()->endsWith('status', 'ev'),
         ));
         self::assertCount(2, $users);
@@ -910,8 +909,8 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $fixtures       = $this->loadFixtureUserEmail();
         $user           = $this->_em->find(CmsUser::class, $fixtures[0]->id);
         $repository     = $this->_em->getRepository(CmsUser::class);
-        $criteriaIsNull = (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->isNull('email'));
-        $criteriaEqNull = (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->eq('email', null));
+        $criteriaIsNull = Criteria::create()->where(Criteria::expr()->isNull('email'));
+        $criteriaEqNull = Criteria::create()->where(Criteria::expr()->eq('email', null));
 
         $user->setEmail(null);
         $this->_em->persist($user);
@@ -968,7 +967,7 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
         $this->expectExceptionMessage('Unrecognized field: ');
 
         $repository = $this->_em->getRepository(CmsUser::class);
-        $result     = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result     = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('username = ?; DELETE FROM cms_users; SELECT 1 WHERE 1', 'beberlei'),
         ));
 

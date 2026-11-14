@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Repository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\Persistence\ObjectRepository;
+use Override;
 
 use function spl_object_id;
 
@@ -23,6 +24,7 @@ final class DefaultRepositoryFactory implements RepositoryFactory
      */
     private array $repositoryList = [];
 
+    #[Override]
     public function getRepository(EntityManagerInterface $entityManager, string $entityName): EntityRepository
     {
         $repositoryHash = $entityManager->getClassMetadata($entityName)->getName() . spl_object_id($entityManager);

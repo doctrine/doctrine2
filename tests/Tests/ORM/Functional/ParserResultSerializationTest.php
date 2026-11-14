@@ -9,18 +9,14 @@ use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Exec\FinalizedSelectExecutor;
 use Doctrine\ORM\Query\Exec\PreparedExecutorFinalizer;
-use Doctrine\ORM\Query\Exec\SingleSelectExecutor;
 use Doctrine\ORM\Query\ParserResult;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use Generator;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use ReflectionMethod;
 use Symfony\Component\VarExporter\VarExporter;
 
-use function file_get_contents;
-use function rtrim;
 use function serialize;
 use function unserialize;
 
@@ -33,26 +29,6 @@ class ParserResultSerializationTest extends OrmFunctionalTestCase
         $this->useModelSet('company');
 
         parent::setUp();
-    }
-
-    /** @param Closure(ParserResult): ParserResult $toSerializedAndBack */
-    #[DataProvider('provideToSerializedAndBack')]
-    #[IgnoreDeprecations]
-    public function testSerializeParserResultForQueryWithSqlWalker(Closure $toSerializedAndBack): void
-    {
-        $query = $this->_em
-            ->createQuery('SELECT u FROM Doctrine\Tests\Models\Company\CompanyEmployee u WHERE u.name = :name');
-
-        // Use the (legacy) SqlWalker which directly puts an SqlExecutor instance into the parser result
-        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, Query\SqlWalker::class);
-
-        $parserResult = self::parseQuery($query);
-        $unserialized = $toSerializedAndBack($parserResult);
-
-        $this->assertInstanceOf(ParserResult::class, $unserialized);
-        $this->assertInstanceOf(ResultSetMapping::class, $unserialized->getResultSetMapping());
-        $this->assertEquals(['name' => [0]], $unserialized->getParameterMappings());
-        $this->assertNotNull($unserialized->prepareSqlExecutor($query));
     }
 
     /** @param Closure(ParserResult): ParserResult $toSerializedAndBack */
@@ -85,27 +61,6 @@ class ParserResultSerializationTest extends OrmFunctionalTestCase
                 return eval('return ' . VarExporter::export($parserResult) . ';');
             },
         ];
-    }
-
-    #[DataProvider('provideSerializedSingleSelectResults')]
-    #[IgnoreDeprecations]
-    public function testUnserializeSingleSelectResult(string $serialized): void
-    {
-        $unserialized = unserialize($serialized);
-
-        $this->assertInstanceOf(ParserResult::class, $unserialized);
-        $this->assertInstanceOf(ResultSetMapping::class, $unserialized->getResultSetMapping());
-        $this->assertEquals(['name' => [0]], $unserialized->getParameterMappings());
-
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/11188');
-        $this->assertInstanceOf(SingleSelectExecutor::class, $unserialized->getSqlExecutor());
-        $this->assertIsString($unserialized->getSqlExecutor()->getSqlStatements());
-    }
-
-    /** @return Generator<string, array{string}> */
-    public static function provideSerializedSingleSelectResults(): Generator
-    {
-        yield '2.17.0' => [rtrim(file_get_contents(__DIR__ . '/ParserResults/single_select_2_17_0.txt'), "\n")];
     }
 
     public function testSymfony44ProvidedData(): void

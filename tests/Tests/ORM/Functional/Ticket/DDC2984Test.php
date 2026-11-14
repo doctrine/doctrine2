@@ -118,7 +118,7 @@ class DDC2984DomainUserId implements Stringable
 
 class DDC2984UserIdCustomDbalType extends StringType
 {
-    private const TYPE_NAME = 'ddc2984_domain_user_id';
+    private const string TYPE_NAME = 'ddc2984_domain_user_id';
 
     public function getName(): string
     {

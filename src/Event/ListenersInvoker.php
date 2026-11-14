@@ -15,10 +15,10 @@ use Doctrine\ORM\Mapping\EntityListenerResolver;
  */
 class ListenersInvoker
 {
-    final public const INVOKE_NONE      = 0;
-    final public const INVOKE_LISTENERS = 1;
-    final public const INVOKE_CALLBACKS = 2;
-    final public const INVOKE_MANAGER   = 4;
+    final public const int INVOKE_NONE      = 0;
+    final public const int INVOKE_LISTENERS = 1;
+    final public const int INVOKE_CALLBACKS = 2;
+    final public const int INVOKE_MANAGER   = 4;
 
     /** The Entity listener resolver. */
     private readonly EntityListenerResolver $resolver;

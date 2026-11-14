@@ -10,7 +10,7 @@ use Exception;
 
 class GH8565EmployeePayloadType extends JsonType
 {
-    public const NAME = 'GH8565EmployeePayloadType';
+    final public const string NAME = 'GH8565EmployeePayloadType';
 
     public function convertToPHPValue($value, AbstractPlatform $platform): string
     {

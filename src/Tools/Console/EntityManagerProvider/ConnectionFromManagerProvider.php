@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Tools\Console\EntityManagerProvider;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Tools\Console\ConnectionProvider;
 use Doctrine\ORM\Tools\Console\EntityManagerProvider;
+use Override;
 
 final class ConnectionFromManagerProvider implements ConnectionProvider
 {
@@ -14,11 +15,13 @@ final class ConnectionFromManagerProvider implements ConnectionProvider
     {
     }
 
+    #[Override]
     public function getDefaultConnection(): Connection
     {
         return $this->entityManagerProvider->getDefaultManager()->getConnection();
     }
 
+    #[Override]
     public function getConnection(string $name): Connection
     {
         return $this->entityManagerProvider->getManager($name)->getConnection();

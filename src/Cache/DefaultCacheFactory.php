@@ -23,6 +23,7 @@ use Doctrine\ORM\Persisters\Collection\CollectionPersister;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use InvalidArgumentException;
 use LogicException;
+use Override;
 use Psr\Cache\CacheItemPoolInterface;
 
 use function assert;
@@ -63,6 +64,7 @@ class DefaultCacheFactory implements CacheFactory
         $this->timestampRegion = $region;
     }
 
+    #[Override]
     public function buildCachedEntityPersister(EntityManagerInterface $em, EntityPersister $persister, ClassMetadata $metadata): CachedEntityPersister
     {
         assert($metadata->cache !== null);
@@ -88,6 +90,7 @@ class DefaultCacheFactory implements CacheFactory
         throw new InvalidArgumentException(sprintf('Unrecognized access strategy type [%s]', $usage));
     }
 
+    #[Override]
     public function buildCachedCollectionPersister(
         EntityManagerInterface $em,
         CollectionPersister $persister,
@@ -116,6 +119,7 @@ class DefaultCacheFactory implements CacheFactory
         throw new InvalidArgumentException(sprintf('Unrecognized access strategy type [%s]', $usage));
     }
 
+    #[Override]
     public function buildQueryCache(EntityManagerInterface $em, string|null $regionName = null): QueryCache
     {
         return new DefaultQueryCache(
@@ -129,11 +133,13 @@ class DefaultCacheFactory implements CacheFactory
         );
     }
 
+    #[Override]
     public function buildCollectionHydrator(EntityManagerInterface $em, AssociationMapping $mapping): CollectionHydrator
     {
         return new DefaultCollectionHydrator($em);
     }
 
+    #[Override]
     public function buildEntityHydrator(EntityManagerInterface $em, ClassMetadata $metadata): EntityHydrator
     {
         return new DefaultEntityHydrator($em);
@@ -142,6 +148,7 @@ class DefaultCacheFactory implements CacheFactory
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getRegion(array $cache): Region
     {
         if (isset($this->regions[$cache['region']])) {
@@ -170,6 +177,7 @@ class DefaultCacheFactory implements CacheFactory
         return $this->regions[$cache['region']] = $region;
     }
 
+    #[Override]
     public function getTimestampRegion(): TimestampRegion
     {
         if ($this->timestampRegion === null) {
@@ -182,6 +190,7 @@ class DefaultCacheFactory implements CacheFactory
         return $this->timestampRegion;
     }
 
+    #[Override]
     public function createCache(EntityManagerInterface $entityManager): Cache
     {
         return new DefaultCache($entityManager);

@@ -12,31 +12,31 @@ use Doctrine\ORM\Cache\Region;
  */
 interface Cache
 {
-    public const DEFAULT_QUERY_REGION_NAME = 'query_cache_region';
+    final public const string DEFAULT_QUERY_REGION_NAME = 'query_cache_region';
 
-    public const DEFAULT_TIMESTAMP_REGION_NAME = 'timestamp_cache_region';
+    final public const string DEFAULT_TIMESTAMP_REGION_NAME = 'timestamp_cache_region';
 
     /**
      * May read items from the cache, but will not add items.
      */
-    public const MODE_GET = 1;
+    final public const int MODE_GET = 1;
 
     /**
      * Will never read items from the cache,
      * but will add items to the cache as it reads them from the database.
      */
-    public const MODE_PUT = 2;
+    final public const int MODE_PUT = 2;
 
     /**
      * May read items from the cache, and add items to the cache.
      */
-    public const MODE_NORMAL = 3;
+    final public const int MODE_NORMAL = 3;
 
     /**
      * The query will never read items from the cache,
      * but will refresh items to the cache as it reads them from the database.
      */
-    public const MODE_REFRESH = 4;
+    final public const int MODE_REFRESH = 4;
 
     public function getEntityCacheRegion(string $className): Region|null;
 

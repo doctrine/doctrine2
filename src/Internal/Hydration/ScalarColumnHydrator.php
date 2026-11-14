@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Internal\Hydration;
 
 use Doctrine\DBAL\Driver\Exception;
 use Doctrine\ORM\Exception\MultipleSelectorsFoundException;
+use Override;
 
 use function count;
 
@@ -20,6 +21,7 @@ final class ScalarColumnHydrator extends AbstractHydrator
      * @throws MultipleSelectorsFoundException
      * @throws Exception
      */
+    #[Override]
     protected function hydrateAllData(): array
     {
         if (count($this->resultSetMapping()->fieldMappings) > 1) {

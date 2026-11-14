@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 use function sprintf;
 
@@ -20,6 +21,7 @@ class UpperFunction extends FunctionNode
 {
     public Node $stringPrimary;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return sprintf(
@@ -28,6 +30,7 @@ class UpperFunction extends FunctionNode
         );
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

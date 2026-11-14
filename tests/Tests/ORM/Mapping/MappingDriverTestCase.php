@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Mapping;
 
 use Doctrine\Common\Collections\Collection;
-use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping as ORM;
@@ -18,7 +17,6 @@ use Doctrine\ORM\Mapping\DefaultTypedFieldMapper;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
 use Doctrine\ORM\Mapping\DiscriminatorColumnMapping;
 use Doctrine\ORM\Mapping\DiscriminatorMap;
-use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
@@ -68,7 +66,6 @@ use Doctrine\Tests\Models\Upsertable\Updatable;
 use Doctrine\Tests\ORM\Mapping\NamingStrategy\CustomPascalNamingStrategy;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Depends;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\TestWith;
 use SortDirection;
 use stdClass;
@@ -82,8 +79,6 @@ use const CASE_UPPER;
 
 abstract class MappingDriverTestCase extends OrmTestCase
 {
-    use VerifyDeprecations;
-
     abstract protected function loadDriver(): MappingDriver;
 
     /** @param class-string<object> $entityClassName */
@@ -402,51 +397,6 @@ abstract class MappingDriverTestCase extends OrmTestCase
         self::assertEquals(['number' => SortDirection::Ascending], $class->associationMappings['phonenumbers']->orderBy);
 
         return $class;
-    }
-
-    #[IgnoreDeprecations]
-    public function testOrderByWithStringValues(): void
-    {
-        if ($this->loadDriver() instanceof XmlDriver) {
-            $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        } else {
-            // there are 3 associations using the string order value
-            $this->doctrineDeprecationsExpectations['https://github.com/doctrine/orm/issues/11313'] = 3;
-        }
-
-        $class = $this->createClassMetadata(UserWithStringOrderBy::class);
-
-        self::assertTrue(isset($class->associationMappings['phonenumbersAsc']));
-        self::assertEquals(
-            ['number' => SortDirection::Ascending],
-            $class->associationMappings['phonenumbersAsc']->orderBy,
-        );
-
-        self::assertTrue(isset($class->associationMappings['phonenumbersDesc']));
-        self::assertEquals(
-            ['number' => SortDirection::Descending],
-            $class->associationMappings['phonenumbersDesc']->orderBy,
-        );
-
-        self::assertTrue(isset($class->associationMappings['groupsMixed']));
-        self::assertEquals(
-            ['name' => SortDirection::Ascending, 'id' => SortDirection::Descending],
-            $class->associationMappings['groupsMixed']->orderBy,
-        );
-    }
-
-    #[IgnoreDeprecations]
-    public function testOrderByWithInvalidDirection(): void
-    {
-        $driver = $this->loadDriver();
-
-        $this->expectException(MappingException::class);
-
-        // XML driver validates against XSD first, so error message is different but still contains "INVALID"
-        $this->expectExceptionMessageMatches('/INVALID/');
-
-        // This should trigger the exception during metadata creation
-        $this->createClassMetadata(UserWithInvalidOrderBy::class);
     }
 
     #[Depends('testInverseOneToManyAssociation')]
@@ -1735,111 +1685,6 @@ class BlogPostComment
                     [
                         0 => ['nullable' => false],
                     ],
-            ],
-        );
-    }
-}
-
-/**
- * Entity to test backward compatibility of string-based OrderBy values
- */
-#[ORM\Entity]
-class UserWithStringOrderBy
-{
-    #[ORM\Id]
-    #[ORM\Column]
-    #[ORM\GeneratedValue(strategy: 'AUTO')]
-    public int|null $id = null;
-
-    /** @var Collection<int, Phonenumber> */
-    #[ORM\OneToMany(targetEntity: Phonenumber::class, mappedBy: 'user')]
-    #[ORM\OrderBy(['number' => 'ASC'])]
-    public $phonenumbersAsc;
-
-    /** @var Collection<int, Phonenumber> */
-    #[ORM\OneToMany(targetEntity: Phonenumber::class, mappedBy: 'user')]
-    #[ORM\OrderBy(['number' => 'DESC'])]
-    public $phonenumbersDesc;
-
-    /** @var Collection<int, Group> */
-    #[ORM\ManyToMany(targetEntity: Group::class)]
-    #[ORM\OrderBy(['name' => 'ASC', 'id' => 'DESC'])]
-    public $groupsMixed;
-
-    public static function loadMetadata(ClassMetadata $metadata): void
-    {
-        $metadata->mapField(
-            [
-                'id'                 => true,
-                'fieldName'          => 'id',
-                'type'               => 'integer',
-            ],
-        );
-
-        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
-
-        $metadata->mapOneToMany(
-            [
-                'fieldName' => 'phonenumbersAsc',
-                'mappedBy' => 'user',
-                'targetEntity' => Phonenumber::class,
-                'orderBy' => ['number' => 'ASC'],
-            ],
-        );
-
-        $metadata->mapOneToMany(
-            [
-                'fieldName' => 'phonenumbersDesc',
-                'mappedBy' => 'user',
-                'targetEntity' => Phonenumber::class,
-                'orderBy' => ['number' => 'DESC'],
-            ],
-        );
-
-        $metadata->mapManyToMany(
-            [
-                'fieldName' => 'groupsMixed',
-                'targetEntity' => Group::class,
-                'orderBy' => ['name' => 'ASC', 'id' => 'DESC'],
-            ],
-        );
-    }
-}
-
-/**
- * Entity to test invalid order direction handling
- */
-#[ORM\Entity]
-class UserWithInvalidOrderBy
-{
-    #[ORM\Id]
-    #[ORM\Column]
-    #[ORM\GeneratedValue(strategy: 'AUTO')]
-    public int|null $id = null;
-
-    /** @var Collection<int, Phonenumber> */
-    #[ORM\OneToMany(targetEntity: Phonenumber::class, mappedBy: 'user')]
-    #[ORM\OrderBy(['name' => 'INVALID'])]
-    public $items;
-
-    public static function loadMetadata(ClassMetadata $metadata): void
-    {
-        $metadata->mapField(
-            [
-                'id'                 => true,
-                'fieldName'          => 'id',
-                'type'               => 'integer',
-            ],
-        );
-
-        $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
-
-        $metadata->mapOneToMany(
-            [
-                'fieldName' => 'items',
-                'mappedBy' => 'user',
-                'targetEntity' => Phonenumber::class,
-                'orderBy' => ['name' => 'INVALID'],
             ],
         );
     }

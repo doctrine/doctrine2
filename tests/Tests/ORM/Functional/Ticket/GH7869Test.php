@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\Decorator\EntityManagerDecorator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -18,8 +17,6 @@ use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
-use function method_exists;
-
 #[Group('GH7869')]
 class GH7869Test extends OrmTestCase
 {
@@ -30,11 +27,6 @@ class GH7869Test extends OrmTestCase
             ->willReturn(true);
 
         $connection = $this->createConnectionStub($platform);
-
-        if (method_exists($connection, 'getEventManager')) {
-            $connection->method('getEventManager')
-                ->willReturn(new EventManager());
-        }
 
         $em = new class (new EntityManagerMock($connection)) extends EntityManagerDecorator {
             /** @var int */

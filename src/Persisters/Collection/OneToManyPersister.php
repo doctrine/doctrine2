@@ -13,6 +13,7 @@ use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 
 use function array_fill;
 use function array_keys;
@@ -20,7 +21,6 @@ use function array_reverse;
 use function array_values;
 use function assert;
 use function count;
-use function defined;
 use function implode;
 use function is_int;
 use function is_string;
@@ -30,6 +30,7 @@ use function is_string;
  */
 class OneToManyPersister extends AbstractCollectionPersister
 {
+    #[Override]
     public function delete(PersistentCollection $collection): void
     {
         // The only valid case here is when you have weak entities. In this
@@ -51,6 +52,7 @@ class OneToManyPersister extends AbstractCollectionPersister
             : $this->deleteEntityCollection($collection);
     }
 
+    #[Override]
     public function update(PersistentCollection $collection): void
     {
         // This can never happen. One to many can only be inverse side.
@@ -59,6 +61,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         return;
     }
 
+    #[Override]
     public function get(PersistentCollection $collection, mixed $index): object|null
     {
         $mapping = $this->getMapping($collection);
@@ -82,13 +85,13 @@ class OneToManyPersister extends AbstractCollectionPersister
         );
     }
 
+    #[Override]
     public function count(PersistentCollection $collection): int
     {
         $mapping   = $this->getMapping($collection);
         $persister = $this->uow->getEntityPersister($mapping->targetEntity);
 
-        // Doctrine Collections 2.x support
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
 
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
@@ -101,6 +104,7 @@ class OneToManyPersister extends AbstractCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function slice(PersistentCollection $collection, int $offset, int|null $length = null): array
     {
         $mapping   = $this->getMapping($collection);
@@ -109,6 +113,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         return $persister->getOneToManyCollection($mapping, $collection->getOwner(), $offset, $length);
     }
 
+    #[Override]
     public function containsKey(PersistentCollection $collection, mixed $key): bool
     {
         $mapping = $this->getMapping($collection);
@@ -122,15 +127,14 @@ class OneToManyPersister extends AbstractCollectionPersister
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
         // 'mappedBy' field.
-        // Doctrine Collections 2.x support
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
-
+        $criteria = Criteria::create();
         $criteria->andWhere(Criteria::expr()->eq($mapping->mappedBy, $collection->getOwner()));
         $criteria->andWhere(Criteria::expr()->eq($mapping->indexBy(), $key));
 
         return (bool) $persister->count($criteria);
     }
 
+    #[Override]
     public function contains(PersistentCollection $collection, object $element): bool
     {
         if (! $this->isValidEntityState($element)) {
@@ -140,8 +144,7 @@ class OneToManyPersister extends AbstractCollectionPersister
         $mapping   = $this->getMapping($collection);
         $persister = $this->uow->getEntityPersister($mapping->targetEntity);
 
-        // Doctrine Collections 2.x support
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         // only works with single id identifier entities. Will throw an
         // exception in Entity Persisters if that is not the case for the
         // 'mappedBy' field.
@@ -153,6 +156,7 @@ class OneToManyPersister extends AbstractCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadCriteria(PersistentCollection $collection, Criteria $criteria): array
     {
         throw new BadMethodCallException('Filtering a collection by Criteria is not supported by this CollectionPersister.');

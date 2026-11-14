@@ -17,6 +17,7 @@ use Doctrine\ORM\Query\AST\WhereClause;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\TreeWalkerAdapter;
 use LogicException;
+use Override;
 
 use function array_unshift;
 use function count;
@@ -34,18 +35,19 @@ use function reset;
  */
 class CursorWalker extends TreeWalkerAdapter
 {
-    public const HINT_CURSOR_PARAMETERS         = 'doctrine.cursor.parameters';
-    public const HINT_CURSOR_REVERSE            = 'doctrine.cursor.reverse';
-    public const HINT_CURSOR_ORDER_BY_ITEMS     = 'doctrine.cursor.order_by_items';
-    public const HINT_QUERY_PRODUCES_DUPLICATES = 'doctrine.cursor.query_produces_duplicates';
+    public const string HINT_CURSOR_PARAMETERS         = 'doctrine.cursor.parameters';
+    public const string HINT_CURSOR_REVERSE            = 'doctrine.cursor.reverse';
+    public const string HINT_CURSOR_ORDER_BY_ITEMS     = 'doctrine.cursor.order_by_items';
+    public const string HINT_QUERY_PRODUCES_DUPLICATES = 'doctrine.cursor.query_produces_duplicates';
 
     /**
      * Prefix of the parameters bound for the cursor predicate. Names are
      * namespaced so that they cannot collide with the parameters of the
      * paginated query, whose values would then be silently overwritten.
      */
-    private const CURSOR_PARAMETER_PREFIX = 'dctrn_cursor_';
+    private const string CURSOR_PARAMETER_PREFIX = 'dctrn_cursor_';
 
+    #[Override]
     public function walkSelectStatement(SelectStatement $selectStatement): void
     {
         $query            = $this->_getQuery();

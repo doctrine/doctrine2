@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Override;
+
 final class OneToManyAssociationMapping extends ToManyInverseSideMapping
 {
     /**
@@ -28,6 +30,7 @@ final class OneToManyAssociationMapping extends ToManyInverseSideMapping
      *     isOwningSide: bool,
      * } $mappingArray
      */
+    #[Override]
     public static function fromMappingArray(array $mappingArray): static
     {
         $mapping = parent::fromMappingArray($mappingArray);

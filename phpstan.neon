@@ -3,24 +3,13 @@ includes:
     - phpstan-params.neon
 
 parameters:
-    treatPhpDocTypesAsCertain: false
+    checkMissingOverrideMethodAttribute: true
 
-    excludePaths:
-        # Compatibility shims for Collections 2 vs Collections 3
-        # These have intentional signature mismatches that cannot be resolved
-        - src/PersistentCollectionImplementation.php
-        - src/Persisters/SqlValueVisitorImplementation.php
+    # Some baseline entries and ignore rules only apply to a specific installed
+    # DBAL version.
+    reportUnmatchedIgnoredErrors: false
 
     ignoreErrors:
-        # Paginator is deprecated in favor of OffsetPaginator, but the static-analysis
-        # fixture still legitimately references it until its removal in 4.0.
-        -
-            identifier: return.deprecatedClass
-            path: tests/StaticAnalysis/Tools/Pagination/paginator-covariant.php
-        -
-            identifier: parameter.deprecatedClass
-            path: tests/StaticAnalysis/Tools/Pagination/paginator-covariant.php
-
         # Symfony cache supports passing a key prefix to the clear method.
         - '/^Method Psr\\Cache\\CacheItemPoolInterface\:\:clear\(\) invoked with 1 parameter, 0 required\.$/'
 
@@ -29,39 +18,8 @@ parameters:
             message: '~^Match expression does not handle remaining values:~'
             path: src/Utility/PersisterHelper.php
 
-        # The return type is already narrow enough.
-        - '~^Method Doctrine\\ORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''[a-z_]+'' so it can be removed from the return type\.$~'
-        - '~^Method Doctrine\\ORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\(?:Array)?ParameterType\:\:[A-Z_]+ so it can be removed from the return type\.$~'
-
-        # DBAL 4 compatibility
+        # The type provider API used by the ORM is only available in DBAL >= 4.6.
+        # When analyzing against the latest stable DBAL, it is reported as an unknown class.
         -
-            message: '~^Method Doctrine\\ORM\\Query\\AST\\Functions\\TrimFunction::getTrimMode\(\) never returns .* so it can be removed from the return type\.$~'
-            path: src/Query/AST/Functions/TrimFunction.php
-        -
-            message: '~^Method Doctrine\\ORM\\Utility\\PersisterHelper\:\:getArrayBindingType\(\) never returns .* so it can be removed from the return type\.$~'
-            path: src/Utility/PersisterHelper.php
-
-        # Compatibility with DBAL 3
-        # See https://github.com/doctrine/dbal/pull/3480
-        -
-            message: '~^Result of method Doctrine\\DBAL\\Connection::commit\(\) \(void\) is used\.$~'
-            path: src/UnitOfWork.php
-        -
-            message: '~^Strict comparison using === between void and false will always evaluate to false\.$~'
-            path: src/UnitOfWork.php
-        -
-            message: '~^Variable \$e on left side of \?\? always exists and is not nullable\.$~'
-            path: src/UnitOfWork.php
-
-        -
-            message: '~^Parameter #2 \$command of static method Doctrine\\ORM\\Tools\\Console\\ConsoleRunner::addCommandToApplication\(\) expects Symfony\\Component\\Console\\Command\\Command, Doctrine\\DBAL\\Tools\\Console\\Command\\ReservedWordsCommand given\.$~'
-            path: src/Tools/Console/ConsoleRunner.php
-
-        -
-            message: '~Strict comparison using \=\=\= between callable\(\)\: mixed and null will always evaluate to false\.~'
-            path: src/Tools/SchemaTool.php
-
-        # Compatibility with Persistence 3
-        -
-            message: '#Expression on left side of \?\? is not nullable.#'
-            path: src/Mapping/Driver/AttributeDriver.php
+            message: '~Doctrine\\DBAL\\Types\\TypeProvider~'
+            identifier: class.notFound

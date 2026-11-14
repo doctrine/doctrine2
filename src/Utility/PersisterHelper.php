@@ -14,7 +14,6 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\QueryException;
 use RuntimeException;
 
@@ -35,7 +34,7 @@ use function sprintf;
  */
 class PersisterHelper
 {
-    private const DATE_TIME_TYPES = [
+    private const array DATE_TIME_TYPES = [
         Types::DATE_MUTABLE,
         Types::DATE_IMMUTABLE,
         Types::DATETIME_MUTABLE,
@@ -212,8 +211,7 @@ class PersisterHelper
         return $types;
     }
 
-    /** @phpstan-return ArrayParameterType::* */
-    private static function getArrayBindingType(ParameterType|int|string $type, TypeProvider|TypeRegistry $typeProvider): ArrayParameterType|int
+    private static function getArrayBindingType(ParameterType|int|string $type, TypeProvider|TypeRegistry $typeProvider): ArrayParameterType
     {
         if (! $type instanceof ParameterType) {
             $type = $typeProvider->get((string) $type)->getBindingType();
@@ -260,7 +258,7 @@ class PersisterHelper
             return [$value->value];
         }
 
-        $valueClass = DefaultProxyClassNameResolver::getClass($value);
+        $valueClass = $value::class;
 
         if ($em->getMetadataFactory()->isTransient($valueClass)) {
             return [$value];

@@ -24,7 +24,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const preRemove = 'preRemove';
+    final public const string preRemove = 'preRemove';
 
     /**
      * The postRemove event occurs for an entity after the entity has
@@ -32,7 +32,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const postRemove = 'postRemove';
+    final public const string postRemove = 'postRemove';
 
     /**
      * The prePersist event occurs for a given entity before the respective
@@ -40,7 +40,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const prePersist = 'prePersist';
+    final public const string prePersist = 'prePersist';
 
     /**
      * The postPersist event occurs for an entity after the entity has
@@ -49,7 +49,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const postPersist = 'postPersist';
+    final public const string postPersist = 'postPersist';
 
     /**
      * The preUpdate event occurs before the database update operations to
@@ -57,7 +57,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const preUpdate = 'preUpdate';
+    final public const string preUpdate = 'preUpdate';
 
     /**
      * The postUpdate event occurs after the database update operations to
@@ -65,7 +65,7 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const postUpdate = 'postUpdate';
+    final public const string postUpdate = 'postUpdate';
 
     /**
      * The postLoad event occurs for an entity after the entity has been loaded
@@ -78,26 +78,26 @@ final class Events
      *
      * This is an entity lifecycle event.
      */
-    public const postLoad = 'postLoad';
+    final public const string postLoad = 'postLoad';
 
     /**
      * The loadClassMetadata event occurs after the mapping metadata for a class
      * has been loaded from a mapping source (attributes/xml).
      */
-    public const loadClassMetadata = 'loadClassMetadata';
+    final public const string loadClassMetadata = 'loadClassMetadata';
 
     /**
      * The onClassMetadataNotFound event occurs whenever loading metadata for a class
      * failed.
      */
-    public const onClassMetadataNotFound = 'onClassMetadataNotFound';
+    final public const string onClassMetadataNotFound = 'onClassMetadataNotFound';
 
     /**
      * The preFlush event occurs when the EntityManager#flush() operation is invoked,
      * but before any changes to managed entities have been calculated. This event is
      * always raised right after EntityManager#flush() call.
      */
-    public const preFlush = 'preFlush';
+    final public const string preFlush = 'preFlush';
 
     /**
      * The onFlush event occurs when the EntityManager#flush() operation is invoked,
@@ -105,7 +105,7 @@ final class Events
      * actual database operations are executed. The event is only raised if there is
      * actually something to do for the underlying UnitOfWork.
      */
-    public const onFlush = 'onFlush';
+    final public const string onFlush = 'onFlush';
 
     /**
      * The postFlush event occurs when the EntityManager#flush() operation is invoked and
@@ -113,11 +113,11 @@ final class Events
      * actually something to do for the underlying UnitOfWork. The event won't be raised if an error occurs during the
      * flush operation.
      */
-    public const postFlush = 'postFlush';
+    final public const string postFlush = 'postFlush';
 
     /**
      * The onClear event occurs when the EntityManager#clear() operation is invoked,
      * after all references to entities have been removed from the unit of work.
      */
-    public const onClear = 'onClear';
+    final public const string onClear = 'onClear';
 }

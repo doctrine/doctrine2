@@ -8,6 +8,7 @@ use ArrayIterator;
 use Countable;
 use Doctrine\Persistence\Mapping\ClassMetadata;
 use FilterIterator;
+use Override;
 use RuntimeException;
 
 use function assert;
@@ -49,6 +50,7 @@ class MetadataFilter extends FilterIterator implements Countable
         parent::__construct($metadata);
     }
 
+    #[Override]
     public function accept(): bool
     {
         if (count($this->filter) === 0) {
@@ -76,6 +78,7 @@ class MetadataFilter extends FilterIterator implements Countable
     }
 
     /** @return ArrayIterator<int, ClassMetadata> */
+    #[Override]
     public function getInnerIterator(): ArrayIterator
     {
         $innerIterator = parent::getInnerIterator();
@@ -85,6 +88,7 @@ class MetadataFilter extends FilterIterator implements Countable
         return $innerIterator;
     }
 
+    #[Override]
     public function count(): int
     {
         return count($this->getInnerIterator());

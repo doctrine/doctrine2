@@ -6,13 +6,8 @@ namespace Doctrine\ORM\Tools;
 
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ComparatorConfig;
-use Doctrine\DBAL\Schema\DefaultExpression;
-use Doctrine\DBAL\Schema\DefaultExpression\CurrentDate;
-use Doctrine\DBAL\Schema\DefaultExpression\CurrentTime;
-use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Index\IndexedColumn;
 use Doctrine\DBAL\Schema\Name\Identifier;
@@ -54,7 +49,6 @@ use function count;
 use function current;
 use function implode;
 use function in_array;
-use function interface_exists;
 use function is_numeric;
 use function method_exists;
 use function preg_match;
@@ -69,7 +63,7 @@ use function strtolower;
  */
 class SchemaTool
 {
-    private const KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
+    private const array KNOWN_COLUMN_OPTIONS = ['comment', 'unsigned', 'fixed', 'default', 'values'];
 
     private readonly AbstractPlatform $platform;
     private readonly QuoteStrategy $quoteStrategy;
@@ -350,7 +344,7 @@ class SchemaTool
                     if ($inheritedKeyColumns !== []) {
                         // A FK collected on the same columns (e.g. for an inherited identifier association)
                         // would get the same generated name and replace the FK to the root table.
-                        unset($addedFks[$this->getAssetName($table) . '.' . implode('', $inheritedKeyColumns)]);
+                        unset($addedFks[$table->getObjectName()->toString() . '.' . implode('', $inheritedKeyColumns)]);
 
                         // Add a FK constraint on the ID column
                         /** @phpstan-ignore method.deprecated (to be handled in experimental code) */
@@ -603,12 +597,6 @@ class SchemaTool
             $options['scale'] = $mapping->scale;
         }
 
-        /** @phpstan-ignore property.deprecated */
-        if (isset($mapping->default)) {
-            /** @phpstan-ignore property.deprecated */
-            $options['default'] = $mapping->default;
-        }
-
         if (isset($mapping->columnDefinition)) {
             $options['columnDefinition'] = $mapping->columnDefinition;
         }
@@ -616,7 +604,7 @@ class SchemaTool
         // the 'default' option can be overwritten here
         $options = $this->gatherColumnOptions($mapping) + $options;
 
-        if (isset($options['default']) && interface_exists(DefaultExpression::class)) {
+        if (isset($options['default'])) {
             if (
                 in_array($mapping->type, [
                     Types::DATETIME_MUTABLE,
@@ -979,7 +967,7 @@ class SchemaTool
         // Use parameter FK name (from JoinTable) if provided, otherwise use extracted from JoinColumns
         $finalForeignKeyName = $foreignKeyName ?? $extractedForeignKeyName;
 
-        $compositeName = $this->getAssetName($theJoinTable) . '.' . implode('', $localColumns);
+        $compositeName = $theJoinTable->getObjectName()->toString() . '.' . implode('', $localColumns);
 
         // Check if an FK constraint already exists for this composite key (table + columns)
         if (isset($addedFks[$compositeName])) {
@@ -1109,17 +1097,17 @@ class SchemaTool
         $deployedSchema = $this->schemaManager->introspectSchema();
 
         foreach ($schema->getTables() as $table) {
-            if (! $deployedSchema->hasTable($this->getAssetName($table))) {
-                /** @phpstan-ignore method.deprecated (todo) */
-                $schema->dropTable($this->getAssetName($table));
+            $tableName = $table->getObjectName()->toString();
+            if (! $deployedSchema->hasTable($tableName)) {
+                $schema->dropTable($tableName);
             }
         }
 
         if ($this->platform->supportsSequences()) {
             foreach ($schema->getSequences() as $sequence) {
-                if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
-                    /** @phpstan-ignore method.deprecated (todo) */
-                    $schema->dropSequence($this->getAssetName($sequence));
+                $sequenceName = $sequence->getObjectName()->toString();
+                if (! $deployedSchema->hasSequence($sequenceName)) {
+                    $schema->dropSequence($sequenceName);
                 }
             }
 
@@ -1141,7 +1129,7 @@ class SchemaTool
                 }
 
                 if (count($columns) === 1) {
-                    $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
+                    $checkSequence = $table->getObjectName()->toString() . '_' . $columns[0] . '_seq';
                     if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
                         /** @phpstan-ignore method.deprecated (todo) */
                         $schema->createSequence($checkSequence);
@@ -1203,14 +1191,9 @@ class SchemaTool
         $config         = $connection->getConfiguration();
         $previousFilter = $config->getSchemaAssetsFilter();
 
-        if ($previousFilter === null) {
-            return $this->schemaManager->introspectSchema();
-        }
-
         // whitelist assets we already know about in $toSchema, use the existing filter otherwise
-        $getAssetName = $this->getAssetName(...);
-        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName): bool {
-            $assetName = $asset instanceof AbstractAsset ? $getAssetName($asset) : $asset;
+        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema): bool {
+            $assetName = $asset instanceof NamedObject ? $asset->getObjectName()->toString() : $asset;
 
             return $toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName) || $previousFilter($asset);
         });
@@ -1274,27 +1257,13 @@ class SchemaTool
      */
     private static function indexFlagsAreCompatible(Index $existingIndex): bool
     {
-        // @phpstan-ignore function.alreadyNarrowedType (DBAL < 4.3 has no Index::getType())
-        if (method_exists($existingIndex, 'getType')) {
-            $existingTypeName = self::getIndexTypeName($existingIndex->getType());
+        $existingTypeName = self::getIndexTypeName($existingIndex->getType());
 
-            return $existingTypeName !== 'FULLTEXT' && $existingTypeName !== 'SPATIAL';
-        }
-
-        // @phpstan-ignore method.deprecated (DBAL < 4.3: getFlags() is the supported API before getType())
-        return $existingIndex->getFlags() === [];
+        return $existingTypeName !== 'FULLTEXT' && $existingTypeName !== 'SPATIAL';
     }
 
     private static function getIndexTypeName(mixed $type): string
     {
         return $type instanceof UnitEnum ? $type->name : '';
-    }
-
-    private function getAssetName(AbstractAsset $asset): string
-    {
-        return $asset instanceof NamedObject
-            ? $asset->getObjectName()->toString()
-            // @phpstan-ignore method.deprecated (DBAL < 4.4)
-            : $asset->getName();
     }
 }

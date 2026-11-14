@@ -4,42 +4,22 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Proxy;
 
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\EntityNotFoundException;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\ORMInvalidArgumentException;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\ORM\Proxy\ProxyFactory;
-use Doctrine\Persistence\Mapping\RuntimeReflectionService;
-use Doctrine\Persistence\Proxy;
 use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\Mocks\UnitOfWorkMock;
-use Doctrine\Tests\Models\Company\CompanyEmployee;
-use Doctrine\Tests\Models\Company\CompanyPerson;
 use Doctrine\Tests\Models\ECommerce\ECommerceFeature;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
-use PHPUnit\Framework\Attributes\RequiresMethod;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 use ReflectionClass;
-use ReflectionProperty;
-use stdClass;
-use Symfony\Component\VarExporter\ProxyHelper;
-
-use function assert;
-use function method_exists;
-use function sys_get_temp_dir;
 
 /**
  * Test the proxy generator. Its work is generating on-the-fly subclasses of a given model, which implement the Proxy pattern.
  */
 class ProxyFactoryTest extends OrmTestCase
 {
-    use VerifyDeprecations;
-
     private UnitOfWorkMock $uowMock;
     private EntityManagerMock $emMock;
     private ProxyFactory $proxyFactory;
@@ -52,23 +32,10 @@ class ProxyFactoryTest extends OrmTestCase
 
         $connection = $this->createConnectionStub($platform);
 
-        if (method_exists($connection, 'getEventManager')) {
-            $connection->method('getEventManager')
-                ->willReturn(new EventManager());
-        }
-
         $this->emMock  = new EntityManagerMock($connection);
         $this->uowMock = new UnitOfWorkMock($this->emMock);
         $this->emMock->setUnitOfWork($this->uowMock);
-        $args               = $this->emMock->getConfiguration()->isNativeLazyObjectsEnabled() ?
-            [$this->emMock] :
-            [
-                $this->emMock,
-                sys_get_temp_dir(),
-                'Proxies',
-                ProxyFactory::AUTOGENERATE_ALWAYS,
-            ];
-        $this->proxyFactory = new ProxyFactory(...$args);
+        $this->proxyFactory = new ProxyFactory($this->emMock);
     }
 
     public function testReferenceProxyDelegatesLoadingToThePersister(): void
@@ -90,43 +57,6 @@ class ProxyFactoryTest extends OrmTestCase
             ->willReturn($proxy);
 
         $proxy->getDescription();
-    }
-
-    public function testSkipMappedSuperClassesOnGeneration(): void
-    {
-        $cm                     = new ClassMetadata(stdClass::class);
-        $cm->isMappedSuperclass = true;
-
-        self::assertSame(
-            0,
-            $this->proxyFactory->generateProxyClasses([$cm]),
-            'No proxies generated.',
-        );
-    }
-
-    #[Group('6625')]
-    public function testSkipEmbeddableClassesOnGeneration(): void
-    {
-        $cm                  = new ClassMetadata(stdClass::class);
-        $cm->isEmbeddedClass = true;
-
-        self::assertSame(
-            0,
-            $this->proxyFactory->generateProxyClasses([$cm]),
-            'No proxies generated.',
-        );
-    }
-
-    #[Group('DDC-1771')]
-    public function testSkipAbstractClassesOnGeneration(): void
-    {
-        $cm = new ClassMetadata(AbstractClass::class);
-        $cm->initializeReflection(new RuntimeReflectionService());
-        self::assertNotNull($cm->reflClass);
-
-        $num = $this->proxyFactory->generateProxyClasses([$cm]);
-
-        self::assertEquals(0, $num, 'No proxies generated.');
     }
 
     #[Group('DDC-2432')]
@@ -156,12 +86,6 @@ class ProxyFactoryTest extends OrmTestCase
 
     private static function assertUninitializedLazyObject(object $proxy): void
     {
-        if ($proxy instanceof Proxy) {
-            self::assertFalse($proxy->__isInitialized());
-
-            return;
-        }
-
         $reflectionClass = new ReflectionClass($proxy);
         self::assertTrue($reflectionClass->isUninitializedLazyObject($proxy));
     }
@@ -192,55 +116,8 @@ class ProxyFactoryTest extends OrmTestCase
         self::assertUninitializedLazyObject($proxy);
     }
 
-    public function testProxyClonesParentFields(): void
+    public function testProxyFactoryAcceptsNullProxyArgs(): void
     {
-        if ($this->emMock->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            self::markTestSkipped('This test is not relevant when native lazy objects are enabled');
-        }
-
-        $companyEmployee = new CompanyEmployee();
-        $companyEmployee->setSalary(1000); // A property on the CompanyEmployee
-        $companyEmployee->setName('Bob'); // A property on the parent class, CompanyPerson
-
-        // Set the id of the CompanyEmployee (which is in the parent CompanyPerson)
-        $property = new ReflectionProperty(CompanyPerson::class, 'id');
-        $property->setValue($companyEmployee, 42);
-
-        $classMetaData = $this->emMock->getClassMetadata(CompanyEmployee::class);
-
-        $persister = $this->getMockBuilder(BasicEntityPersister::class)
-            ->onlyMethods(['loadById', 'getClassMetadata'])
-            ->disableOriginalConstructor()
-            ->getMock();
-        $this->uowMock->setEntityPersister(CompanyEmployee::class, $persister);
-
-        $proxy = $this->proxyFactory->getProxy(CompanyEmployee::class, ['id' => 42]);
-        assert($proxy instanceof Proxy);
-
-        $loadByIdMock = $persister
-            ->expects(self::atLeastOnce())
-            ->method('loadById');
-
-        $loadByIdMock->willReturn($companyEmployee);
-
-        $persister
-            ->expects(self::atLeastOnce())
-            ->method('getClassMetadata')
-            ->willReturn($classMetaData);
-
-        $cloned = clone $proxy;
-        assert($cloned instanceof CompanyEmployee);
-
-        self::assertSame(42, $cloned->getId(), 'Expected the Id to be cloned');
-        self::assertSame(1000, $cloned->getSalary(), 'Expect properties on the CompanyEmployee class to be cloned');
-        self::assertSame('Bob', $cloned->getName(), 'Expect properties on the CompanyPerson class to be cloned');
-    }
-
-    #[RequiresPhp('>=8.4.0')]
-    #[IgnoreDeprecations]
-    public function testProxyFactoryAcceptsNullProxyArgsWhenNativeLazyObjectsAreEnabled(): void
-    {
-        $this->emMock->getConfiguration()->enableNativeLazyObjects(true);
         $this->proxyFactory = new ProxyFactory(
             $this->emMock,
             null,
@@ -253,58 +130,6 @@ class ProxyFactoryTest extends OrmTestCase
         $reflection         = new ReflectionClass($proxy);
 
         self::assertTrue($reflection->isUninitializedLazyObject($proxy));
-    }
-
-    #[RequiresPhp('>=8.4.0')]
-    #[RequiresMethod(ProxyHelper::class, 'generateLazyGhost')]
-    #[IgnoreDeprecations]
-    public function testProxyFactoryTriggersDeprecationWhenNativeLazyObjectsAreDisabled(): void
-    {
-        $this->emMock->getConfiguration()->enableNativeLazyObjects(false);
-
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12005');
-
-        $this->proxyFactory = new ProxyFactory(
-            $this->emMock,
-            sys_get_temp_dir(),
-            'Proxies',
-            ProxyFactory::AUTOGENERATE_ALWAYS,
-        );
-    }
-
-    #[RequiresPhp('< 8.4.0')]
-    public function testProxyFactoryDoesNotTriggerDeprecationWhenNativeLazyObjectsAreDisabled(): void
-    {
-        $this->emMock->getConfiguration()->enableNativeLazyObjects(false);
-
-        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12005');
-
-        $this->proxyFactory = new ProxyFactory(
-            $this->emMock,
-            sys_get_temp_dir(),
-            'Proxies',
-            ProxyFactory::AUTOGENERATE_ALWAYS,
-        );
-    }
-
-    #[IgnoreDeprecations]
-    public function testProxyFactoryThrowsIfLazyGhostsAreUnavailable(): void
-    {
-        if (method_exists(ProxyHelper::class, 'generateLazyGhost')) {
-            self::markTestSkipped('This test is not relevant when lazy ghosts are available');
-        }
-
-        $this->emMock->getConfiguration()->enableNativeLazyObjects(false);
-
-        $this->expectException(ORMInvalidArgumentException::class);
-        $this->expectExceptionMessage('Symfony LazyGhost is not available. Please install the "symfony/var-exporter" package version 6.4 or 7 to use this feature or enable PHP 8.4 native lazy objects.');
-
-        new ProxyFactory(
-            $this->emMock,
-            sys_get_temp_dir(),
-            'Proxies',
-            ProxyFactory::AUTOGENERATE_ALWAYS,
-        );
     }
 }
 

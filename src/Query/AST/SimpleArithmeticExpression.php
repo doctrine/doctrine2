@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * SimpleArithmeticExpression ::= ArithmeticTerm {("+" | "-") ArithmeticTerm}*
@@ -18,6 +19,7 @@ class SimpleArithmeticExpression extends Node
     {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkSimpleArithmeticExpression($this);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 class HavingClause extends Node
 {
@@ -12,6 +13,7 @@ class HavingClause extends Node
     {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkHavingClause($this);

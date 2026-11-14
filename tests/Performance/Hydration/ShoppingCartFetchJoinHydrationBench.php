@@ -35,9 +35,9 @@ use function sprintf;
 #[Iterations(10)]
 final class ShoppingCartFetchJoinHydrationBench
 {
-    private const CART_FIELDS = ['id', 'uuid', 'name', 'status', 'createdAt', 'updatedAt', 'options', 'metadata', 'active', 'total', 'version'];
+    private const array CART_FIELDS = ['id', 'uuid', 'name', 'status', 'createdAt', 'updatedAt', 'options', 'metadata', 'active', 'total', 'version'];
 
-    private const ITEM_FIELDS = ['id', 'uuid', 'sku', 'quantity', 'addedAt', 'options'];
+    private const array ITEM_FIELDS = ['id', 'uuid', 'sku', 'quantity', 'addedAt', 'options'];
 
     private EntityManagerInterface $entityManager;
 

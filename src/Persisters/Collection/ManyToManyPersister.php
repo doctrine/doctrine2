@@ -9,7 +9,6 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\LockMode;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\InverseSideMapping;
@@ -18,6 +17,7 @@ use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\SqlValueVisitor;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 use SortDirection;
 
 use function array_fill;
@@ -34,8 +34,7 @@ use function sprintf;
  */
 class ManyToManyPersister extends AbstractCollectionPersister
 {
-    use CompatOrderings;
-
+    #[Override]
     public function delete(PersistentCollection $collection): void
     {
         $mapping = $this->getMapping($collection);
@@ -56,6 +55,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         $this->conn->executeStatement($this->getDeleteSQL($collection), $this->getDeleteSQLParameters($collection), $types);
     }
 
+    #[Override]
     public function update(PersistentCollection $collection): void
     {
         $mapping = $this->getMapping($collection);
@@ -84,6 +84,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         }
     }
 
+    #[Override]
     public function get(PersistentCollection $collection, mixed $index): object|null
     {
         $mapping = $this->getMapping($collection);
@@ -110,6 +111,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
     }
 
     /** @return non-negative-int */
+    #[Override]
     public function count(PersistentCollection $collection): int
     {
         $conditions  = [];
@@ -166,6 +168,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function slice(PersistentCollection $collection, int $offset, int|null $length = null): array
     {
         $mapping   = $this->getMapping($collection);
@@ -174,6 +177,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         return $persister->getManyToManyCollection($mapping, $collection->getOwner(), $offset, $length);
     }
 
+    #[Override]
     public function containsKey(PersistentCollection $collection, mixed $key): bool
     {
         $mapping = $this->getMapping($collection);
@@ -193,6 +197,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         return (bool) $this->conn->fetchOne($sql, $params, $types);
     }
 
+    #[Override]
     public function contains(PersistentCollection $collection, object $element): bool
     {
         if (! $this->isValidEntityState($element)) {
@@ -213,6 +218,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadCriteria(PersistentCollection $collection, Criteria $criteria): array
     {
         $mapping       = $this->getMapping($collection);
@@ -749,7 +755,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
 
     private function getOrderingSql(Criteria $criteria, ClassMetadata $targetClass): string
     {
-        $orderings = $this->getOrderings($criteria);
+        $orderings = $criteria->getOrderings();
 
         if ($orderings) {
             $orderBy = [];
@@ -760,12 +766,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
                     $this->platform,
                 );
 
-                if ($direction instanceof SortDirection) {
-                    $directionString = $direction === SortDirection::Ascending ? 'ASC' : 'DESC';
-                } else {
-                    /** @phpstan-ignore property.deprecatedEnum */
-                    $directionString = $direction->value;
-                }
+                $directionString = $direction === SortDirection::Ascending ? 'ASC' : 'DESC';
 
                 $orderBy[] = $field . ' ' . $directionString;
             }

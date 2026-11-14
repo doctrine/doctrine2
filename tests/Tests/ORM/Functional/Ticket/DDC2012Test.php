@@ -106,7 +106,7 @@ class DDC2012ItemPerson extends DDC2012Item
 
 class DDC2012TsVectorType extends Type
 {
-    public const MYTYPE = 'tsvector';
+    final public const string MYTYPE = 'tsvector';
 
     /** @phpstan-var array<string, list<array{value: mixed, platform: AbstractPlatform}>> */
     public static $calls = [];

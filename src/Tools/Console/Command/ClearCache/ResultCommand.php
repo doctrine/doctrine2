@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Tools\Console\Command\ClearCache;
 
 use Doctrine\ORM\Tools\Console\Command\AbstractEntityManagerCommand;
 use InvalidArgumentException;
+use Override;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class ResultCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:clear-cache:result')
@@ -43,6 +45,7 @@ because of a limitation of its execution nature.
 EOT);
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = (new SymfonyStyle($input, $output))->getErrorStyle();

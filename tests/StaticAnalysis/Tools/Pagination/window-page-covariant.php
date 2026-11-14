@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\StaticAnalysis\Tools\Pagination;
 
-use Doctrine\ORM\Tools\Pagination\Paginator;
+use Doctrine\ORM\Tools\Pagination\WindowPage;
 
 /** @template-covariant T of object */
-abstract class PaginatorFactory
+abstract class PageFactory
 {
     /** @var class-string<T> */
     private $class;
@@ -24,8 +24,8 @@ abstract class PaginatorFactory
         return $this->class;
     }
 
-    /** @phpstan-return Paginator<T> */
-    abstract public function createPaginator(): Paginator;
+    /** @phpstan-return WindowPage<T> */
+    abstract public function createPage(): WindowPage;
 }
 
 interface Animal
@@ -36,18 +36,18 @@ class Cat implements Animal
 {
 }
 
-/** @param Paginator<Animal> $paginator */
-function getFirstAnimal(Paginator $paginator): Animal|null
+/** @param WindowPage<Animal> $page */
+function getFirstAnimal(WindowPage $page): Animal|null
 {
-    foreach ($paginator as $result) {
+    foreach ($page as $result) {
         return $result;
     }
 
     return null;
 }
 
-/** @param PaginatorFactory<Cat> $catPaginatorFactory */
-function test(PaginatorFactory $catPaginatorFactory): Animal|null
+/** @param PageFactory<Cat> $catPageFactory */
+function test(PageFactory $catPageFactory): Animal|null
 {
-    return getFirstAnimal($catPaginatorFactory->createPaginator());
+    return getFirstAnimal($catPageFactory->createPage());
 }

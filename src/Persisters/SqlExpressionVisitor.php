@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
+use Override;
 use RuntimeException;
 
 use function implode;
@@ -28,6 +29,7 @@ class SqlExpressionVisitor extends ExpressionVisitor
     }
 
     /** Converts a comparison expression into the target query language output. */
+    #[Override]
     public function walkComparison(Comparison $comparison): string
     {
         $field = $comparison->getField();
@@ -53,6 +55,7 @@ class SqlExpressionVisitor extends ExpressionVisitor
      *
      * @throws RuntimeException
      */
+    #[Override]
     public function walkCompositeExpression(CompositeExpression $expr): string
     {
         $expressionList = [];
@@ -72,6 +75,7 @@ class SqlExpressionVisitor extends ExpressionVisitor
     /**
      * Converts a value expression into the target query language part.
      */
+    #[Override]
     public function walkValue(Value $value): string
     {
         return '?';

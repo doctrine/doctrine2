@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Mapping;
 
 use InvalidArgumentException;
 use LogicException;
+use Override;
 use ReflectionProperty;
 
 use function assert;
@@ -27,11 +28,13 @@ final class ReflectionReadonlyProperty extends ReflectionProperty
         parent::__construct($wrappedProperty->class, $wrappedProperty->name);
     }
 
+    #[Override]
     public function getValue(object|null $object = null): mixed
     {
         return $this->wrappedProperty->getValue(...func_get_args());
     }
 
+    #[Override]
     public function setValue(mixed $objectOrValue, mixed $value = null): void
     {
         if (func_num_args() < 2 || $objectOrValue === null || ! $this->isInitialized($objectOrValue)) {

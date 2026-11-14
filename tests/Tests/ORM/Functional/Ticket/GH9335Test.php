@@ -12,7 +12,6 @@ use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\OneToOne;
-use Doctrine\Tests\Mocks\CompatibilityType;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -51,8 +50,6 @@ final class GH9335Test extends OrmFunctionalTestCase
 
 class GH9335IntObjectType extends Type
 {
-    use CompatibilityType;
-
     public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {
         return $platform->getIntegerTypeDeclarationSQL($column);
@@ -73,7 +70,7 @@ class GH9335IntObjectType extends Type
         return new GH9335IntObject((int) $value);
     }
 
-    private function doGetBindingType(): ParameterType|int
+    public function getBindingType(): ParameterType
     {
         return ParameterType::INTEGER;
     }

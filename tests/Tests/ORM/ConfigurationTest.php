@@ -15,13 +15,11 @@ use Doctrine\ORM\Mapping\DefaultTypedFieldMapper;
 use Doctrine\ORM\Mapping\EntityListenerResolver;
 use Doctrine\ORM\Mapping\NamingStrategy;
 use Doctrine\ORM\Mapping\QuoteStrategy;
-use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Tests\Models\DDC753\DDC753CustomRepository;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RequiresMethod;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
 
@@ -39,39 +37,6 @@ class ConfigurationTest extends TestCase
         parent::setUp();
 
         $this->configuration = new Configuration();
-    }
-
-    #[IgnoreDeprecations]
-    public function testSetGetProxyDir(): void
-    {
-        self::assertNull($this->configuration->getProxyDir()); // defaults
-
-        $this->configuration->setProxyDir(__DIR__);
-        self::assertSame(__DIR__, $this->configuration->getProxyDir());
-    }
-
-    #[IgnoreDeprecations]
-    public function testSetGetAutoGenerateProxyClasses(): void
-    {
-        self::assertSame(ProxyFactory::AUTOGENERATE_ALWAYS, $this->configuration->getAutoGenerateProxyClasses()); // defaults
-
-        $this->configuration->setAutoGenerateProxyClasses(false);
-        self::assertSame(ProxyFactory::AUTOGENERATE_NEVER, $this->configuration->getAutoGenerateProxyClasses());
-
-        $this->configuration->setAutoGenerateProxyClasses(true);
-        self::assertSame(ProxyFactory::AUTOGENERATE_ALWAYS, $this->configuration->getAutoGenerateProxyClasses());
-
-        $this->configuration->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_FILE_NOT_EXISTS);
-        self::assertSame(ProxyFactory::AUTOGENERATE_FILE_NOT_EXISTS, $this->configuration->getAutoGenerateProxyClasses());
-    }
-
-    #[IgnoreDeprecations]
-    public function testSetGetProxyNamespace(): void
-    {
-        self::assertNull($this->configuration->getProxyNamespace()); // defaults
-
-        $this->configuration->setProxyNamespace(__NAMESPACE__);
-        self::assertSame(__NAMESPACE__, $this->configuration->getProxyNamespace());
     }
 
     public function testSetGetMetadataDriverImpl(): void
@@ -221,15 +186,6 @@ class ConfigurationTest extends TestCase
         $defaultTypedFieldMapper = new DefaultTypedFieldMapper();
         $this->configuration->setTypedFieldMapper($defaultTypedFieldMapper);
         self::assertSame($defaultTypedFieldMapper, $this->configuration->getTypedFieldMapper());
-    }
-
-    #[RequiresPhp('>=8.4.0')]
-    #[IgnoreDeprecations]
-    public function testDisablingNativeLazyObjectsIsDeprecated(): void
-    {
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12005');
-
-        $this->configuration->enableNativeLazyObjects(false);
     }
 
     #[RequiresMethod(Schema::class, 'edit')]

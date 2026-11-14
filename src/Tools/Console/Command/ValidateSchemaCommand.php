@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Tools\Console\Command;
 
 use Doctrine\ORM\Tools\SchemaValidator;
+use Override;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -20,6 +21,7 @@ use function sprintf;
  */
 class ValidateSchemaCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:validate-schema')
@@ -31,6 +33,7 @@ class ValidateSchemaCommand extends AbstractEntityManagerCommand
              ->setHelp('Validate that the mapping files are correct and in sync with the database.');
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = (new SymfonyStyle($input, $output))->getErrorStyle();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * EmptyCollectionComparisonExpression ::= CollectionValuedPathExpression "IS" ["NOT"] "EMPTY"
@@ -19,6 +20,7 @@ class EmptyCollectionComparisonExpression extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkEmptyCollectionComparisonExpression($this);

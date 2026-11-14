@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Query;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use LogicException;
+use Override;
 
 use function array_diff;
 use function array_keys;
@@ -23,6 +24,7 @@ abstract class TreeWalkerAdapter implements TreeWalker
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function __construct(
         private readonly AbstractQuery $query,
         private readonly ParserResult $parserResult,
@@ -33,19 +35,23 @@ abstract class TreeWalkerAdapter implements TreeWalker
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getQueryComponents(): array
     {
         return $this->queryComponents;
     }
 
+    #[Override]
     public function walkSelectStatement(AST\SelectStatement $selectStatement): void
     {
     }
 
+    #[Override]
     public function walkUpdateStatement(AST\UpdateStatement $updateStatement): void
     {
     }
 
+    #[Override]
     public function walkDeleteStatement(AST\DeleteStatement $deleteStatement): void
     {
     }

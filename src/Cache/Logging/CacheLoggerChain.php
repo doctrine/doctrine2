@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Cache\Logging;
 use Doctrine\ORM\Cache\CollectionCacheKey;
 use Doctrine\ORM\Cache\EntityCacheKey;
 use Doctrine\ORM\Cache\QueryCacheKey;
+use Override;
 
 class CacheLoggerChain implements CacheLogger
 {
@@ -29,6 +30,7 @@ class CacheLoggerChain implements CacheLogger
         return $this->loggers;
     }
 
+    #[Override]
     public function collectionCacheHit(string $regionName, CollectionCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -36,6 +38,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function collectionCacheMiss(string $regionName, CollectionCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -43,6 +46,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function collectionCachePut(string $regionName, CollectionCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -50,6 +54,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function entityCacheHit(string $regionName, EntityCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -57,6 +62,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function entityCacheMiss(string $regionName, EntityCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -64,6 +70,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function entityCachePut(string $regionName, EntityCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -71,6 +78,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function queryCacheHit(string $regionName, QueryCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -78,6 +86,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function queryCacheMiss(string $regionName, QueryCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {
@@ -85,6 +94,7 @@ class CacheLoggerChain implements CacheLogger
         }
     }
 
+    #[Override]
     public function queryCachePut(string $regionName, QueryCacheKey $key): void
     {
         foreach ($this->loggers as $logger) {

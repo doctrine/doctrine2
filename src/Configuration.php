@@ -20,7 +20,6 @@ use Doctrine\ORM\Mapping\EntityListenerResolver;
 use Doctrine\ORM\Mapping\NamingStrategy;
 use Doctrine\ORM\Mapping\QuoteStrategy;
 use Doctrine\ORM\Mapping\TypedFieldMapper;
-use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Query\AST\Functions\FunctionNode;
 use Doctrine\ORM\Query\Filter\SQLFilter;
 use Doctrine\ORM\Repository\DefaultRepositoryFactory;
@@ -33,8 +32,6 @@ use function class_exists;
 use function is_a;
 use function method_exists;
 use function strtolower;
-
-use const PHP_VERSION_ID;
 
 /**
  * Configuration container for all configuration options of Doctrine.
@@ -60,112 +57,6 @@ class Configuration extends \Doctrine\DBAL\Configuration
     public function getIdentityGenerationPreferences(): array
     {
         return $this->identityGenerationPreferences;
-    }
-
-    /**
-     * Sets the directory where Doctrine generates any necessary proxy class files.
-     */
-    public function setProxyDir(string $dir): void
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::triggerIfCalledFromOutside(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        $this->attributes['proxyDir'] = $dir;
-    }
-
-    /**
-     * Gets the directory where Doctrine generates any necessary proxy class files.
-     */
-    public function getProxyDir(): string|null
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        return $this->attributes['proxyDir'] ?? null;
-    }
-
-    /**
-     * Gets the strategy for automatically generating proxy classes.
-     *
-     * @return ProxyFactory::AUTOGENERATE_*
-     */
-    public function getAutoGenerateProxyClasses(): int
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        return $this->attributes['autoGenerateProxyClasses'] ?? ProxyFactory::AUTOGENERATE_ALWAYS;
-    }
-
-    /**
-     * Sets the strategy for automatically generating proxy classes.
-     *
-     * @param bool|ProxyFactory::AUTOGENERATE_* $autoGenerate True is converted to AUTOGENERATE_ALWAYS, false to AUTOGENERATE_NEVER.
-     */
-    public function setAutoGenerateProxyClasses(bool|int $autoGenerate): void
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::triggerIfCalledFromOutside(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        $this->attributes['autoGenerateProxyClasses'] = (int) $autoGenerate;
-    }
-
-    /**
-     * Gets the namespace where proxy classes reside.
-     */
-    public function getProxyNamespace(): string|null
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        return $this->attributes['proxyNamespace'] ?? null;
-    }
-
-    /**
-     * Sets the namespace where proxy classes reside.
-     */
-    public function setProxyNamespace(string $ns): void
-    {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::triggerIfCalledFromOutside(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Calling %s is deprecated and will not be possible in Doctrine ORM 4.0.',
-                __METHOD__,
-            );
-        }
-
-        $this->attributes['proxyNamespace'] = $ns;
     }
 
     public function getUseSchemaEditorApi(): bool
@@ -680,70 +571,6 @@ class Configuration extends \Doctrine\DBAL\Configuration
     public function setSchemaIgnoreClasses(array $schemaIgnoreClasses): void
     {
         $this->attributes['schemaIgnoreClasses'] = $schemaIgnoreClasses;
-    }
-
-    public function isNativeLazyObjectsEnabled(): bool
-    {
-        return $this->attributes['nativeLazyObjects'] ?? false;
-    }
-
-    public function enableNativeLazyObjects(bool $nativeLazyObjects): void
-    {
-        if (PHP_VERSION_ID >= 80400 && ! $nativeLazyObjects) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                'Disabling native lazy objects is deprecated and will be impossible in Doctrine ORM 4.0.',
-            );
-        }
-
-        if (PHP_VERSION_ID < 80400 && $nativeLazyObjects) {
-            throw new LogicException('Lazy loading proxies require PHP 8.4 or higher.');
-        }
-
-        $this->attributes['nativeLazyObjects'] = $nativeLazyObjects;
-    }
-
-    /**
-     * @deprecated lazy ghost objects are always enabled
-     *
-     * @return true
-     */
-    public function isLazyGhostObjectEnabled(): bool
-    {
-        return true;
-    }
-
-    /** @deprecated lazy ghost objects cannot be disabled */
-    public function setLazyGhostObjectEnabled(bool $flag): void
-    {
-        if (! $flag) {
-            throw new LogicException(<<<'EXCEPTION'
-            The lazy ghost object feature cannot be disabled anymore.
-            Please remove the call to setLazyGhostObjectEnabled(false).
-            EXCEPTION);
-        }
-    }
-
-    /** @deprecated rejecting ID collisions in the identity map cannot be disabled */
-    public function setRejectIdCollisionInIdentityMap(bool $flag): void
-    {
-        if (! $flag) {
-            throw new LogicException(<<<'EXCEPTION'
-                Rejecting ID collisions in the identity map cannot be disabled anymore.
-                Please remove the call to setRejectIdCollisionInIdentityMap(false).
-                EXCEPTION);
-        }
-    }
-
-    /**
-     * @deprecated rejecting ID collisions in the identity map is always enabled
-     *
-     * @return true
-     */
-    public function isRejectIdCollisionInIdentityMapEnabled(): bool
-    {
-        return true;
     }
 
     public function setEagerFetchBatchSize(int $batchSize = 100): void

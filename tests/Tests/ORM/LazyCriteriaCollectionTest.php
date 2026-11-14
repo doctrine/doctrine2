@@ -12,8 +12,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-use function defined;
-
 #[CoversClass(LazyCriteriaCollection::class)]
 class LazyCriteriaCollectionTest extends TestCase
 {
@@ -24,7 +22,7 @@ class LazyCriteriaCollectionTest extends TestCase
     protected function setUp(): void
     {
         $this->persister              = $this->createMock(EntityPersister::class);
-        $this->criteria               = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $this->criteria               = Criteria::create();
         $this->lazyCriteriaCollection = new LazyCriteriaCollection($this->persister, $this->criteria);
     }
 
@@ -80,7 +78,7 @@ class LazyCriteriaCollectionTest extends TestCase
             ->with($this->criteria)
             ->willReturn([$foo, $bar, $baz]);
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
 
         $criteria->andWhere($criteria->expr()->eq('val', 'foo'));
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 /**
@@ -38,6 +39,7 @@ class Math implements Stringable
         return $this->rightExpr;
     }
 
+    #[Override]
     public function __toString(): string
     {
         // Adjusting Left Expression

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use DateTime;
-use Doctrine\ORM\Tools\Pagination\Paginator;
+use Doctrine\ORM\Tools\Pagination\OffsetPaginator;
+use Doctrine\ORM\Tools\Pagination\Window;
 use Doctrine\Tests\Models\Company\CompanyEmployee;
 use Doctrine\Tests\Models\Company\CompanyManager;
 use Doctrine\Tests\Models\Company\CompanyPerson;
@@ -72,10 +73,11 @@ final class GH7039Test extends OrmFunctionalTestCase
         );
         $query->setParameter('type', $this->_em->getClassMetadata($subClass));
 
-        $paginator = new Paginator($query);
-        $paginator->setUseOutputWalkers($useOutputWalkers);
+        $paginator = new OffsetPaginator(true, $useOutputWalkers);
+        $page      = $paginator->paginate($query, new Window(0, 10));
 
-        self::assertCount(1, iterator_to_array($paginator->getIterator()));
-        self::assertSame(1, $paginator->count());
+        self::assertCount(1, iterator_to_array($page->getIterator()));
+        self::assertSame(1, $page->getTotalCount());
+        self::assertSame(1, $paginator->getTotalCount($query));
     }
 }

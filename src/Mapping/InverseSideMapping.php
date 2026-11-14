@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Override;
+
 abstract class InverseSideMapping extends AssociationMapping
 {
     /**
@@ -20,6 +22,7 @@ abstract class InverseSideMapping extends AssociationMapping
     }
 
     /** @return list<string> */
+    #[Override]
     public function __sleep(): array
     {
         return [

@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Internal\Hydration;
 
 use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\ORM\NoResultException;
+use Override;
 
 use function array_shift;
 use function count;
@@ -16,6 +17,7 @@ use function key;
  */
 class SingleScalarHydrator extends AbstractHydrator
 {
+    #[Override]
     protected function hydrateAllData(): mixed
     {
         $data    = $this->statement()->fetchAllAssociative();

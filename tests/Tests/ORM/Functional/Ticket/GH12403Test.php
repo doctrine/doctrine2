@@ -18,10 +18,6 @@ class GH12403Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            $this->markTestSkipped('Test requires native lazy objects enabled.');
-        }
-
         $this->createSchemaForModels(GH12403ScalarEntity::class, OwningSide::class, InverseSide::class);
     }
 

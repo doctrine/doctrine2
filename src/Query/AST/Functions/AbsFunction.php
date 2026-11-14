@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "ABS" "(" SimpleArithmeticExpression ")"
@@ -18,6 +19,7 @@ class AbsFunction extends FunctionNode
 {
     public Node|string $simpleArithmeticExpression;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return 'ABS(' . $sqlWalker->walkSimpleArithmeticExpression(
@@ -25,6 +27,7 @@ class AbsFunction extends FunctionNode
         ) . ')';
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

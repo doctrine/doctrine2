@@ -12,7 +12,6 @@ use Doctrine\Tests\Models\CMS\CmsPhonenumber;
 use Doctrine\Tests\Models\CMS\CmsTag;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\OrmFunctionalTestCase;
-use Doctrine\Tests\Proxies\__CG__\Doctrine\Tests\Models\CMS\CmsUser as CmsUserProxy;
 
 /**
  * Test that Doctrine ORM correctly works with proxy instances exactly like with ordinary Entities
@@ -102,36 +101,6 @@ class ProxiesLikeEntitiesTest extends OrmFunctionalTestCase
         self::assertSame($this->user->getId(), $result->getId());
         $this->_em->remove($proxy);
         $this->_em->flush();
-    }
-
-    /**
-     * Verifying that proxies can be used without problems as query parameters
-     */
-    public function testFindWithProxyName(): void
-    {
-        if ($this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            self::markTestSkipped('There is no such thing as a proxy class name when native lazy objects are enabled.');
-        }
-
-        $result = $this->_em->find(CmsUserProxy::class, $this->user->getId());
-        self::assertSame($this->user->getId(), $result->getId());
-        $this->_em->clear();
-
-        $result = $this->_em->getReference(CmsUserProxy::class, $this->user->getId());
-        self::assertSame($this->user->getId(), $result->getId());
-        $this->_em->clear();
-
-        $result = $this->_em->getRepository(CmsUserProxy::class)->findOneBy(['username' => $this->user->username]);
-        self::assertSame($this->user->getId(), $result->getId());
-        $this->_em->clear();
-
-        $result = $this->_em
-            ->createQuery('SELECT u FROM Doctrine\Tests\Proxies\__CG__\Doctrine\Tests\Models\CMS\CmsUser u WHERE u.id = ?1')
-            ->setParameter(1, $this->user->getId())
-            ->getSingleResult();
-
-        self::assertSame($this->user->getId(), $result->getId());
-        $this->_em->clear();
     }
 
     protected function tearDown(): void

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Cache\Persister\Entity;
 
 use Doctrine\ORM\Cache\EntityCacheKey;
+use Override;
 
 /**
  * Specific non-strict read/write cached entity persister
  */
 class NonStrictReadWriteCachedEntityPersister extends AbstractEntityPersister
 {
+    #[Override]
     public function afterTransactionComplete(): void
     {
         $isChanged = false;
@@ -42,11 +44,13 @@ class NonStrictReadWriteCachedEntityPersister extends AbstractEntityPersister
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function afterTransactionRolledBack(): void
     {
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function delete(object $entity): bool
     {
         $key     = new EntityCacheKey($this->class->rootEntityName, $this->uow->getEntityIdentifier($entity));
@@ -61,6 +65,7 @@ class NonStrictReadWriteCachedEntityPersister extends AbstractEntityPersister
         return $deleted;
     }
 
+    #[Override]
     public function update(object $entity): void
     {
         $this->persister->update($entity);

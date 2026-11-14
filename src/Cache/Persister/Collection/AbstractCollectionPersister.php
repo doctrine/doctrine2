@@ -17,9 +17,9 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\Collection\CollectionPersister;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\UnitOfWork;
+use Override;
 
 use function array_values;
 use function assert;
@@ -63,21 +63,25 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
         $this->targetEntity    = $em->getClassMetadata($association->targetEntity);
     }
 
+    #[Override]
     public function getCacheRegion(): Region
     {
         return $this->region;
     }
 
+    #[Override]
     public function getSourceEntityMetadata(): ClassMetadata
     {
         return $this->sourceEntity;
     }
 
+    #[Override]
     public function getTargetEntityMetadata(): ClassMetadata
     {
         return $this->targetEntity;
     }
 
+    #[Override]
     public function loadCollectionCache(PersistentCollection $collection, CollectionCacheKey $key): array|null
     {
         $cache = $this->region->get($key);
@@ -89,6 +93,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
         return $this->hydrator->loadCacheEntry($this->sourceEntity, $key, $cache, $collection);
     }
 
+    #[Override]
     public function storeCollectionCache(CollectionCacheKey $key, Collection|array $elements): void
     {
         $associationMapping = $this->sourceEntity->associationMappings[$key->association];
@@ -111,7 +116,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
             }
 
             $class     = $this->targetEntity;
-            $className = DefaultProxyClassNameResolver::getClass($elements[$index]);
+            $className = $elements[$index]::class;
 
             if ($className !== $this->targetEntity->name) {
                 $class = $this->metadataFactory->getMetadataFor($className);
@@ -128,16 +133,19 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
         }
     }
 
+    #[Override]
     public function contains(PersistentCollection $collection, object $element): bool
     {
         return $this->persister->contains($collection, $element);
     }
 
+    #[Override]
     public function containsKey(PersistentCollection $collection, mixed $key): bool
     {
         return $this->persister->containsKey($collection, $key);
     }
 
+    #[Override]
     public function count(PersistentCollection $collection): int
     {
         $ownerId = $this->uow->getEntityIdentifier($collection->getOwner());
@@ -151,6 +159,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
         return $this->persister->count($collection);
     }
 
+    #[Override]
     public function get(PersistentCollection $collection, mixed $index): mixed
     {
         return $this->persister->get($collection, $index);
@@ -159,6 +168,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function slice(PersistentCollection $collection, int $offset, int|null $length = null): array
     {
         return $this->persister->slice($collection, $offset, $length);
@@ -167,6 +177,7 @@ abstract class AbstractCollectionPersister implements CachedCollectionPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadCriteria(PersistentCollection $collection, Criteria $criteria): array
     {
         return $this->persister->loadCriteria($collection, $criteria);

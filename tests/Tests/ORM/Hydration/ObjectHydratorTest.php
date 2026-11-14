@@ -36,7 +36,6 @@ use PHPUnit\Framework\TestCase;
 use function count;
 use function property_exists;
 use function strtoupper;
-use function sys_get_temp_dir;
 
 class ObjectHydratorTest extends HydrationTestCase
 {
@@ -1114,12 +1113,8 @@ class ObjectHydratorTest extends HydrationTestCase
             ],
         ];
 
-        $args = $this->entityManager->getConfiguration()->isNativeLazyObjectsEnabled() ?
-            [$this->entityManager] :
-            [$this->entityManager, sys_get_temp_dir(), 'Proxies', ProxyFactory::AUTOGENERATE_ALWAYS];
-
         // extending the proxy factory to spy on getProxy()
-        $proxyFactory = new class (...$args) extends ProxyFactory {
+        $proxyFactory = new class ($this->entityManager) extends ProxyFactory {
             public function getProxy(string $className, array $identifier, bool $assignIdentifiers = false): object
             {
                 TestCase::assertSame(ECommerceShipping::class, $className);
@@ -1167,12 +1162,8 @@ class ObjectHydratorTest extends HydrationTestCase
 
         $proxyInstance = new ECommerceShipping();
 
-        $args = $this->entityManager->getConfiguration()->isNativeLazyObjectsEnabled() ?
-            [$this->entityManager] :
-            [$this->entityManager, sys_get_temp_dir(), 'Proxies', ProxyFactory::AUTOGENERATE_ALWAYS];
-
         // extending the proxy factory to spy on getProxy()
-        $proxyFactory = new class (...$args) extends ProxyFactory {
+        $proxyFactory = new class ($this->entityManager) extends ProxyFactory {
             public function getProxy(string $className, array $identifier, bool $assignIdentifiers = false): object
             {
                 TestCase::assertSame(ECommerceShipping::class, $className);

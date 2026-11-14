@@ -31,7 +31,7 @@ use function strlen;
  */
 final class NameParser
 {
-    private const IDENTIFIER_PATTERN = <<<'PATTERN'
+    private const string IDENTIFIER_PATTERN = <<<'PATTERN'
         /\G
         (?:
             "(?<ansi>[^"]++(?:""[^"]*+)*+)"

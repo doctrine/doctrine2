@@ -10,7 +10,6 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Cache;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\Query\Parameter;
@@ -26,14 +25,12 @@ use Doctrine\Tests\OrmTestCase;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use SortDirection;
 
 use function array_filter;
-use function defined;
 
 /**
  * Test case for the QueryBuilder class used to build DQL query string in a
@@ -41,7 +38,6 @@ use function defined;
  */
 class QueryBuilderTest extends OrmTestCase
 {
-    use CompatOrderings;
     use VerifyDeprecations;
 
     private EntityManagerMock $entityManager;
@@ -489,30 +485,6 @@ class QueryBuilderTest extends OrmTestCase
         $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC');
     }
 
-    #[IgnoreDeprecations]
-    public function testLegacyOrderByNull(): void
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $qb->select('u')
-            ->from(CmsUser::class, 'u')
-            ->orderBy('u.username', null);
-
-        $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC');
-    }
-
-    #[IgnoreDeprecations]
-    public function testLegacyOrderByString(): void
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $qb->select('u')
-            ->from(CmsUser::class, 'u')
-            ->orderBy('u.username', 'ASC');
-
-        $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC');
-    }
-
     public function testAddOrderBy(): void
     {
         $qb = $this->entityManager->createQueryBuilder()
@@ -520,32 +492,6 @@ class QueryBuilderTest extends OrmTestCase
             ->from(CmsUser::class, 'u')
             ->orderBy('u.username', SortDirection::Ascending)
             ->addOrderBy('u.username', SortDirection::Descending);
-
-        $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC, u.username DESC');
-    }
-
-    #[IgnoreDeprecations]
-    public function testLegacyAddOrderByNull(): void
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $qb->select('u')
-            ->from(CmsUser::class, 'u')
-            ->orderBy('u.username', SortDirection::Ascending)
-            ->addOrderBy('u.username', null);
-
-        $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC, u.username ASC');
-    }
-
-    #[IgnoreDeprecations]
-    public function testLegacyAddOrderByString(): void
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $qb->select('u')
-            ->from(CmsUser::class, 'u')
-            ->orderBy('u.username', SortDirection::Ascending)
-            ->addOrderBy('u.username', 'DESC');
 
         $this->assertValidQueryBuilder($qb, 'SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u ORDER BY u.username ASC, u.username DESC');
     }
@@ -567,7 +513,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('u')
             ->from(CmsUser::class, 'u');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field', 'value'));
 
         $qb->addCriteria($criteria);
@@ -581,7 +527,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->andX(
             $criteria->expr()->eq('field', 'value1'),
             $criteria->expr()->eq('field', 'value2'),
@@ -600,7 +546,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('field', 'value2'));
 
@@ -617,7 +563,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field1', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('field2', 'value2'));
 
@@ -634,7 +580,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field1', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('field2', 'value2'));
 
@@ -651,7 +597,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field1', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('field1', 'value2'));
 
@@ -668,8 +614,8 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('u')
             ->from(CmsUser::class, 'u');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
-        $criteria->orderBy(['field' => $this->isCollections31() ? SortDirection::Descending : 'DESC']);
+        $criteria = Criteria::create();
+        $criteria->orderBy(['field' => SortDirection::Descending]);
 
         $qb->addCriteria($criteria);
 
@@ -685,8 +631,8 @@ class QueryBuilderTest extends OrmTestCase
             ->from(CmsUser::class, 'u')
             ->join('u.article', 'a');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
-        $criteria->orderBy(['a.field' => $this->isCollections31() ? SortDirection::Descending : 'DESC']);
+        $criteria = Criteria::create();
+        $criteria->orderBy(['a.field' => SortDirection::Descending]);
 
         $qb->addCriteria($criteria);
 
@@ -700,7 +646,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('u')
             ->from(CmsUser::class, 'u');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->setFirstResult(2);
         $criteria->setMaxResults(10);
 
@@ -718,7 +664,7 @@ class QueryBuilderTest extends OrmTestCase
             ->setFirstResult(2)
             ->setMaxResults(10);
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
 
         $qb->addCriteria($criteria);
 
@@ -1008,7 +954,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
         $qb->join('alias1.articles', 'alias2');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('field', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('alias2.field', 'value2'));
 
@@ -1026,7 +972,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
         $qb->join('alias1.articles', 'alias2');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('alias1.field', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('alias2.field', 'value2'));
 
@@ -1044,7 +990,7 @@ class QueryBuilderTest extends OrmTestCase
         $qb->select('alias1')->from(CmsUser::class, 'alias1');
         $qb->join('alias1.articles', 'alias2');
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->where($criteria->expr()->eq('alias1.field', 'value1'));
         $criteria->andWhere($criteria->expr()->gt('alias2.field', 'value2'));
         $criteria->andWhere($criteria->expr()->lt('alias2.field', 'value3'));

@@ -49,12 +49,11 @@ interface EntityPersister
      * @param mixed[]|Criteria $criteria
      * @param mixed[]|null     $orderBy
      * @phpstan-param AssociationMapping|null $assoc
-     * @phpstan-param LockMode::*|null $lockMode
      */
     public function getSelectSQL(
         array|Criteria $criteria,
         AssociationMapping|null $assoc = null,
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         int|null $offset = null,
         array|null $orderBy = null,
@@ -72,14 +71,14 @@ interface EntityPersister
      *
      * @param array<string, mixed> $criteria
      *
-     * @phpstan-return array{list<mixed>, list<ParameterType::*|ArrayParameterType::*|string>}
+     * @phpstan-return array{list<mixed>, list<ParameterType|ArrayParameterType|string>}
      */
     public function expandParameters(array $criteria): array;
 
     /**
      * Expands Criteria Parameters by walking the expressions and grabbing all parameters and types from it.
      *
-     * @phpstan-return array{list<mixed>, list<ParameterType::*|ArrayParameterType::*|string>}
+     * @phpstan-return array{list<mixed>, list<ParameterType|ArrayParameterType|string>}
      */
     public function expandCriteriaParameters(Criteria $criteria): array;
 
@@ -149,15 +148,12 @@ interface EntityPersister
      * @param AssociationMapping|null                  $assoc    The association that connects the entity
      *                                                           to load to another entity, if any.
      * @param mixed[]                                  $hints    Hints for entity creation.
-     * @param LockMode|int|null                        $lockMode One of the \Doctrine\DBAL\LockMode::* constants
-     *                                                           or NULL if no specific lock mode should be used
-     *                                                           for loading the entity.
+     * @param LockMode|null                            $lockMode The lock mode or NULL if no specific lock mode
+     *                                                           should be used for loading the entity.
      * @param int|null                                 $limit    Limit number of results.
      * @param array<string, SortDirection|string>|null $orderBy  Criteria to order by.
-     * @phpstan-param array<string, mixed>              $criteria
-     * @phpstan-param array<string, mixed>              $hints
-     * @phpstan-param LockMode::*|null                  $lockMode
-     * @phpstan-param array<string, SortDirection|string>|null $orderBy
+     * @phpstan-param array<string, mixed>       $criteria
+     * @phpstan-param array<string, mixed>       $hints
      *
      * @return object|null The loaded and managed entity instance or NULL if the entity can not be found.
      *
@@ -168,7 +164,7 @@ interface EntityPersister
         object|null $entity = null,
         AssociationMapping|null $assoc = null,
         array $hints = [],
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         array|null $orderBy = null,
     ): object|null;
@@ -204,15 +200,13 @@ interface EntityPersister
     /**
      * Refreshes a managed entity.
      *
-     * @param LockMode|int|null $lockMode One of the \Doctrine\DBAL\LockMode::* constants
-     *                                    or NULL if no specific lock mode should be used
-     *                                    for refreshing the managed entity.
+     * @param LockMode|null $lockMode The lock mode or NULL if no specific lock mode
+     *                                should be used for refreshing the managed entity.
      * @phpstan-param array<string, mixed> $id The identifier of the entity as an
      *                                       associative array from column or
      *                                       field names to values.
-     * @phpstan-param LockMode::*|null $lockMode
      */
-    public function refresh(array $id, object $entity, LockMode|int|null $lockMode = null): void;
+    public function refresh(array $id, object $entity, LockMode|null $lockMode = null): void;
 
     /**
      * Loads Entities matching the given Criteria object.
@@ -224,8 +218,8 @@ interface EntityPersister
     /**
      * Loads a list of entities by a list of field criteria.
      *
-     * @phpstan-param array<string, SortDirection|string>|null $orderBy
-     * @phpstan-param array<string, mixed>                     $criteria
+     * @param array<string, SortDirection|string>|null $orderBy Criteria to order by.
+     * @phpstan-param array<string, mixed>                       $criteria
      *
      * @return mixed[]
      */
@@ -278,9 +272,8 @@ interface EntityPersister
      * Locks all rows of this entity matching the given criteria with the specified pessimistic lock mode.
      *
      * @phpstan-param array<string, mixed> $criteria
-     * @phpstan-param LockMode::* $lockMode
      */
-    public function lock(array $criteria, LockMode|int $lockMode): void;
+    public function lock(array $criteria, LockMode $lockMode): void;
 
     /**
      * Returns an array with (sliced or full list) of elements in the specified collection.

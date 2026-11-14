@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\AST\Functions\FunctionNode;
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * LikeExpression ::= StringExpression ["NOT"] "LIKE" string ["ESCAPE" char]
@@ -22,6 +23,7 @@ class LikeExpression extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkLikeExpression($this);

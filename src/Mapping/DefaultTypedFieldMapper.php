@@ -11,13 +11,13 @@ use DateTime;
 use DateTimeImmutable;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
+use Override;
 use ReflectionEnum;
 use ReflectionNamedType;
 use ReflectionProperty;
 
 use function array_merge;
 use function assert;
-use function defined;
 use function enum_exists;
 use function is_a;
 
@@ -27,10 +27,11 @@ final class DefaultTypedFieldMapper implements TypedFieldMapper
     /** @var array<class-string|ScalarName, class-string<Type>|string> $typedFieldMappings */
     private array $typedFieldMappings;
 
-    private const DEFAULT_TYPED_FIELD_MAPPINGS = [
+    private const array DEFAULT_TYPED_FIELD_MAPPINGS = [
         DateInterval::class => Types::DATEINTERVAL,
         DateTime::class => Types::DATETIME_MUTABLE,
         DateTimeImmutable::class => Types::DATETIME_IMMUTABLE,
+        Number::class => Types::NUMBER,
         'array' => Types::JSON,
         'bool' => Types::BOOLEAN,
         'float' => Types::FLOAT,
@@ -41,17 +42,16 @@ final class DefaultTypedFieldMapper implements TypedFieldMapper
     /** @param array<class-string|ScalarName, class-string<Type>|string> $typedFieldMappings */
     public function __construct(array $typedFieldMappings = [])
     {
-        $defaultMappings = self::DEFAULT_TYPED_FIELD_MAPPINGS;
-        if (defined(Types::class . '::NUMBER')) { // DBAL 4.3+
-            $defaultMappings[Number::class] = Types::NUMBER;
-        }
-
-        $this->typedFieldMappings = array_merge($defaultMappings, $typedFieldMappings);
+        $this->typedFieldMappings = array_merge(
+            self::DEFAULT_TYPED_FIELD_MAPPINGS,
+            $typedFieldMappings,
+        );
     }
 
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function validateAndComplete(array $mapping, ReflectionProperty $field): array
     {
         $type = $field->getType();
@@ -63,10 +63,7 @@ final class DefaultTypedFieldMapper implements TypedFieldMapper
         if (
             ! $type->isBuiltin()
             && enum_exists($type->getName())
-            && (! isset($mapping['type']) || (
-                defined('Doctrine\DBAL\Types\Types::ENUM')
-                && $mapping['type'] === Types::ENUM
-            ))
+            && (! isset($mapping['type']) || $mapping['type'] === Types::ENUM)
         ) {
             $reflection = new ReflectionEnum($type->getName());
             if (! $reflection->isBacked()) {

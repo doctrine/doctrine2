@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Cache\Persister\Entity;
 
 use Doctrine\Common\Collections\Criteria;
-use Doctrine\Common\Collections\Order;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Cache;
 use Doctrine\ORM\Cache\CollectionCacheKey;
@@ -13,7 +12,6 @@ use Doctrine\ORM\Cache\EntityCacheKey;
 use Doctrine\ORM\Cache\EntityHydrator;
 use Doctrine\ORM\Cache\Logging\CacheLogger;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Cache\QueryCacheKey;
 use Doctrine\ORM\Cache\Region;
 use Doctrine\ORM\Cache\TimestampCacheKey;
@@ -24,21 +22,18 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\UnitOfWork;
+use Override;
 use SortDirection;
 
 use function array_merge;
-use function func_get_args;
 use function serialize;
 use function sha1;
 
 abstract class AbstractEntityPersister implements CachedEntityPersister
 {
-    use CompatOrderings;
-
     protected UnitOfWork $uow;
     protected ClassMetadataFactory $metadataFactory;
 
@@ -81,6 +76,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         $this->timestampKey    = new TimestampCacheKey($this->class->rootEntityName);
     }
 
+    #[Override]
     public function addInsert(object $entity): void
     {
         $this->persister->addInsert($entity);
@@ -89,15 +85,17 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getInserts(): array
     {
         return $this->persister->getInserts();
     }
 
+    #[Override]
     public function getSelectSQL(
         array|Criteria $criteria,
         AssociationMapping|null $assoc = null,
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         int|null $offset = null,
         array|null $orderBy = null,
@@ -105,21 +103,25 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $this->persister->getSelectSQL($criteria, $assoc, $lockMode, $limit, $offset, $orderBy);
     }
 
+    #[Override]
     public function getCountSQL(array|Criteria $criteria = []): string
     {
         return $this->persister->getCountSQL($criteria);
     }
 
+    #[Override]
     public function getInsertSQL(): string
     {
         return $this->persister->getInsertSQL();
     }
 
+    #[Override]
     public function getResultSetMapping(): ResultSetMapping
     {
         return $this->persister->getResultSetMapping();
     }
 
+    #[Override]
     public function getSelectConditionStatementSQL(
         string $field,
         mixed $value,
@@ -129,6 +131,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $this->persister->getSelectConditionStatementSQL($field, $value, $assoc, $comparison);
     }
 
+    #[Override]
     public function exists(object $entity, Criteria|null $extraConditions = null): bool
     {
         if ($extraConditions === null) {
@@ -142,20 +145,23 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $this->persister->exists($entity, $extraConditions);
     }
 
+    #[Override]
     public function getCacheRegion(): Region
     {
         return $this->region;
     }
 
+    #[Override]
     public function getEntityHydrator(): EntityHydrator
     {
         return $this->hydrator;
     }
 
+    #[Override]
     public function storeEntityCache(object $entity, EntityCacheKey $key): bool
     {
         $class     = $this->class;
-        $className = DefaultProxyClassNameResolver::getClass($entity);
+        $className = $entity::class;
 
         if ($className !== $this->class->name) {
             $class = $this->metadataFactory->getMetadataFor($className);
@@ -209,13 +215,12 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * Generates a string of currently query
      *
-     * @param string[]|Criteria                                      $criteria
-     * @param array<string, SortDirection>|array<string, Order>|null $orderBy
+     * @param string[]|Criteria                 $criteria
+     * @param array<string, SortDirection>|null $orderBy
      */
     protected function getHash(
         string $query,
         array|Criteria $criteria,
-        // @phpstan-ignore parameter.deprecatedEnum
         array|null $orderBy = null,
         int|null $limit = null,
         int|null $offset = null,
@@ -230,6 +235,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function expandParameters(array $criteria): array
     {
         return $this->persister->expandParameters($criteria);
@@ -238,11 +244,13 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function expandCriteriaParameters(Criteria $criteria): array
     {
         return $this->persister->expandCriteriaParameters($criteria);
     }
 
+    #[Override]
     public function getClassMetadata(): ClassMetadata
     {
         return $this->persister->getClassMetadata();
@@ -251,6 +259,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getManyToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -263,6 +272,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getOneToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -272,11 +282,13 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $this->persister->getOneToManyCollection($assoc, $sourceEntity, $offset, $limit);
     }
 
+    #[Override]
     public function getOwningTable(string $fieldName): string
     {
         return $this->persister->getOwningTable($fieldName);
     }
 
+    #[Override]
     public function executeInserts(): void
     {
         // The commit order/foreign key relationships may make it necessary that multiple calls to executeInsert()
@@ -293,12 +305,13 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function load(
         array $criteria,
         object|null $entity = null,
         AssociationMapping|null $assoc = null,
         array $hints = [],
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         array|null $orderBy = null,
     ): object|null {
@@ -340,6 +353,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadAll(
         array $criteria = [],
         array|null $orderBy = null,
@@ -376,6 +390,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadById(array $identifier, object|null $entity = null): object|null
     {
         $cacheKey   = new EntityCacheKey($this->class->rootEntityName, $identifier);
@@ -403,7 +418,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         }
 
         $class     = $this->class;
-        $className = DefaultProxyClassNameResolver::getClass($entity);
+        $className = $entity::class;
 
         if ($className !== $this->class->name) {
             $class = $this->metadataFactory->getMetadataFor($className);
@@ -425,6 +440,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $entity;
     }
 
+    #[Override]
     public function count(array|Criteria $criteria = []): int
     {
         return $this->persister->count($criteria);
@@ -433,9 +449,10 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadCriteria(Criteria $criteria): array
     {
-        $orderBy     = $this->getOrderings($criteria);
+        $orderBy     = $criteria->getOrderings();
         $limit       = $criteria->getMaxResults();
         $offset      = $criteria->getFirstResult();
         $query       = $this->persister->getSelectSQL($criteria);
@@ -468,6 +485,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadManyToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -499,6 +517,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
         return $list;
     }
 
+    #[Override]
     public function loadOneToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -533,6 +552,7 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadOneToOneEntity(AssociationMapping $assoc, object $sourceEntity, array $identifier = []): object|null
     {
         return $this->persister->loadOneToOneEntity($assoc, $sourceEntity, $identifier);
@@ -541,7 +561,8 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
-    public function lock(array $criteria, LockMode|int $lockMode): void
+    #[Override]
+    public function lock(array $criteria, LockMode $lockMode): void
     {
         $this->persister->lock($criteria, $lockMode);
     }
@@ -549,16 +570,15 @@ abstract class AbstractEntityPersister implements CachedEntityPersister
     /**
      * {@inheritDoc}
      */
-    public function refresh(array $id, object $entity, LockMode|int|null $lockMode = null): void
+    #[Override]
+    public function refresh(array $id, object $entity, LockMode|null $lockMode = null): void
     {
         $this->persister->refresh($id, $entity, $lockMode);
     }
 
     /** @param array<string, mixed> $ownerId */
-    protected function buildCollectionCacheKey(AssociationMapping $association, array $ownerId, /* string $filterHash */): CollectionCacheKey
+    protected function buildCollectionCacheKey(AssociationMapping $association, array $ownerId, string $filterHash): CollectionCacheKey
     {
-        $filterHash = (string) (func_get_args()[2] ?? ''); // todo: move to argument in next major release
-
         return new CollectionCacheKey(
             $this->metadataFactory->getMetadataFor($association->sourceEntity)->rootEntityName,
             $association->fieldName,

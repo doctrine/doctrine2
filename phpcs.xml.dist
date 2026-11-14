@@ -11,7 +11,7 @@
     <!-- Ignore warnings, show progress of the run and show sniff names -->
     <arg value="nps"/>
 
-    <config name="php_version" value="80100"/>
+    <config name="php_version" value="80400"/>
 
     <file>src</file>
     <file>tests</file>
@@ -50,10 +50,6 @@
     </rule>
 
     <rule ref="PSR1.Classes.ClassDeclaration.MultipleClasses">
-        <exclude-pattern>src/Mapping/Driver/LoadMappingFileImplementation.php</exclude-pattern>
-        <exclude-pattern>src/Mapping/GetReflectionClassImplementation.php</exclude-pattern>
-        <exclude-pattern>src/Persisters/SqlValueVisitorImplementation.php</exclude-pattern>
-        <exclude-pattern>src/PersistentCollectionImplementation.php</exclude-pattern>
         <exclude-pattern>tests/*</exclude-pattern>
     </rule>
 
@@ -159,7 +155,6 @@
 
     <rule ref="SlevomatCodingStandard.Classes.SuperfluousInterfaceNaming">
         <exclude-pattern>src/EntityManagerInterface.php</exclude-pattern>
-        <!-- the Paginator name is taken by the deprecated class until its removal in 4.0 -->
         <exclude-pattern>src/Tools/Pagination/PaginatorInterface.php</exclude-pattern>
     </rule>
 
@@ -208,12 +203,6 @@
     -->
     <rule ref="SlevomatCodingStandard.Namespaces.UseFromSameNamespace.UseFromSameNamespace">
         <exclude-pattern>tests/Tests/Models/DDC1590/DDC1590User.php</exclude-pattern>
-    </rule>
-
-
-    <rule ref="Squiz.Classes.ValidClassName.NotCamelCaps">
-        <!-- we need to test what happens with an stdClass proxy -->
-        <exclude-pattern>tests/Tests/Proxy/DefaultProxyClassNameResolverTest.php</exclude-pattern>
     </rule>
 
     <rule ref="Squiz.Commenting.FunctionComment.WrongStyle">

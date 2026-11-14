@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Tools\Console\Command\Debug;
 
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Override;
 use Symfony\Component\Console\Completion\CompletionInput;
 use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -26,6 +27,7 @@ use function sprintf;
 
 final class DebugEntityListenersDoctrineCommand extends AbstractCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this
@@ -44,6 +46,7 @@ To show only listeners for a specific event, pass the event name:
 EOT);
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
@@ -115,6 +118,7 @@ EOT);
         return self::SUCCESS;
     }
 
+    #[Override]
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         if ($input->mustSuggestArgumentValuesFor('entity')) {

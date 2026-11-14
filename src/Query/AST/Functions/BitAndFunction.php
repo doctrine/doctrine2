@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "BIT_AND" "(" ArithmeticPrimary "," ArithmeticPrimary ")"
@@ -19,6 +20,7 @@ class BitAndFunction extends FunctionNode
     public Node $firstArithmetic;
     public Node $secondArithmetic;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         $platform = $sqlWalker->getConnection()->getDatabasePlatform();
@@ -29,6 +31,7 @@ class BitAndFunction extends FunctionNode
         );
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

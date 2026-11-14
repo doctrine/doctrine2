@@ -8,7 +8,6 @@ use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Schema\Index as DbalIndex;
 use Doctrine\DBAL\Schema\Index\IndexType;
 use Doctrine\DBAL\Schema\Table as DbalTable;
-use Doctrine\DBAL\Schema\Visitor\Visitor;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -30,10 +29,7 @@ use PHPUnit\Framework\Attributes\Group;
 
 use function array_filter;
 use function array_values;
-use function class_exists;
-use function enum_exists;
 use function implode;
-use function in_array;
 use function str_contains;
 use function strtolower;
 
@@ -61,59 +57,38 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
 
         $tool = new SchemaTool($this->_em);
         $sql  = $tool->getCreateSchemaSql($classes);
-
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_groups (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(50) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_groups (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(50) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[1], self::logicalOr(
-            // DBAL 3
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, email_id INT DEFAULT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4 (see https://github.com/doctrine/dbal/pull/4777)
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, email_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, email_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[2], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_users_groups (user_id INT NOT NULL, group_id INT NOT NULL, INDEX IDX_7EA9409AA76ED395 (user_id), INDEX IDX_7EA9409AFE54D947 (group_id), PRIMARY KEY(user_id, group_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users_groups (user_id INT NOT NULL, group_id INT NOT NULL, INDEX IDX_7EA9409AA76ED395 (user_id), INDEX IDX_7EA9409AFE54D947 (group_id), PRIMARY KEY (user_id, group_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[3], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_users_tags (user_id INT NOT NULL, tag_id INT NOT NULL, INDEX IDX_93F5A1ADA76ED395 (user_id), INDEX IDX_93F5A1ADBAD26311 (tag_id), PRIMARY KEY(user_id, tag_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_users_tags (user_id INT NOT NULL, tag_id INT NOT NULL, INDEX IDX_93F5A1ADA76ED395 (user_id), INDEX IDX_93F5A1ADBAD26311 (tag_id), PRIMARY KEY (user_id, tag_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[4], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(50) DEFAULT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(50) DEFAULT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[5], self::logicalOr(
-            // DBAL 3
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, user_id INT DEFAULT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4 (see https://github.com/doctrine/dbal/pull/4777)
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[6], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_emails (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(250) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_emails (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(250) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-        self::assertThat($sql[7], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE cms_phonenumbers (phonenumber VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, INDEX IDX_F21F790FA76ED395 (user_id), PRIMARY KEY(phonenumber)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE cms_phonenumbers (phonenumber VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, INDEX IDX_F21F790FA76ED395 (user_id), PRIMARY KEY (phonenumber)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
+        self::assertEquals(
+            $sql[0],
+            'CREATE TABLE cms_groups (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(50) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[1],
+            'CREATE TABLE cms_users (id INT AUTO_INCREMENT NOT NULL, status VARCHAR(50) DEFAULT NULL, username VARCHAR(255) NOT NULL, name VARCHAR(255) NOT NULL, email_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_3AF03EC5F85E0677 (username), UNIQUE INDEX UNIQ_3AF03EC5A832C1C9 (email_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[2],
+            'CREATE TABLE cms_users_groups (user_id INT NOT NULL, group_id INT NOT NULL, INDEX IDX_7EA9409AA76ED395 (user_id), INDEX IDX_7EA9409AFE54D947 (group_id), PRIMARY KEY (user_id, group_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[3],
+            'CREATE TABLE cms_users_tags (user_id INT NOT NULL, tag_id INT NOT NULL, INDEX IDX_93F5A1ADA76ED395 (user_id), INDEX IDX_93F5A1ADBAD26311 (tag_id), PRIMARY KEY (user_id, tag_id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[4],
+            'CREATE TABLE cms_tags (id INT AUTO_INCREMENT NOT NULL, tag_name VARCHAR(50) DEFAULT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[5],
+            'CREATE TABLE cms_addresses (id INT AUTO_INCREMENT NOT NULL, country VARCHAR(50) NOT NULL, zip VARCHAR(50) NOT NULL, city VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, UNIQUE INDEX UNIQ_ACAC157BA76ED395 (user_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[6],
+            'CREATE TABLE cms_emails (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(250) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
+        self::assertEquals(
+            $sql[7],
+            'CREATE TABLE cms_phonenumbers (phonenumber VARCHAR(50) NOT NULL, user_id INT DEFAULT NULL, INDEX IDX_F21F790FA76ED395 (user_id), PRIMARY KEY (phonenumber)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
         self::assertThat($sql[8], self::logicalOr(
             // DBAL < 4.5
             self::equalTo('ALTER TABLE cms_users ADD CONSTRAINT FK_3AF03EC5A832C1C9 FOREIGN KEY (email_id) REFERENCES cms_emails (id)'),
@@ -168,12 +143,10 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
         $sql  = $tool->getCreateSchemaSql($classes);
 
         self::assertCount(1, $sql);
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE decimal_model (id INT AUTO_INCREMENT NOT NULL, `decimal` NUMERIC(5, 2) NOT NULL, `high_scale` NUMERIC(14, 4) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE decimal_model (id INT AUTO_INCREMENT NOT NULL, `decimal` NUMERIC(5, 2) NOT NULL, `high_scale` NUMERIC(14, 4) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
+        self::assertEquals(
+            $sql[0],
+            'CREATE TABLE decimal_model (id INT AUTO_INCREMENT NOT NULL, `decimal` NUMERIC(5, 2) NOT NULL, `high_scale` NUMERIC(14, 4) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
     }
 
     public function testGetCreateSchemaSql3(): void
@@ -184,29 +157,10 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
         $sql  = $tool->getCreateSchemaSql($classes);
 
         self::assertCount(1, $sql);
-        self::assertThat($sql[0], self::logicalOr(
-            // DBAL < 4.3
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT(1) NOT NULL, PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.3 (see https://github.com/doctrine/dbal/pull/6864)
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT(1) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-            // DBAL 4.4 (see https://github.com/doctrine/dbal/pull/7221)
-            self::equalTo('CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB'),
-        ));
-    }
-
-    #[Group('DBAL-204')]
-    public function testGetCreateSchemaSql4(): void
-    {
-        if (! class_exists(Visitor::class)) {
-            self::markTestSkipped('Test valid for doctrine/dbal:3.x only.');
-        }
-
-        $classes = [$this->_em->getClassMetadata(MysqlSchemaNamespacedEntity::class)];
-
-        $tool = new SchemaTool($this->_em);
-        $sql  = $tool->getCreateSchemaSql($classes);
-
-        self::assertCount(0, $sql);
+        self::assertEquals(
+            $sql[0],
+            'CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
+        );
     }
 
     #[Group('GH-5593')]
@@ -287,20 +241,12 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
 
     private static function indexIsUnique(DbalIndex $index): bool
     {
-        if (enum_exists(IndexType::class)) {
-            return $index->getType() === IndexType::UNIQUE;
-        }
-
-        return $index->isUnique();
+        return $index->getType() === IndexType::UNIQUE;
     }
 
     private static function indexIsFulltext(DbalIndex $index): bool
     {
-        if (enum_exists(IndexType::class)) {
-            return $index->getType() === IndexType::FULLTEXT;
-        }
-
-        return in_array('fulltext', $index->getFlags(), true);
+        return $index->getType() === IndexType::FULLTEXT;
     }
 
     private static function findUniqueNonPrimaryIndex(DbalTable $table): DbalIndex|null

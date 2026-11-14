@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Expr\Comparison;
-use Doctrine\DBAL\Types\EnumType;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\MappingException;
@@ -34,8 +33,6 @@ use Doctrine\Tests\OrmFunctionalTestCase;
 use Generator;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-use function class_exists;
-use function defined;
 use function sprintf;
 use function uniqid;
 
@@ -469,11 +466,8 @@ EXCEPTION
     {
         yield Card::class => [Card::class];
         yield TypedCard::class => [TypedCard::class];
-
-        if (class_exists(EnumType::class)) {
-            yield CardNativeEnum::class => [CardNativeEnum::class];
-            yield TypedCardNativeEnum::class => [TypedCardNativeEnum::class];
-        }
+        yield CardNativeEnum::class => [CardNativeEnum::class];
+        yield TypedCardNativeEnum::class => [TypedCardNativeEnum::class];
     }
 
     public function testItAllowsReadingAttributes(): void
@@ -560,7 +554,7 @@ EXCEPTION
         $library = $this->_em->find(Library::class, $library->id);
         self::assertFalse($library->books->isInitialized(), 'Pre-condition: lazy collection');
 
-        $result = $library->books->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where($comparison));
+        $result = $library->books->matching(Criteria::create()->where($comparison));
 
         self::assertCount(1, $result);
         self::assertSame($nonfictionBook->id, $result[0]->id);
@@ -589,7 +583,7 @@ EXCEPTION
         $category = $this->_em->find(BookCategory::class, $category->id);
         self::assertFalse($category->books->isInitialized(), 'Pre-condition: lazy collection');
 
-        $result = $category->books->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where($comparison));
+        $result = $category->books->matching(Criteria::create()->where($comparison));
 
         self::assertCount(1, $result);
         self::assertSame($nonfictionBook->id, $result[0]->id);

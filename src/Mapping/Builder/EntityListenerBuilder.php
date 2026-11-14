@@ -17,7 +17,7 @@ use function get_class_methods;
 class EntityListenerBuilder
 {
     /** Hash-map to handle event names. */
-    private const EVENTS = [
+    private const array EVENTS = [
         Events::preRemove   => true,
         Events::postRemove  => true,
         Events::prePersist  => true,

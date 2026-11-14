@@ -6,10 +6,10 @@ namespace Doctrine\ORM\Cache;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\ORM\Utility\IdentifierFlattener;
+use Override;
 
 use function assert;
 use function is_array;
@@ -34,6 +34,7 @@ class DefaultEntityHydrator implements EntityHydrator
         $this->identifierFlattener = new IdentifierFlattener($em->getUnitOfWork(), $em->getMetadataFactory());
     }
 
+    #[Override]
     public function buildCacheEntry(ClassMetadata $metadata, EntityCacheKey $key, object $entity): EntityCacheEntry
     {
         $data = $this->uow->getOriginalEntityData($entity);
@@ -97,7 +98,7 @@ class DefaultEntityHydrator implements EntityHydrator
             }
 
             if (! isset($assoc->id)) {
-                $targetClass = DefaultProxyClassNameResolver::getClass($data[$name]);
+                $targetClass = $data[$name]::class;
                 $targetId    = $this->uow->getEntityIdentifier($data[$name]);
                 $data[$name] = new AssociationCacheEntry($targetClass, $targetId);
 
@@ -125,6 +126,7 @@ class DefaultEntityHydrator implements EntityHydrator
         return new EntityCacheEntry($metadata->name, $data);
     }
 
+    #[Override]
     public function loadCacheEntry(ClassMetadata $metadata, EntityCacheKey $key, EntityCacheEntry $entry, object|null $entity = null): object|null
     {
         $data  = $entry->data;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping\PropertyAccessors;
 
 use BackedEnum;
+use Override;
 use ReflectionProperty;
 
 use function array_map;
@@ -19,6 +20,7 @@ class EnumPropertyAccessor implements PropertyAccessor
     {
     }
 
+    #[Override]
     public function setValue(object $object, mixed $value): void
     {
         if ($value !== null) {
@@ -28,6 +30,7 @@ class EnumPropertyAccessor implements PropertyAccessor
         $this->parent->setValue($object, $value);
     }
 
+    #[Override]
     public function getValue(object $object): mixed
     {
         $enum = $this->parent->getValue($object);
@@ -78,6 +81,7 @@ class EnumPropertyAccessor implements PropertyAccessor
         return $this->enumType::from($value);
     }
 
+    #[Override]
     public function getUnderlyingReflector(): ReflectionProperty
     {
         return $this->parent->getUnderlyingReflector();

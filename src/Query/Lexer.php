@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query;
 
 use Doctrine\Common\Lexer\AbstractLexer;
+use Override;
 
 use function constant;
 use function ctype_alpha;
@@ -37,6 +38,7 @@ class Lexer extends AbstractLexer
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function getCatchablePatterns(): array
     {
         return [
@@ -51,11 +53,13 @@ class Lexer extends AbstractLexer
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function getNonCatchablePatterns(): array
     {
         return ['\s+', '--.*', '(.)'];
     }
 
+    #[Override]
     protected function getType(string &$value): TokenType
     {
         $type = TokenType::T_NONE;

@@ -12,8 +12,6 @@ use Doctrine\Tests\Models\Tweet\Tweet;
 use Doctrine\Tests\Models\Tweet\User;
 use Doctrine\Tests\OrmFunctionalTestCase;
 
-use function defined;
-
 class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
 {
     protected function setUp(): void
@@ -68,7 +66,7 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
         $this->loadFixture();
 
         $repository = $this->_em->getRepository(DateTimeModel::class);
-        $dates      = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $dates      = $repository->matching(Criteria::create()->where(
             Criteria::expr()->lte('datetime', new DateTime('today')),
         ));
 
@@ -100,7 +98,7 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
         $this->loadNullFieldFixtures();
         $repository = $this->_em->getRepository(DateTimeModel::class);
 
-        $dates = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $dates = $repository->matching(Criteria::create()->where(
             Criteria::expr()->isNull('time'),
         ));
 
@@ -112,7 +110,7 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
         $this->loadNullFieldFixtures();
         $repository = $this->_em->getRepository(DateTimeModel::class);
 
-        $dates = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $dates = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('time', null),
         ));
 
@@ -124,7 +122,7 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
         $this->loadNullFieldFixtures();
         $repository = $this->_em->getRepository(DateTimeModel::class);
 
-        $dates = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $dates = $repository->matching(Criteria::create()->where(
             Criteria::expr()->neq('time', null),
         ));
 
@@ -136,14 +134,14 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
         $this->loadFixture();
         $repository = $this->_em->getRepository(DateTimeModel::class);
 
-        $dates = $repository->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $dates = $repository->matching(Criteria::create());
 
         self::assertFalse($dates->isInitialized());
         self::assertCount(3, $dates);
         self::assertFalse($dates->isInitialized());
 
         // Test it can work even with a constraint
-        $dates = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $dates = $repository->matching(Criteria::create()->where(
             Criteria::expr()->lte('datetime', new DateTime('today')),
         ));
 
@@ -171,7 +169,7 @@ class EntityRepositoryCriteriaTest extends OrmFunctionalTestCase
 
         $this->_em->clear();
 
-        $criteria = defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create();
+        $criteria = Criteria::create();
         $criteria->andWhere($criteria->expr()->contains('content', 'Criteria'));
 
         $user   = $this->_em->find(User::class, $user->id);

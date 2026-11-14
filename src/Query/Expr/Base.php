@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\Expr;
 
 use InvalidArgumentException;
+use Override;
 use Stringable;
 
 use function array_key_exists;
@@ -88,6 +89,7 @@ abstract class Base implements Stringable
         return count($this->parts);
     }
 
+    #[Override]
     public function __toString(): string
     {
         if ($this->count() === 1) {

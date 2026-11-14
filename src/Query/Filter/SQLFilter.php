@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\ParameterTypeInferer;
 use InvalidArgumentException;
+use Override;
 use Stringable;
 
 use function array_map;
@@ -150,6 +151,7 @@ abstract class SQLFilter implements Stringable
     /**
      * Returns as string representation of the SQLFilter parameters (the state).
      */
+    #[Override]
     final public function __toString(): string
     {
         return serialize(array_map(

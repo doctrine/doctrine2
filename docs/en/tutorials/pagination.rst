@@ -195,35 +195,6 @@ API Reference
 ``Window::getPageNumber(): int``
     Returns the 1-based page number the window points at.
 
-Legacy ``Paginator``
-~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 3.7
-
-    The ``Paginator`` class is deprecated in favor of ``OffsetPaginator`` and
-    will be removed in 4.0.
-
-The legacy ``Paginator`` reads the offset implicitly from the query
-(``setFirstResult()`` / ``setMaxResults()``) and implements the SPL interfaces
-``Countable`` and ``IteratorAggregate``:
-
-.. code-block:: php
-
-    <?php
-    use Doctrine\ORM\Tools\Pagination\Paginator;
-
-    $dql = "SELECT p, c FROM BlogPost p JOIN p.comments c";
-    $query = $entityManager->createQuery($dql)
-                           ->setFirstResult(0)
-                           ->setMaxResults(100);
-
-    $paginator = new Paginator($query, fetchJoinCollection: true);
-
-    $c = count($paginator);
-    foreach ($paginator as $post) {
-        echo $post->getHeadline() . "\n";
-    }
-
 Cursor-Based Pagination
 -----------------------
 

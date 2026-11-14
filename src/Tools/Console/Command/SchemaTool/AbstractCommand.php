@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Tools\Console\Command\SchemaTool;
 
 use Doctrine\ORM\Tools\Console\Command\AbstractEntityManagerCommand;
 use Doctrine\ORM\Tools\SchemaTool;
+use Override;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -20,6 +21,7 @@ abstract class AbstractCommand extends AbstractEntityManagerCommand
     /** @param mixed[] $metadatas */
     abstract protected function executeSchemaCommand(InputInterface $input, OutputInterface $output, SchemaTool $schemaTool, array $metadatas, SymfonyStyle $ui): int;
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = new SymfonyStyle($input, $output);

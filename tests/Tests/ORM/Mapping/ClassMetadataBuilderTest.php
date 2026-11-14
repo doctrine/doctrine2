@@ -23,7 +23,6 @@ use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\ValueObjects\Name;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use SortDirection;
 
 #[Group('DDC-659')]
@@ -625,35 +624,6 @@ class ClassMetadataBuilderTest extends OrmTestCase
                 ]),
             ],
             $this->cm->associationMappings,
-        );
-    }
-
-    #[IgnoreDeprecations]
-    public function testCreateOneToManyWithLegacySortDirection(): void
-    {
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $this->builder->createOneToMany('groups', CmsGroup::class)
-                    ->mappedBy('test')
-                    ->setOrderBy(['test' => 'ASC'])
-                    ->build();
-
-        self::assertEquals(
-            SortDirection::Ascending,
-            $this->cm->associationMappings['groups']->orderBy['test'],
-        );
-    }
-
-    #[IgnoreDeprecations]
-    public function testCreateManyToManyWithLegacySortDirection(): void
-    {
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $this->builder->createManyToMany('groups', CmsGroup::class)
-                    ->setOrderBy(['test' => 'ASC'])
-                    ->build();
-
-        self::assertEquals(
-            SortDirection::Ascending,
-            $this->cm->associationMappings['groups']->orderBy['test'],
         );
     }
 

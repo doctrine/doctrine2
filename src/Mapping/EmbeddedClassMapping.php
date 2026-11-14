@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use ArrayAccess;
-
 use function property_exists;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class EmbeddedClassMapping implements ArrayAccess
+final class EmbeddedClassMapping
 {
-    use ArrayAccessImplementation;
-
     public string|false|null $columnPrefix = null;
     public string|null $declaredField      = null;
     public string|null $originalField      = null;

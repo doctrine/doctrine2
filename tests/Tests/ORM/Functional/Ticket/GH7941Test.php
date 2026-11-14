@@ -20,7 +20,7 @@ use function strlen;
 #[Group('GH7941')]
 final class GH7941Test extends OrmFunctionalTestCase
 {
-    private const PRODUCTS = [
+    private const array PRODUCTS = [
         ['name' => 'Test 1', 'price' => '100', 'square_root' => 10],
         ['name' => 'Test 2', 'price' => '100', 'square_root' => 10],
         ['name' => 'Test 3', 'price' => '100', 'square_root' => 10],

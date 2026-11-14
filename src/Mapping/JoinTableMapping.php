@@ -4,16 +4,11 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use ArrayAccess;
-
 use function array_map;
 use function in_array;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class JoinTableMapping implements ArrayAccess
+final class JoinTableMapping
 {
-    use ArrayAccessImplementation;
-
     public bool|null $quoted                  = null;
     public string|null $foreignKeyName        = null;
     public string|null $inverseForeignKeyName = null;

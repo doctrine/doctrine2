@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * RangeVariableDeclaration ::= AbstractSchemaName ["AS"] AliasIdentificationVariable
@@ -20,6 +21,7 @@ class RangeVariableDeclaration extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkRangeVariableDeclaration($this);

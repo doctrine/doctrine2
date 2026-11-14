@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping\Builder;
 
+use Override;
+
 /**
  * ManyToMany Association Builder
  *
@@ -29,6 +31,7 @@ class ManyToManyAssociationBuilder extends OneToManyAssociationBuilder
      *
      * @return $this
      */
+    #[Override]
     public function addJoinColumn(
         string $columnName,
         string $referencedColumnName,
@@ -72,6 +75,7 @@ class ManyToManyAssociationBuilder extends OneToManyAssociationBuilder
         return $this;
     }
 
+    #[Override]
     public function build(): ClassMetadataBuilder
     {
         $mapping              = $this->mapping;

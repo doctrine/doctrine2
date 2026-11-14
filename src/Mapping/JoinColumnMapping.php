@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use ArrayAccess;
-
 use function property_exists;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class JoinColumnMapping implements ArrayAccess
+final class JoinColumnMapping
 {
-    use ArrayAccessImplementation;
-
     public bool|null $deferrable         = null;
     public bool|null $unique             = null;
     public bool|null $quoted             = null;

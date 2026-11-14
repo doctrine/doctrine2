@@ -18,6 +18,7 @@ use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\UnitOfWork;
+use Override;
 
 use function array_map;
 use function array_shift;
@@ -54,6 +55,7 @@ class DefaultQueryCache implements QueryCache
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function get(QueryCacheKey $key, ResultSetMapping $rsm, array $hints = []): array|null
     {
         if (! ($key->cacheMode & Cache::MODE_GET)) {
@@ -203,6 +205,7 @@ class DefaultQueryCache implements QueryCache
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function put(QueryCacheKey $key, ResultSetMapping $rsm, mixed $result, array $hints = []): bool
     {
         if ($rsm->scalarMappings) {
@@ -412,11 +415,13 @@ class DefaultQueryCache implements QueryCache
         return $values;
     }
 
+    #[Override]
     public function clear(): bool
     {
         return $this->region->evictAll();
     }
 
+    #[Override]
     public function getRegion(): Region
     {
         return $this->region;

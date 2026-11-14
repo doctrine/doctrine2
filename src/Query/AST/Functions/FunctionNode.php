@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Query\AST\Functions;
 use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * Abstract Function Node.
@@ -23,6 +24,7 @@ abstract class FunctionNode extends Node
 
     abstract public function getSql(SqlWalker $sqlWalker): string;
 
+    #[Override]
     public function dispatch(SqlWalker $sqlWalker): string
     {
         return $sqlWalker->walkFunction($this);

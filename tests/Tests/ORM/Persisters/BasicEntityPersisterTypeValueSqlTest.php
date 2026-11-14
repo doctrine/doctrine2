@@ -23,7 +23,6 @@ use PHPUnit\Framework\Attributes\Group;
 use ReflectionMethod;
 
 use function array_slice;
-use function defined;
 use function enum_exists;
 
 class BasicEntityPersisterTypeValueSqlTest extends OrmTestCase
@@ -176,7 +175,7 @@ class BasicEntityPersisterTypeValueSqlTest extends OrmTestCase
         self::assertEquals('SELECT COUNT(*) FROM "not-a-simple-entity" t0 WHERE t0."simple-entity-value" = ?', $statement);
 
         // Using a criteria object
-        $criteria  = (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->eq('value', 'bar'));
+        $criteria  = Criteria::create()->where(Criteria::expr()->eq('value', 'bar'));
         $statement = $persister->getCountSQL($criteria);
         self::assertEquals('SELECT COUNT(*) FROM "not-a-simple-entity" t0 WHERE t0."simple-entity-value" = ?', $statement);
     }

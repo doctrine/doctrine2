@@ -107,7 +107,7 @@ class GH5839Zone
 
 final class GH5839TrimmedStringType extends StringType
 {
-    public const NAME = 'gh5839_trimmed_string';
+    public const string NAME = 'gh5839_trimmed_string';
 
     public function getName(): string
     {

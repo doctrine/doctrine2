@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Tests;
 
 use Doctrine\Common\EventManager;
-use Doctrine\DBAL\Configuration as DBALConfiguration;
 use Doctrine\DBAL\Exception\DatabaseObjectNotFoundException;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\OraclePlatform;
@@ -192,7 +191,6 @@ use function strtolower;
 use function var_export;
 
 use const PHP_EOL;
-use const PHP_VERSION_ID;
 
 /**
  * Base testcase class for all functional ORM testcases.
@@ -916,7 +914,6 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
         //FIXME: two different configs! $conn and the created entity manager have
         // different configs.
         $config = new Configuration();
-        TestUtil::configureProxies($config);
         $config->setMetadataCache(self::$metadataCache);
         $config->setQueryCache(self::$queryCache);
 
@@ -955,10 +952,6 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
             $this->isSecondLevelCacheEnabled = true;
         }
 
-        if (PHP_VERSION_ID >= 80400 && $this->getEnv('ENABLE_NATIVE_LAZY_OBJECTS', true)) {
-            $config->enableNativeLazyObjects(true);
-        }
-
         $mappingDriver ??= AttributeDriverFactory::createAttributeDriver([
             __DIR__ . '/Models/Cache',
             __DIR__ . '/Models/GeoNames',
@@ -970,17 +963,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
         assert($conn !== null);
         $conn->queryLog->reset();
 
-        // get rid of more global state
-        if (method_exists($conn, 'getEventManager')) {
-            $evm = $conn->getEventManager();
-            foreach ($evm->getAllListeners() as $event => $listeners) {
-                foreach ($listeners as $listener) {
-                    $evm->removeEventListener([$event], $listener);
-                }
-            }
-        } else {
-            $evm = new EventManager();
-        }
+        $evm = new EventManager();
 
         if ($enableSecondLevelCache) {
             $evm->addEventListener('loadClassMetadata', new CacheMetadataListener());

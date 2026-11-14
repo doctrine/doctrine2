@@ -21,7 +21,6 @@ use Doctrine\Tests\Mocks\NullSqlWalker;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 
 class LanguageRecognitionTest extends OrmTestCase
 {
@@ -269,13 +268,6 @@ class LanguageRecognitionTest extends OrmTestCase
     public function testJoinClassPathUsingON(): void
     {
         $this->assertValidDQL('SELECT u.name FROM Doctrine\Tests\Models\CMS\CmsUser u JOIN Doctrine\Tests\Models\CMS\CmsArticle a ON a.user = u.id');
-    }
-
-    #[IgnoreDeprecations]
-    public function testJoinClassPathUsingWITH(): void
-    {
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/12192');
-        $this->assertValidDQL('SELECT u.name FROM Doctrine\Tests\Models\CMS\CmsUser u JOIN Doctrine\Tests\Models\CMS\CmsArticle a WITH a.user = u.id');
     }
 
     #[Group('DDC-3701')]

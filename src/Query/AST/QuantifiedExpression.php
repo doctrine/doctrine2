@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 use function strtoupper;
 
@@ -36,6 +37,7 @@ class QuantifiedExpression extends Node
         return strtoupper($this->type) === 'SOME';
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkQuantifiedExpression($this);

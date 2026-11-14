@@ -10,6 +10,7 @@ use Doctrine\ORM\Query\Exec\PreparedExecutorFinalizer;
 use Doctrine\ORM\Query\Exec\SqlFinalizer;
 use Doctrine\ORM\Query\SqlOutputWalker;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 use RuntimeException;
 
 use function count;
@@ -28,6 +29,7 @@ use function reset;
  */
 final class RootTypeWalker extends SqlOutputWalker
 {
+    #[Override]
     public function walkSelectStatement(AST\SelectStatement $selectStatement): string
     {
         // Get the root entity and alias from the AST fromClause
@@ -50,6 +52,7 @@ final class RootTypeWalker extends SqlOutputWalker
         )[0];
     }
 
+    #[Override]
     public function getFinalizer(AST\DeleteStatement|AST\UpdateStatement|AST\SelectStatement $AST): SqlFinalizer
     {
         if (! $AST instanceof AST\SelectStatement) {

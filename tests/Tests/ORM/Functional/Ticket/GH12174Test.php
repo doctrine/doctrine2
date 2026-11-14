@@ -41,7 +41,7 @@ class GH12174Test extends OrmFunctionalTestCase
         $smurf = $this->_em->getClassMetadata(GH12174Smurf::class);
         self::assertTrue($smurf->isMappedSuperclass);
         self::assertSame(GH12174Smurf::class, $smurf->getName());
-        self::assertSame(GH12174BlueSmurf::class, $smurf->getAssociationMapping('children')['targetEntity']);
+        self::assertSame(GH12174BlueSmurf::class, $smurf->getAssociationMapping('children')->targetEntity);
 
         $blue = $this->_em->getClassMetadata(GH12174BlueSmurf::class);
         self::assertFalse($blue->isMappedSuperclass);

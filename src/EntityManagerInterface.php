@@ -16,6 +16,7 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Persistence\ObjectManager;
+use Override;
 
 /**
  * Finds, queries and persists entities, and flushes their changes to the database.
@@ -31,6 +32,7 @@ interface EntityManagerInterface extends ObjectManager
      *
      * @template T of object
      */
+    #[Override]
     public function getRepository(string $className): EntityRepository;
 
     /**
@@ -43,6 +45,7 @@ interface EntityManagerInterface extends ObjectManager
      */
     public function getConnection(): Connection;
 
+    #[Override]
     public function getMetadataFactory(): ClassMetadataFactory;
 
     /**
@@ -114,15 +117,12 @@ interface EntityManagerInterface extends ObjectManager
     /**
      * Finds an Entity by its identifier.
      *
-     * @param string            $className   The class name of the entity to find.
-     * @param mixed             $id          The identity of the entity to find.
-     * @param LockMode|int|null $lockMode    One of the \Doctrine\DBAL\LockMode::* constants.
-     *                                       Passing NULL is deprecated, use LockMode::NONE
-     *                                       instead.
-     * @param int|null          $lockVersion The version of the entity to find when using
-     *                                       optimistic locking.
+     * @param string   $className   The class name of the entity to find.
+     * @param mixed    $id          The identity of the entity to find.
+     * @param LockMode $lockMode    One of the \Doctrine\DBAL\LockMode::* cases.
+     * @param int|null $lockVersion The version of the entity to find when using
+     *                              optimistic locking.
      * @phpstan-param class-string<T> $className
-     * @phpstan-param LockMode::*|null $lockMode
      *
      * @return object|null The entity instance or NULL if the entity can not be found.
      * @phpstan-return T|null
@@ -134,22 +134,21 @@ interface EntityManagerInterface extends ObjectManager
      *
      * @template T of object
      */
-    public function find(string $className, mixed $id, LockMode|int|null $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null;
+    #[Override]
+    public function find(string $className, mixed $id, LockMode $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null;
 
     /**
      * Refreshes the persistent state of an object from the database,
      * overriding any local changes that have not yet been persisted.
      *
-     * @param LockMode|int|null $lockMode One of the \Doctrine\DBAL\LockMode::* constants.
-     *                                    Passing NULL is deprecated, use LockMode::NONE
-     *                                    instead.
-     * @phpstan-param LockMode::*|null $lockMode
+     * @param LockMode $lockMode One of the \Doctrine\DBAL\LockMode::* cases.
      *
      * @throws ORMInvalidArgumentException
      * @throws ORMException
      * @throws TransactionRequiredException
      */
-    public function refresh(object $object, LockMode|int|null $lockMode = LockMode::NONE): void;
+    #[Override]
+    public function refresh(object $object, LockMode $lockMode = LockMode::NONE): void;
 
     /**
      * Gets a reference to the entity identified by the given type and identifier
@@ -176,12 +175,10 @@ interface EntityManagerInterface extends ObjectManager
     /**
      * Acquire a lock on the given entity.
      *
-     * @phpstan-param LockMode::* $lockMode
-     *
      * @throws OptimisticLockException
      * @throws PessimisticLockException
      */
-    public function lock(object $entity, LockMode|int $lockMode, DateTimeInterface|int|null $lockVersion = null): void;
+    public function lock(object $entity, LockMode $lockMode, DateTimeInterface|int|null $lockVersion = null): void;
 
     /**
      * Gets the EventManagerInterface used by the EntityManager.
@@ -241,5 +238,6 @@ interface EntityManagerInterface extends ObjectManager
      *
      * @phpstan-template T of object
      */
+    #[Override]
     public function getClassMetadata(string $className): Mapping\ClassMetadata;
 }

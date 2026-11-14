@@ -154,7 +154,7 @@ class AdvancedAssociationTest extends OrmFunctionalTestCase
 #[Entity]
 class Lemma
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'lemma_id')]
@@ -213,7 +213,7 @@ class Lemma
 #[Entity]
 class Type
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'type_id')]
@@ -289,7 +289,7 @@ class Type
 #[Entity]
 class Phrase
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'phrase_id')]
@@ -353,7 +353,7 @@ class Phrase
 #[Entity]
 class PhraseType
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'phrase_type_id')]
@@ -415,7 +415,7 @@ class PhraseType
 #[Entity]
 class Definition
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'definition_id')]

@@ -6,11 +6,13 @@ namespace Doctrine\ORM\Cache\Persister\Collection;
 
 use Doctrine\ORM\Cache\CollectionCacheKey;
 use Doctrine\ORM\PersistentCollection;
+use Override;
 
 use function spl_object_id;
 
 class NonStrictReadWriteCachedCollectionPersister extends AbstractCollectionPersister
 {
+    #[Override]
     public function afterTransactionComplete(): void
     {
         if (isset($this->queuedCache['update'])) {
@@ -28,11 +30,13 @@ class NonStrictReadWriteCachedCollectionPersister extends AbstractCollectionPers
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function afterTransactionRolledBack(): void
     {
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function delete(PersistentCollection $collection): void
     {
         $ownerId = $this->uow->getEntityIdentifier($collection->getOwner());
@@ -43,6 +47,7 @@ class NonStrictReadWriteCachedCollectionPersister extends AbstractCollectionPers
         $this->queuedCache['delete'][spl_object_id($collection)] = $key;
     }
 
+    #[Override]
     public function update(PersistentCollection $collection): void
     {
         $isInitialized = $collection->isInitialized();

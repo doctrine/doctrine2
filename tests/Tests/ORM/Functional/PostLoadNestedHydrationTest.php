@@ -31,7 +31,7 @@ use function sprintf;
 
 class PostLoadNestedHydrationTest extends OrmFunctionalTestCase
 {
-    private const HOOKED_HYDRATOR = 'postload-hooked';
+    private const string HOOKED_HYDRATOR = 'postload-hooked';
 
     /** @var list<int> */
     private array $userIds = [];

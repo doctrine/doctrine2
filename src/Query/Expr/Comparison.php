@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 /**
@@ -13,12 +14,12 @@ use Stringable;
  */
 class Comparison implements Stringable
 {
-    final public const EQ  = '=';
-    final public const NEQ = '<>';
-    final public const LT  = '<';
-    final public const LTE = '<=';
-    final public const GT  = '>';
-    final public const GTE = '>=';
+    final public const string EQ  = '=';
+    final public const string NEQ = '<>';
+    final public const string LT  = '<';
+    final public const string LTE = '<=';
+    final public const string GT  = '>';
+    final public const string GTE = '>=';
 
     /** Creates a comparison expression with the given arguments. */
     public function __construct(protected mixed $leftExpr, protected string $operator, protected mixed $rightExpr)
@@ -40,6 +41,7 @@ class Comparison implements Stringable
         return $this->rightExpr;
     }
 
+    #[Override]
     public function __toString(): string
     {
         return $this->leftExpr . ' ' . $this->operator . ' ' . $this->rightExpr;

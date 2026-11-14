@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Query;
 use Exception;
+use Override;
 use RuntimeException;
 use ValueError;
 
@@ -27,6 +28,7 @@ class SimpleObjectHydrator extends AbstractHydrator
 
     private ClassMetadata|null $class = null;
 
+    #[Override]
     protected function prepare(): void
     {
         if (count($this->resultSetMapping()->aliasMap) !== 1) {
@@ -42,6 +44,7 @@ class SimpleObjectHydrator extends AbstractHydrator
         $this->hints['isPartial'] = count($this->rsm->partialAliases) > 0;
     }
 
+    #[Override]
     protected function cleanup(): void
     {
         parent::cleanup();
@@ -53,6 +56,7 @@ class SimpleObjectHydrator extends AbstractHydrator
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function hydrateAllData(): array
     {
         $this->hydrateAllRows();
@@ -65,6 +69,7 @@ class SimpleObjectHydrator extends AbstractHydrator
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function hydrateRow(array $row): void
     {
         assert($this->class !== null);

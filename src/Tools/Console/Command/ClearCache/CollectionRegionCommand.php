@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Tools\Console\Command\ClearCache;
 use Doctrine\ORM\Cache;
 use Doctrine\ORM\Tools\Console\Command\AbstractEntityManagerCommand;
 use InvalidArgumentException;
+use Override;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,6 +21,7 @@ use function sprintf;
  */
 class CollectionRegionCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:clear-cache:region:collection')
@@ -56,6 +58,7 @@ not all cache providers are able to flush entries, because of a limitation of it
 EOT);
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = (new SymfonyStyle($input, $output))->getErrorStyle();

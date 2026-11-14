@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Query;
 
 use Doctrine\ORM\AbstractQuery;
 use Generator;
+use Override;
 
 /**
  * Represents a chain of tree walkers that modify an AST and finally emit output.
@@ -26,6 +27,7 @@ class TreeWalkerChain implements TreeWalker
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function __construct(
         private readonly AbstractQuery $query,
         private readonly ParserResult $parserResult,
@@ -38,6 +40,7 @@ class TreeWalkerChain implements TreeWalker
      *
      * {@inheritDoc}
      */
+    #[Override]
     public function getQueryComponents(): array
     {
         return $this->queryComponents;
@@ -53,6 +56,7 @@ class TreeWalkerChain implements TreeWalker
         $this->walkers[] = $walkerClass;
     }
 
+    #[Override]
     public function walkSelectStatement(AST\SelectStatement $selectStatement): void
     {
         foreach ($this->getWalkers() as $walker) {
@@ -62,6 +66,7 @@ class TreeWalkerChain implements TreeWalker
         }
     }
 
+    #[Override]
     public function walkUpdateStatement(AST\UpdateStatement $updateStatement): void
     {
         foreach ($this->getWalkers() as $walker) {
@@ -69,6 +74,7 @@ class TreeWalkerChain implements TreeWalker
         }
     }
 
+    #[Override]
     public function walkDeleteStatement(AST\DeleteStatement $deleteStatement): void
     {
         foreach ($this->getWalkers() as $walker) {

@@ -27,6 +27,7 @@ use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Query\SqlOutputWalker;
 use LogicException;
+use Override;
 use RuntimeException;
 
 use function array_diff;
@@ -56,7 +57,7 @@ use function substr;
  */
 class LimitSubqueryOutputWalker extends SqlOutputWalker
 {
-    private const ORDER_BY_PATH_EXPRESSION = '/(?<![a-z0-9_])%s\.%s(?![a-z0-9_])/i';
+    private const string ORDER_BY_PATH_EXPRESSION = '/(?<![a-z0-9_])%s\.%s(?![a-z0-9_])/i';
 
     private readonly AbstractPlatform $platform;
     private readonly ResultSetMapping $rsm;
@@ -152,6 +153,7 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
         $AST->orderByClause = null;
     }
 
+    #[Override]
     public function walkSelectStatement(SelectStatement $selectStatement): string
     {
         $sqlFinalizer = $this->getFinalizer($selectStatement);
@@ -163,6 +165,7 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
         return $abstractSqlExecutor->getSqlStatements();
     }
 
+    #[Override]
     public function getFinalizer(AST\DeleteStatement|AST\UpdateStatement|AST\SelectStatement $AST): SqlFinalizer
     {
         if (! $AST instanceof SelectStatement) {
@@ -562,6 +565,7 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
         return $sqlIdentifier;
     }
 
+    #[Override]
     public function walkPathExpression(PathExpression $pathExpr): string
     {
         if (! $this->inSubSelect && ! $this->platformSupportsRowNumber() && ! in_array($pathExpr, $this->orderByPathExpressions, true)) {
@@ -571,6 +575,7 @@ class LimitSubqueryOutputWalker extends SqlOutputWalker
         return parent::walkPathExpression($pathExpr);
     }
 
+    #[Override]
     public function walkSubSelect(Subselect $subselect): string
     {
         $wasInSubSelect    = $this->inSubSelect;

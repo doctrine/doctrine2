@@ -78,7 +78,7 @@ class GH6141Test extends OrmFunctionalTestCase
 
 class GH6141PeopleType extends StringType
 {
-    public const NAME = 'gh6141people';
+    final public const string NAME = 'gh6141people';
 
     /**
      * {@inheritDoc}
@@ -108,8 +108,8 @@ class GH6141PeopleType extends StringType
 
 class GH6141People implements Stringable
 {
-    public const BOSS     = 'boss';
-    public const EMPLOYEE = 'employee';
+    final public const string BOSS     = 'boss';
+    final public const string EMPLOYEE = 'employee';
 
     /** @throws InvalidArgumentException */
     public static function get(string $value): GH6141People

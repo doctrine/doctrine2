@@ -14,6 +14,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Exception\InvalidCursor;
 use Doctrine\ORM\Utility\PersisterHelper;
 use LogicException;
+use Override;
 
 use function array_map;
 use function array_reverse;
@@ -92,6 +93,7 @@ final class CursorPaginator implements PaginatorInterface
      *
      * @throws InvalidCursor If $position is not a Cursor instance, a string, or null.
      */
+    #[Override]
     public function paginate(Query|QueryBuilder $query, mixed $position = null): CursorPage
     {
         $query  = $this->resolveQuery($query);

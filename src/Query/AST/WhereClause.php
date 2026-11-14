@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * WhereClause ::= "WHERE" ConditionalExpression
@@ -17,6 +18,7 @@ class WhereClause extends Node
     {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkWhereClause($this);

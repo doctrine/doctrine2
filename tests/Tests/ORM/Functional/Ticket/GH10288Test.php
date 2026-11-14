@@ -105,7 +105,7 @@ class GH10288Test extends OrmFunctionalTestCase
 
 class GH10288PeopleType extends StringType
 {
-    public const NAME = 'GH10288PeopleType';
+    final public const string NAME = 'GH10288PeopleType';
 
     public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): string
     {

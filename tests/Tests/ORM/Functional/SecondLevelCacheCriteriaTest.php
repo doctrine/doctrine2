@@ -10,8 +10,6 @@ use Doctrine\Tests\Models\Cache\Country;
 use Doctrine\Tests\Models\Cache\State;
 use PHPUnit\Framework\Attributes\Group;
 
-use function defined;
-
 #[Group('DDC-2183')]
 class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
 {
@@ -28,7 +26,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
         $repository = $this->_em->getRepository(Country::class);
         $this->getQueryLog()->reset()->enable();
         $name    = $this->countries[0]->getName();
-        $result1 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result1 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $name),
         ));
 
@@ -43,7 +41,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
 
         $this->_em->clear();
 
-        $result2 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result2 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $name),
         ));
 
@@ -67,7 +65,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
 
         $repository = $this->_em->getRepository(Country::class);
         $this->getQueryLog()->reset()->enable();
-        $result1 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result1 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $this->countries[0]->getName()),
         ));
 
@@ -81,7 +79,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
 
         $this->_em->clear();
 
-        $result2 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result2 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $this->countries[0]->getName()),
         ));
 
@@ -96,7 +94,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
         self::assertEquals($this->countries[0]->getId(), $result2[0]->getId());
         self::assertEquals($this->countries[0]->getName(), $result2[0]->getName());
 
-        $result3 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result3 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $this->countries[1]->getName()),
         ));
 
@@ -111,7 +109,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
         self::assertEquals($this->countries[1]->getId(), $result3[0]->getId());
         self::assertEquals($this->countries[1]->getName(), $result3[0]->getName());
 
-        $result4 = $repository->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $result4 = $repository->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $this->countries[1]->getName()),
         ));
 
@@ -136,7 +134,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
         $itemName = $this->states[0]->getCities()->get(0)->getName();
         $this->getQueryLog()->reset()->enable();
         $collection = $entity->getCities();
-        $matching   = $collection->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $matching   = $collection->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $itemName),
         ));
 
@@ -149,7 +147,7 @@ class SecondLevelCacheCriteriaTest extends SecondLevelCacheFunctionalTestCase
         $entity = $this->_em->find(State::class, $this->states[0]->getId());
         $this->getQueryLog()->reset()->enable();
         $collection = $entity->getCities();
-        $matching   = $collection->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $matching   = $collection->matching(Criteria::create()->where(
             Criteria::expr()->eq('name', $itemName),
         ));
 

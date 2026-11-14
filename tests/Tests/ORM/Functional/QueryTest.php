@@ -111,10 +111,6 @@ class QueryTest extends OrmFunctionalTestCase
 
     public function testJoinPartialObjectHydration(): void
     {
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            $this->markTestSkipped('Test requires native lazy objects to be enabled.');
-        }
-
         $user           = new CmsUser();
         $user->name     = 'Guilherme';
         $user->username = 'gblanco';

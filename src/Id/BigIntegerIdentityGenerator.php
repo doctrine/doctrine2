@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Id;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Override;
 
 /**
  * Id generator that obtains IDs from special "identity" columns. These are columns
@@ -13,11 +14,13 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 class BigIntegerIdentityGenerator extends AbstractIdGenerator
 {
+    #[Override]
     public function generateId(EntityManagerInterface $em, object|null $entity): string
     {
         return (string) $em->getConnection()->lastInsertId();
     }
 
+    #[Override]
     public function isPostInsertGenerator(): bool
     {
         return true;

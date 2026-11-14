@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Tools\Pagination;
 use ArrayIterator;
 use Closure;
 use LogicException;
+use Override;
 use Traversable;
 
 use function array_map;
@@ -47,6 +48,7 @@ final class CursorPage implements Page
      *
      * @return list<T>
      */
+    #[Override]
     public function getItems(): array
     {
         return $this->items;
@@ -57,6 +59,7 @@ final class CursorPage implements Page
      *
      * @return Traversable<int, T>
      */
+    #[Override]
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->items);
@@ -65,6 +68,7 @@ final class CursorPage implements Page
     /**
      * Returns the number of items on this page.
      */
+    #[Override]
     public function count(): int
     {
         return count($this->items);
@@ -74,6 +78,7 @@ final class CursorPage implements Page
      * Executes an extra COUNT query and returns the total number of matching
      * root entities, ignoring the cursor and limit. The result is memoized.
      */
+    #[Override]
     public function getTotalCount(): int
     {
         return $this->totalCount ??= ($this->totalCountProvider)();
@@ -82,6 +87,7 @@ final class CursorPage implements Page
     /**
      * Returns whether there is a previous page.
      */
+    #[Override]
     public function hasPreviousPage(): bool
     {
         return $this->cursor !== null && ($this->cursor->isNext() || $this->hasMore);
@@ -90,6 +96,7 @@ final class CursorPage implements Page
     /**
      * Returns whether there is a next page.
      */
+    #[Override]
     public function hasNextPage(): bool
     {
         return $this->hasMore || ($this->cursor !== null && $this->cursor->isPrevious());
@@ -98,6 +105,7 @@ final class CursorPage implements Page
     /**
      * Returns whether the result set spans more than one page.
      */
+    #[Override]
     public function hasToPaginate(): bool
     {
         return $this->hasPreviousPage() || $this->hasNextPage();

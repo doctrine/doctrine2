@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 /**
@@ -40,6 +41,7 @@ class From implements Stringable
         return $this->indexBy;
     }
 
+    #[Override]
     public function __toString(): string
     {
         return $this->from . ' ' . $this->alias .

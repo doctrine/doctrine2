@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Tools\Pagination;
 
 use Countable;
 use IteratorAggregate;
+use Override;
 
 /**
  * Immutable result of a single pagination.
@@ -37,6 +38,7 @@ interface Page extends Countable, IteratorAggregate
     /**
      * Returns the number of items on this page.
      */
+    #[Override]
     public function count(): int;
 
     /**

@@ -20,10 +20,6 @@ final class GH12674Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            self::markTestSkipped('Test requires native lazy objects enabled.');
-        }
-
         $this->createSchemaForModels(Category::class, Item::class);
 
         // Inserted through DBAL on purpose: once a ReflectionProperty has been used on any object,

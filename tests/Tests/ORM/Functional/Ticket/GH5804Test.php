@@ -56,7 +56,7 @@ final class GH5804Generator extends AbstractIdGenerator
 
 final class GH5804Type extends Type
 {
-    public const NAME = 'GH5804Type';
+    final public const string NAME = 'GH5804Type';
 
     public function getName(): string
     {

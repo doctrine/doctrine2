@@ -16,7 +16,7 @@ use function str_replace;
  */
 class UuidObjectType extends Type
 {
-    public const NAME = 'uuid_object';
+    public const string NAME = 'uuid_object';
 
     /**
      * {@inheritDoc}

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\Common\Proxy\Proxy as CommonProxy;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\Tests\Models\Company\CompanyAuction;
 use Doctrine\Tests\Models\ECommerce\ECommerceProduct;
 use Doctrine\Tests\Models\ECommerce\ECommerceProduct2;
@@ -14,12 +13,6 @@ use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
 use function assert;
-use function file_exists;
-use function str_replace;
-use function strlen;
-use function substr;
-
-use const DIRECTORY_SEPARATOR;
 
 /**
  * Tests the generation of a proxy object for lazy loading.
@@ -236,30 +229,5 @@ class ReferenceProxyTest extends OrmFunctionalTestCase
         self::assertTrue($this->isUninitializedObject($entity), 'Pre-Condition: Object is unitialized proxy.');
         self::assertEquals('Doctrine Cookbook', $entity->getName());
         self::assertFalse($this->isUninitializedObject($entity), 'Getting something other than the identifier initializes the proxy.');
-    }
-
-    #[Group('DDC-1604')]
-    public function testCommonPersistenceProxy(): void
-    {
-        if ($this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            self::markTestSkipped('Test only works with proxy generation disabled.');
-        }
-
-        $id = $this->createProduct();
-
-        $entity = $this->_em->getReference(ECommerceProduct::class, $id);
-        assert($entity instanceof ECommerceProduct);
-        $className = DefaultProxyClassNameResolver::getClass($entity);
-
-        self::assertTrue($this->isUninitializedObject($entity));
-        self::assertEquals(ECommerceProduct::class, $className);
-
-        $restName      = str_replace($this->_em->getConfiguration()->getProxyNamespace(), '', $entity::class);
-        $restName      = substr($entity::class, strlen($this->_em->getConfiguration()->getProxyNamespace()) + 1);
-        $proxyFileName = $this->_em->getConfiguration()->getProxyDir() . DIRECTORY_SEPARATOR . str_replace('\\', '', $restName) . '.php';
-        self::assertTrue(file_exists($proxyFileName), 'Proxy file name cannot be found generically.');
-
-        $this->initializeObject($entity);
-        self::assertFalse($this->isUninitializedObject($entity));
     }
 }

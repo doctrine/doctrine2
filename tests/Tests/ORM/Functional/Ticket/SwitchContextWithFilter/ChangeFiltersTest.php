@@ -10,8 +10,8 @@ use Doctrine\Tests\ORM\Functional\Ticket\SwitchContextWithFilter\SQLFilter\Compa
 
 final class ChangeFiltersTest extends AbstractTestCase
 {
-    private const COMPANY_A = 'A';
-    private const COMPANY_B = 'B';
+    private const string COMPANY_A = 'A';
+    private const string COMPANY_B = 'B';
 
     public function setUp(): void
     {

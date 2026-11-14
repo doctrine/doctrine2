@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping\PropertyAccessors;
 
-use Doctrine\ORM\Proxy\InternalProxy;
-use LogicException;
+use Override;
 use ReflectionProperty;
 
 use function ltrim;
-
-use const PHP_VERSION_ID;
 
 /**
  * This is a PHP 8.4 and up only class and replaces ObjectCastPropertyAccessor.
@@ -31,31 +28,21 @@ class RawValuePropertyAccessor implements PropertyAccessor
 
     private function __construct(private ReflectionProperty $reflectionProperty, private string $key)
     {
-        if (PHP_VERSION_ID < 80400) {
-            throw new LogicException('This class requires PHP 8.4 or higher.');
-        }
     }
 
+    #[Override]
     public function setValue(object $object, mixed $value): void
     {
-        if (! ($object instanceof InternalProxy && ! $object->__isInitialized())) {
-            $this->reflectionProperty->setRawValueWithoutLazyInitialization($object, $value);
-
-            return;
-        }
-
-        $object->__setInitialized(true);
-
-        $this->reflectionProperty->setRawValue($object, $value);
-
-        $object->__setInitialized(false);
+        $this->reflectionProperty->setRawValueWithoutLazyInitialization($object, $value);
     }
 
+    #[Override]
     public function getValue(object $object): mixed
     {
         return ((array) $object)[$this->key] ?? null;
     }
 
+    #[Override]
     public function getUnderlyingReflector(): ReflectionProperty
     {
         return $this->reflectionProperty;

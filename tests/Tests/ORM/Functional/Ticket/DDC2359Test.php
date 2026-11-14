@@ -8,13 +8,13 @@ use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
+use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
@@ -27,13 +27,14 @@ class DDC2359Test extends TestCase
      */
     public function testIssue(): void
     {
-        $stubDriver    = $this->createStub(MappingDriver::class);
-        $stubMetadata  = $this->createStub(ClassMetadata::class);
+        $mockDriver    = $this->createStub(MappingDriver::class);
         $entityManager = $this->createStub(EntityManager::class);
 
-        $metadataFactory = $this->getMockBuilder(ClassMetadataFactory::class)
-            ->onlyMethods(['newClassMetadataInstance', 'wakeupReflection'])
+        $metadataFactory   = $this->getMockBuilder(ClassMetadataFactory::class)
+            ->onlyMethods(['wakeupReflection', 'validateRuntimeMetadata'])
             ->getMock();
+        $reflectionService = new RuntimeReflectionService();
+        $metadataFactory->expects(self::once())->method('wakeupReflection');
 
         $configuration = $this->getMockBuilder(Configuration::class)
             ->onlyMethods(['getMetadataDriverImpl'])
@@ -43,7 +44,7 @@ class DDC2359Test extends TestCase
 
         $configuration
             ->method('getMetadataDriverImpl')
-            ->willReturn($stubDriver);
+            ->willReturn($mockDriver);
 
         $entityManager->method('getConfiguration')->willReturn($configuration);
         $entityManager->method('getConnection')->willReturn($connection);
@@ -51,23 +52,16 @@ class DDC2359Test extends TestCase
             ->method('getEventManager')
             ->willReturn(new EventManager());
 
-        $metadataFactory->method('newClassMetadataInstance')->willReturn($stubMetadata);
-        $metadataFactory->expects(self::once())->method('wakeupReflection');
-
         $metadataFactory->setEntityManager($entityManager);
-
-        $stubMetadata->method('getName')->willReturn(DDC2359Foo::class);
-
-        self::assertSame($stubMetadata, $metadataFactory->getMetadataFor(DDC2359Foo::class));
+        $metadataFactory->getMetadataFor(DDC2359Foo::class);
     }
 }
 
 #[Entity]
 class DDC2359Foo
 {
-    /** @var int */
     #[Id]
     #[Column(type: 'integer')]
     #[GeneratedValue]
-    public $id;
+    public int $id;
 }

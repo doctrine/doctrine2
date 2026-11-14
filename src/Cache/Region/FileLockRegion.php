@@ -11,6 +11,7 @@ use Doctrine\ORM\Cache\ConcurrentRegion;
 use Doctrine\ORM\Cache\Lock;
 use Doctrine\ORM\Cache\Region;
 use InvalidArgumentException;
+use Override;
 
 use function array_filter;
 use function array_map;
@@ -35,7 +36,7 @@ use const LOCK_EX;
  */
 class FileLockRegion implements ConcurrentRegion
 {
-    final public const LOCK_EXTENSION = 'lock';
+    final public const string LOCK_EXTENSION = 'lock';
 
     /**
      * @param numeric-string|int $lockLifetime
@@ -102,11 +103,13 @@ class FileLockRegion implements ConcurrentRegion
         return @fileatime($filename);
     }
 
+    #[Override]
     public function getName(): string
     {
         return $this->region->getName();
     }
 
+    #[Override]
     public function contains(CacheKey $key): bool
     {
         if ($this->isLocked($key)) {
@@ -116,6 +119,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->contains($key);
     }
 
+    #[Override]
     public function get(CacheKey $key): CacheEntry|null
     {
         if ($this->isLocked($key)) {
@@ -125,6 +129,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->get($key);
     }
 
+    #[Override]
     public function getMultiple(CollectionCacheEntry $collection): array|null
     {
         if (array_filter(array_map($this->isLocked(...), $collection->identifiers))) {
@@ -134,6 +139,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->getMultiple($collection);
     }
 
+    #[Override]
     public function put(CacheKey $key, CacheEntry $entry, Lock|null $lock = null): bool
     {
         if ($this->isLocked($key, $lock)) {
@@ -143,6 +149,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->put($key, $entry);
     }
 
+    #[Override]
     public function evict(CacheKey $key): bool
     {
         if ($this->isLocked($key)) {
@@ -152,6 +159,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->evict($key);
     }
 
+    #[Override]
     public function evictAll(): bool
     {
         // The check below is necessary because on some platforms glob returns false
@@ -165,6 +173,7 @@ class FileLockRegion implements ConcurrentRegion
         return $this->region->evictAll();
     }
 
+    #[Override]
     public function lock(CacheKey $key): Lock|null
     {
         if ($this->isLocked($key)) {
@@ -183,6 +192,7 @@ class FileLockRegion implements ConcurrentRegion
         return $lock;
     }
 
+    #[Override]
     public function unlock(CacheKey $key, Lock $lock): bool
     {
         if ($this->isLocked($key, $lock)) {

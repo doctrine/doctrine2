@@ -96,11 +96,10 @@ code.
 Transparent lazy loading on PHP 8.4
 ------------------------------------
 
-When :ref:`native lazy objects <reference-native-lazy-objects>`
-are enabled (PHP 8.4+), partial objects returned by DQL queries behave
-as **lazy ghosts**: only the fields listed in the ``PARTIAL`` clause are
-loaded eagerly from the database. All other scalar fields remain
-uninitialized in the ghost object.
+Partial objects returned by DQL queries behave as **lazy ghosts**: only
+the fields listed in the ``PARTIAL`` clause are loaded eagerly from the
+database. All other scalar fields remain uninitialized in the ghost
+object.
 
 On first access to any uninitialized field, Doctrine automatically issues
 a ``SELECT`` to load the full entity from the database, transparently

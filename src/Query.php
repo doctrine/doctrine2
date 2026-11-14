@@ -7,14 +7,11 @@ namespace Doctrine\ORM;
 use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\AST\DeleteStatement;
 use Doctrine\ORM\Query\AST\SelectStatement;
 use Doctrine\ORM\Query\AST\UpdateStatement;
 use Doctrine\ORM\Query\Exec\AbstractSqlExecutor;
-use Doctrine\ORM\Query\Exec\SqlFinalizer;
-use Doctrine\ORM\Query\OutputWalker;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\ParameterTypeInferer;
 use Doctrine\ORM\Query\Parser;
@@ -22,6 +19,7 @@ use Doctrine\ORM\Query\ParserResult;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Utility\HierarchyDiscriminatorResolver;
+use Override;
 use Psr\Cache\CacheItemPoolInterface;
 
 use function array_keys;
@@ -30,7 +28,6 @@ use function assert;
 use function count;
 use function get_debug_type;
 use function in_array;
-use function is_a;
 use function ksort;
 use function md5;
 use function reset;
@@ -48,14 +45,14 @@ class Query extends AbstractQuery
     /**
      * A query object is in CLEAN state when it has NO unparsed/unprocessed DQL parts.
      */
-    public const STATE_CLEAN = 1;
+    final public const int STATE_CLEAN = 1;
 
     /**
      * A query object is in state DIRTY when it has DQL parts that have not yet been
      * parsed/processed. This is automatically defined as DIRTY when addDqlQueryPart
      * is called.
      */
-    public const STATE_DIRTY = 2;
+    final public const int STATE_DIRTY = 2;
 
     /* Query HINTS */
 
@@ -63,16 +60,16 @@ class Query extends AbstractQuery
      * The refresh hint turns any query into a refresh query with the result that
      * any local changes in entities are overridden with the fetched values.
      */
-    public const HINT_REFRESH = 'doctrine.refresh';
+    final public const string HINT_REFRESH = 'doctrine.refresh';
 
-    public const HINT_CACHE_ENABLED = 'doctrine.cache.enabled';
+    final public const string HINT_CACHE_ENABLED = 'doctrine.cache.enabled';
 
-    public const HINT_CACHE_EVICT = 'doctrine.cache.evict';
+    final public const string HINT_CACHE_EVICT = 'doctrine.cache.evict';
 
     /**
      * Internal hint: is set to the proxy entity that is currently triggered for loading
      */
-    public const HINT_REFRESH_ENTITY = 'doctrine.refresh.entity';
+    final public const string HINT_REFRESH_ENTITY = 'doctrine.refresh.entity';
 
     /**
      * The forcePartialLoad query hint forces a particular query to return
@@ -80,7 +77,7 @@ class Query extends AbstractQuery
      *
      * @todo Rename: HINT_OPTIMIZE
      */
-    public const HINT_FORCE_PARTIAL_LOAD = 'doctrine.forcePartialLoad';
+    final public const string HINT_FORCE_PARTIAL_LOAD = 'doctrine.forcePartialLoad';
 
     /**
      * The includeMetaColumns query hint causes meta columns like foreign keys and
@@ -88,19 +85,19 @@ class Query extends AbstractQuery
      *
      * This hint does only apply to non-object queries.
      */
-    public const HINT_INCLUDE_META_COLUMNS = 'doctrine.includeMetaColumns';
+    final public const string HINT_INCLUDE_META_COLUMNS = 'doctrine.includeMetaColumns';
 
     /**
      * An array of class names that implement \Doctrine\ORM\Query\TreeWalker and
      * are iterated and executed after the DQL has been parsed into an AST.
      */
-    public const HINT_CUSTOM_TREE_WALKERS = 'doctrine.customTreeWalkers';
+    final public const string HINT_CUSTOM_TREE_WALKERS = 'doctrine.customTreeWalkers';
 
     /**
      * A string with a class name that implements \Doctrine\ORM\Query\TreeWalker
      * and is used for generating the target SQL from any DQL AST tree.
      */
-    public const HINT_CUSTOM_OUTPUT_WALKER = 'doctrine.customOutputWalker';
+    final public const string HINT_CUSTOM_OUTPUT_WALKER = 'doctrine.customOutputWalker';
 
     /**
      * Marks queries as creating only read only objects.
@@ -108,11 +105,11 @@ class Query extends AbstractQuery
      * If the object retrieved from the query is already in the identity map
      * then it does not get marked as read only if it wasn't already.
      */
-    public const HINT_READ_ONLY = 'doctrine.readOnly';
+    final public const string HINT_READ_ONLY = 'doctrine.readOnly';
 
-    public const HINT_INTERNAL_ITERATION = 'doctrine.internal.iteration';
+    final public const string HINT_INTERNAL_ITERATION = 'doctrine.internal.iteration';
 
-    public const HINT_LOCK_MODE = 'doctrine.lockMode';
+    final public const string HINT_LOCK_MODE = 'doctrine.lockMode';
 
     /**
      * The current state of this query.
@@ -173,6 +170,7 @@ class Query extends AbstractQuery
      *
      * @return list<string>|string The built sql query or an array of all sql queries.
      */
+    #[Override]
     public function getSQL(): string|array
     {
         return $this->getSqlExecutor()->getSqlStatements();
@@ -188,6 +186,7 @@ class Query extends AbstractQuery
         return $parser->getAST();
     }
 
+    #[Override]
     protected function getResultSetMapping(): ResultSetMapping
     {
         // parse query or load from cache
@@ -252,6 +251,7 @@ class Query extends AbstractQuery
         return $this->parserResult;
     }
 
+    #[Override]
     protected function _doExecute(): Result|int
     {
         $executor = $this->getSqlExecutor();
@@ -499,6 +499,7 @@ class Query extends AbstractQuery
         return $this->expireQueryCache;
     }
 
+    #[Override]
     public function free(): void
     {
         parent::free();
@@ -603,6 +604,7 @@ class Query extends AbstractQuery
     }
 
     /** {@inheritDoc} */
+    #[Override]
     public function toIterable(iterable $parameters = [], $hydrationMode = self::HYDRATE_OBJECT): iterable
     {
         $this->setHint(self::HINT_INTERNAL_ITERATION, true);
@@ -610,6 +612,7 @@ class Query extends AbstractQuery
         return parent::toIterable($parameters, $hydrationMode);
     }
 
+    #[Override]
     public function setHint(string $name, mixed $value): static
     {
         $this->state = self::STATE_DIRTY;
@@ -617,6 +620,7 @@ class Query extends AbstractQuery
         return parent::setHint($name, $value);
     }
 
+    #[Override]
     public function setHydrationMode(string|int $hydrationMode): static
     {
         $this->state = self::STATE_DIRTY;
@@ -629,13 +633,11 @@ class Query extends AbstractQuery
      *
      * @see \Doctrine\DBAL\LockMode
      *
-     * @phpstan-param LockMode::* $lockMode
-     *
      * @return $this
      *
      * @throws TransactionRequiredException
      */
-    public function setLockMode(LockMode|int $lockMode): self
+    public function setLockMode(LockMode $lockMode): self
     {
         if (in_array($lockMode, [LockMode::PESSIMISTIC_READ, LockMode::PESSIMISTIC_WRITE], true)) {
             if (! $this->em->getConnection()->isTransactionActive()) {
@@ -651,10 +653,9 @@ class Query extends AbstractQuery
     /**
      * Get the current lock mode for this query.
      *
-     * @return LockMode|int|null The current lock mode of this query or NULL if no specific lock mode is set.
-     * @phpstan-return LockMode::*|null
+     * @return LockMode|null The current lock mode of this query or NULL if no specific lock mode is set.
      */
-    public function getLockMode(): LockMode|int|null
+    public function getLockMode(): LockMode|null
     {
         $lockMode = $this->getHint(self::HINT_LOCK_MODE);
 
@@ -672,35 +673,15 @@ class Query extends AbstractQuery
     {
         ksort($this->hints);
 
-        if (! $this->hasHint(self::HINT_CUSTOM_OUTPUT_WALKER)) {
-            // Assume Parser will create the SqlOutputWalker; save is_a call, which might trigger a class load
-            $firstAndMaxResult = '';
-        } else {
-            $outputWalkerClass = $this->getHint(self::HINT_CUSTOM_OUTPUT_WALKER);
-            if (is_a($outputWalkerClass, OutputWalker::class, true)) {
-                $firstAndMaxResult = '';
-            } else {
-                Deprecation::trigger(
-                    'doctrine/orm',
-                    'https://github.com/doctrine/orm/pull/11188/',
-                    'Your output walker class %s should implement %s in order to provide a %s. This also means the output walker should not use the query firstResult/maxResult values, which should be read from the query by the SqlFinalizer only.',
-                    $outputWalkerClass,
-                    OutputWalker::class,
-                    SqlFinalizer::class,
-                );
-                $firstAndMaxResult = '&firstResult=' . $this->firstResult . '&maxResult=' . $this->maxResults;
-            }
-        }
-
         return md5(
             $this->getDQL() . serialize($this->hints) .
             '&platform=' . get_debug_type($this->getEntityManager()->getConnection()->getDatabasePlatform()) .
             ($this->em->hasFilters() ? $this->em->getFilters()->getHash() : '') .
-            $firstAndMaxResult .
             '&hydrationMode=' . $this->hydrationMode . '&types=' . serialize($this->parsedTypes) . 'DOCTRINE_QUERY_CACHE_SALT',
         );
     }
 
+    #[Override]
     protected function getHash(): string
     {
         return sha1(parent::getHash() . '-' . $this->firstResult . '-' . $this->maxResults);
@@ -709,6 +690,7 @@ class Query extends AbstractQuery
     /**
      * Cleanup Query resource when clone is called.
      */
+    #[Override]
     public function __clone()
     {
         parent::__clone();

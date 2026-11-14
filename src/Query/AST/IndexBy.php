@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * IndexBy ::= "INDEX" "BY" SingleValuedPathExpression
@@ -17,6 +18,7 @@ class IndexBy extends Node
     {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         $walker->walkIndexBy($this);

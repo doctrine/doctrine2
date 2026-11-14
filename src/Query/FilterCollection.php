@@ -22,12 +22,12 @@ class FilterCollection
     /**
      * A filter object is in CLEAN state when it has no changed parameters.
      */
-    public const FILTERS_STATE_CLEAN = 1;
+    final public const int FILTERS_STATE_CLEAN = 1;
 
     /**
      * A filter object is in DIRTY state when it has changed parameters.
      */
-    public const FILTERS_STATE_DIRTY = 2;
+    final public const int FILTERS_STATE_DIRTY = 2;
 
     private readonly Configuration $config;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 use function strtoupper;
@@ -15,11 +16,11 @@ use function strtoupper;
  */
 class Join implements Stringable
 {
-    final public const INNER_JOIN = 'INNER';
-    final public const LEFT_JOIN  = 'LEFT';
+    final public const string INNER_JOIN = 'INNER';
+    final public const string LEFT_JOIN  = 'LEFT';
 
-    final public const ON   = 'ON';
-    final public const WITH = 'WITH';
+    final public const string ON   = 'ON';
+    final public const string WITH = 'WITH';
 
     /**
      * @phpstan-param self::INNER_JOIN|self::LEFT_JOIN $joinType
@@ -67,6 +68,7 @@ class Join implements Stringable
         return $this->indexBy;
     }
 
+    #[Override]
     public function __toString(): string
     {
         return strtoupper($this->joinType) . ' JOIN ' . $this->join

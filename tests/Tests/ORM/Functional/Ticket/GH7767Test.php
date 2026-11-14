@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -20,13 +19,10 @@ use PHPUnit\Framework\Attributes\Group;
 use SortDirection;
 
 use function assert;
-use function defined;
 
 #[Group('GH7767')]
 class GH7767Test extends OrmFunctionalTestCase
 {
-    use CompatOrderings;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -48,7 +44,7 @@ class GH7767Test extends OrmFunctionalTestCase
         $parent = $this->_em->find(GH7767ParentEntity::class, 1);
         assert($parent instanceof GH7767ParentEntity);
 
-        $children = $parent->getChildren()->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $children = $parent->getChildren()->matching(Criteria::create());
 
         self::assertEquals(100, $children[0]->position);
         self::assertEquals(200, $children[1]->position);
@@ -61,7 +57,7 @@ class GH7767Test extends OrmFunctionalTestCase
         assert($parent instanceof GH7767ParentEntity);
 
         $children = $parent->getChildren()->matching(
-            (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->orderBy(['position' => $this->isCollections31() ? SortDirection::Descending : 'DESC']),
+            Criteria::create()->orderBy(['position' => SortDirection::Descending]),
         );
 
         self::assertEquals(300, $children[0]->position);

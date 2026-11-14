@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\PathExpression;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 use function assert;
 
@@ -24,6 +25,7 @@ class SizeFunction extends FunctionNode
      * @inheritdoc
      * @todo If the collection being counted is already joined, the SQL can be simpler (more efficient).
      */
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         assert($this->collectionPathExpression->field !== null);
@@ -101,6 +103,7 @@ class SizeFunction extends FunctionNode
         return '(' . $sql . ')';
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

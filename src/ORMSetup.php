@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM;
 
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Mapping\Driver\AttributeDriver;
 use Doctrine\ORM\Mapping\Driver\XmlDriver;
 use Doctrine\Persistence\Mapping\Driver\ClassLocator;
@@ -20,39 +19,9 @@ use function apcu_enabled;
 use function class_exists;
 use function extension_loaded;
 use function md5;
-use function sys_get_temp_dir;
-
-use const PHP_VERSION_ID;
 
 final class ORMSetup
 {
-    /**
-     * Creates a configuration with an attribute metadata driver.
-     *
-     * @param string[]|ClassLocator $paths
-     */
-    public static function createAttributeMetadataConfiguration(
-        array|ClassLocator $paths,
-        bool $isDevMode = false,
-        string|null $proxyDir = null,
-        CacheItemPoolInterface|null $cache = null,
-    ): Configuration {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                '%s is deprecated in favor of %s, and will be removed in 4.0.',
-                __METHOD__,
-                self::class . '::createAttributeMetadataConfig()',
-            );
-        }
-
-        $config = self::createConfiguration($isDevMode, $proxyDir, $cache);
-        $config->setMetadataDriverImpl(new AttributeDriver($paths));
-
-        return $config;
-    }
-
     /**
      * Creates a configuration with an attribute metadata driver.
      *
@@ -75,34 +44,6 @@ final class ORMSetup
      *
      * @param string[] $paths
      */
-    public static function createXMLMetadataConfiguration(
-        array $paths,
-        bool $isDevMode = false,
-        string|null $proxyDir = null,
-        CacheItemPoolInterface|null $cache = null,
-        bool $isXsdValidationEnabled = true,
-    ): Configuration {
-        if (PHP_VERSION_ID >= 80400) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                '%s is deprecated in favor of %s, and will be removed in 4.0.',
-                __METHOD__,
-                self::class . '::createXMLMetadataConfig()',
-            );
-        }
-
-        $config = self::createConfiguration($isDevMode, $proxyDir, $cache);
-        $config->setMetadataDriverImpl(new XmlDriver($paths, XmlDriver::DEFAULT_FILE_EXTENSION, $isXsdValidationEnabled));
-
-        return $config;
-    }
-
-    /**
-     * Creates a configuration with an XML metadata driver.
-     *
-     * @param string[] $paths
-     */
     public static function createXMLMetadataConfig(
         array $paths,
         bool $isDevMode = false,
@@ -116,40 +57,6 @@ final class ORMSetup
             XmlDriver::DEFAULT_FILE_EXTENSION,
             $isXsdValidationEnabled,
         ));
-
-        return $config;
-    }
-
-    /**
-     * Creates a configuration without a metadata driver.
-     */
-    public static function createConfiguration(
-        bool $isDevMode = false,
-        string|null $proxyDir = null,
-        CacheItemPoolInterface|null $cache = null,
-    ): Configuration {
-        if (PHP_VERSION_ID >= 80400 && $proxyDir !== null) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12005',
-                '%s is deprecated in favor of %s, and will be removed in 4.0.',
-                __METHOD__,
-                self::class . '::createConfig()',
-            );
-        }
-
-        $proxyDir = $proxyDir ?: sys_get_temp_dir();
-
-        $cache = self::createCacheInstance($isDevMode, $proxyDir, $cache);
-
-        $config = new Configuration();
-
-        $config->setMetadataCache($cache);
-        $config->setQueryCache($cache);
-        $config->setResultCache($cache);
-        $config->setProxyDir($proxyDir);
-        $config->setProxyNamespace('DoctrineProxies');
-        $config->setAutoGenerateProxyClasses($isDevMode);
 
         return $config;
     }

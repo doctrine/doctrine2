@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Tools\Console\Command;
 
 use Doctrine\ORM\Tools\Debug;
 use LogicException;
+use Override;
 use RuntimeException;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -27,6 +28,7 @@ use function strtoupper;
  */
 class RunDqlCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:run-dql')
@@ -56,6 +58,7 @@ class RunDqlCommand extends AbstractEntityManagerCommand
                 EOT);
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = new SymfonyStyle($input, $output);

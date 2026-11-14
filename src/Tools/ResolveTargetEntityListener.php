@@ -10,6 +10,7 @@ use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Override;
 
 use function array_key_exists;
 use function array_replace_recursive;
@@ -29,6 +30,7 @@ class ResolveTargetEntityListener implements EventSubscriber
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getSubscribedEvents(): array
     {
         return [

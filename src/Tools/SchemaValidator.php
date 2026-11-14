@@ -51,7 +51,7 @@ class SchemaValidator
     /**
      * It maps built-in Doctrine types to PHP types
      */
-    private const BUILTIN_TYPES_MAP = [
+    private const array BUILTIN_TYPES_MAP = [
         AsciiStringType::class => ['string'],
         BigIntType::class => ['int', 'string'],
         BooleanType::class => ['bool'],
@@ -294,7 +294,7 @@ class SchemaValidator
         if (
             ! $class->isInheritanceTypeNone()
             && ! $class->isRootEntity()
-            && ($class->reflClass !== null && ! $class->reflClass->isAbstract())
+            && ! $class->reflClass->isAbstract()
             && ! $class->isMappedSuperclass
             && array_search($class->name, $class->discriminatorMap, true) === false
         ) {

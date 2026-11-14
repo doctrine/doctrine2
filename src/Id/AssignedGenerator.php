@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Id;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\EntityMissingAssignedId;
+use Override;
 
 /**
  * Special generator for application-assigned identifiers (doesn't really generate anything).
@@ -19,6 +20,7 @@ class AssignedGenerator extends AbstractIdGenerator
      *
      * @throws EntityMissingAssignedId
      */
+    #[Override]
     public function generateId(EntityManagerInterface $em, object|null $entity): array
     {
         $class      = $em->getClassMetadata($entity::class);

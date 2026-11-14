@@ -9,6 +9,7 @@ use Doctrine\ORM\Cache\CacheKey;
 use Doctrine\ORM\Cache\CollectionCacheEntry;
 use Doctrine\ORM\Cache\Lock;
 use Doctrine\ORM\Cache\Region;
+use Override;
 use Psr\Cache\CacheItemInterface;
 use Psr\Cache\CacheItemPoolInterface;
 use Traversable;
@@ -22,8 +23,8 @@ use function strtr;
  */
 class DefaultRegion implements Region
 {
-    private const REGION_KEY_SEPARATOR = '_';
-    private const REGION_PREFIX        = 'DC2_REGION_';
+    private const string REGION_KEY_SEPARATOR = '_';
+    private const string REGION_PREFIX        = 'DC2_REGION_';
 
     public function __construct(
         private readonly string $name,
@@ -32,16 +33,19 @@ class DefaultRegion implements Region
     ) {
     }
 
+    #[Override]
     public function getName(): string
     {
         return $this->name;
     }
 
+    #[Override]
     public function contains(CacheKey $key): bool
     {
         return $this->cacheItemPool->hasItem($this->getCacheEntryKey($key));
     }
 
+    #[Override]
     public function get(CacheKey $key): CacheEntry|null
     {
         $item  = $this->cacheItemPool->getItem($this->getCacheEntryKey($key));
@@ -54,6 +58,7 @@ class DefaultRegion implements Region
         return $entry;
     }
 
+    #[Override]
     public function getMultiple(CollectionCacheEntry $collection): array|null
     {
         $keys = array_map(
@@ -83,6 +88,7 @@ class DefaultRegion implements Region
         return $result;
     }
 
+    #[Override]
     public function put(CacheKey $key, CacheEntry $entry, Lock|null $lock = null): bool
     {
         $item = $this->cacheItemPool
@@ -96,11 +102,13 @@ class DefaultRegion implements Region
         return $this->cacheItemPool->save($item);
     }
 
+    #[Override]
     public function evict(CacheKey $key): bool
     {
         return $this->cacheItemPool->deleteItem($this->getCacheEntryKey($key));
     }
 
+    #[Override]
     public function evictAll(): bool
     {
         return $this->cacheItemPool->clear(self::REGION_PREFIX . $this->name);

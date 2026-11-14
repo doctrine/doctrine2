@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Tools\Console\Command\ClearCache;
 use Doctrine\ORM\Tools\Console\Command\AbstractEntityManagerCommand;
 use InvalidArgumentException;
 use LogicException;
+use Override;
 use Symfony\Component\Cache\Adapter\ApcuAdapter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,6 +21,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class QueryCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:clear-cache:query')
@@ -28,6 +30,7 @@ class QueryCommand extends AbstractEntityManagerCommand
              ->setHelp('The <info>%command.name%</info> command is meant to clear the query cache of associated Entity Manager.');
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = (new SymfonyStyle($input, $output))->getErrorStyle();

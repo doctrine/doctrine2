@@ -24,7 +24,6 @@ use Generator;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
-use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use SortDirection;
 
 /**
@@ -481,22 +480,5 @@ class ExprTest extends OrmTestCase
         $andExpr->add(null);
 
         self::assertEquals(0, $andExpr->count());
-    }
-
-    #[IgnoreDeprecations]
-    public function testLegacyOrderByConstruct(): void
-    {
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $orderExpr = new OrderBy('u.username', 'DESC');
-        self::assertEquals('u.username DESC', (string) $orderExpr);
-    }
-
-    #[IgnoreDeprecations]
-    public function testLegacyOrderByAdd(): void
-    {
-        $orderExpr = new OrderBy('u.username', SortDirection::Descending);
-        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
-        $orderExpr->add('u.lastname', 'DESC');
-        self::assertEquals('u.username DESC, u.lastname DESC', (string) $orderExpr);
     }
 }

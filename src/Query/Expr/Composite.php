@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 use function implode;
@@ -17,6 +18,7 @@ use function preg_match;
  */
 class Composite extends Base
 {
+    #[Override]
     public function __toString(): string
     {
         if ($this->count() === 1) {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\Expr;
 
+use Override;
 use Stringable;
 
 use function implode;
@@ -41,6 +42,7 @@ class Func implements Stringable
         return $this->arguments;
     }
 
+    #[Override]
     public function __toString(): string
     {
         return $this->name . '(' . implode(', ', $this->arguments) . ')';

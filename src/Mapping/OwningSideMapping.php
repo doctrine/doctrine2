@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Override;
+
 abstract class OwningSideMapping extends AssociationMapping
 {
     /**
@@ -15,6 +17,7 @@ abstract class OwningSideMapping extends AssociationMapping
     public string|null $inversedBy = null;
 
     /** @return list<string> */
+    #[Override]
     public function __sleep(): array
     {
         $serialized = parent::__sleep();

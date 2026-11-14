@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use ArrayAccess;
 use Exception;
 use OutOfRangeException;
 
@@ -14,8 +13,7 @@ use function in_array;
 use function property_exists;
 use function sprintf;
 
-/** @template-implements ArrayAccess<string, mixed> */
-abstract class AssociationMapping implements ArrayAccess
+abstract class AssociationMapping
 {
     /**
      * The names of persistence operations to cascade on the association.

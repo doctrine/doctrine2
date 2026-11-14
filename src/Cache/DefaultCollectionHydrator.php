@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\UnitOfWork;
+use Override;
 
 use function assert;
 
@@ -30,6 +31,7 @@ class DefaultCollectionHydrator implements CollectionHydrator
         $this->uow = $em->getUnitOfWork();
     }
 
+    #[Override]
     public function buildCacheEntry(ClassMetadata $metadata, CollectionCacheKey $key, array|Collection $collection): CollectionCacheEntry
     {
         $data = [];
@@ -41,6 +43,7 @@ class DefaultCollectionHydrator implements CollectionHydrator
         return new CollectionCacheEntry($data);
     }
 
+    #[Override]
     public function loadCacheEntry(ClassMetadata $metadata, CollectionCacheKey $key, CollectionCacheEntry $entry, PersistentCollection $collection): array|null
     {
         $assoc           = $metadata->associationMappings[$key->association];

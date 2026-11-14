@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Mapping;
 
-use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Mapping\DefaultNamingStrategy;
 use Doctrine\ORM\Mapping\JoinTableMapping;
 use Doctrine\ORM\Mapping\ManyToManyOwningSideMapping;
+use Doctrine\ORM\Mapping\MappingException;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\WithoutErrorHandler;
 use PHPUnit\Framework\TestCase;
 
 use function assert;
@@ -18,8 +17,6 @@ use function unserialize;
 
 final class ManyToManyOwningSideMappingTest extends TestCase
 {
-    use VerifyDeprecations;
-
     public function testItSurvivesSerialization(): void
     {
         $mapping = new ManyToManyOwningSideMapping(
@@ -44,20 +41,15 @@ final class ManyToManyOwningSideMappingTest extends TestCase
 
     /** @param array<string,mixed> $mappingArray */
     #[DataProvider('mappingsProvider')]
-    #[WithoutErrorHandler]
     public function testNullableDefaults(
-        bool $expectDeprecation,
+        bool $expectException,
         bool $expectedValue,
         array $mappingArray,
     ): void {
         $namingStrategy = new DefaultNamingStrategy();
-        if ($expectDeprecation) {
-            $this->expectDeprecationWithIdentifier(
-                'https://github.com/doctrine/orm/pull/12126',
-            );
-        } else {
-            $this->expectNoDeprecationWithIdentifier(
-                'https://github.com/doctrine/orm/pull/12126',
+        if ($expectException) {
+            $this->expectException(
+                MappingException::class,
             );
         }
 

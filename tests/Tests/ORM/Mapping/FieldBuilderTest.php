@@ -6,6 +6,7 @@ namespace Doctrine\Tests\ORM\Mapping;
 
 use Doctrine\ORM\Mapping\Builder\ClassMetadataBuilder;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\TestWith;
@@ -36,7 +37,8 @@ class FieldBuilderTest extends OrmTestCase
 
     public function testCustomIdGeneratorCanBeSet(): void
     {
-        $cmBuilder = new ClassMetadataBuilder(new ClassMetadata(CmsUser::class));
+        $cmBuilder = new ClassMetadataBuilder($cm = new ClassMetadata(CmsUser::class));
+        $cm->initializeReflection(new RuntimeReflectionService());
 
         $fieldBuilder = $cmBuilder->createField('aField', 'string');
 

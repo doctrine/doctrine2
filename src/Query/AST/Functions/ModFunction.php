@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "MOD" "(" SimpleArithmeticExpression "," SimpleArithmeticExpression ")"
@@ -19,6 +20,7 @@ class ModFunction extends FunctionNode
     public Node|string $firstSimpleArithmeticExpression;
     public Node|string $secondSimpleArithmeticExpression;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return $sqlWalker->getConnection()->getDatabasePlatform()->getModExpression(
@@ -27,6 +29,7 @@ class ModFunction extends FunctionNode
         );
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

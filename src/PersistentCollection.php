@@ -9,10 +9,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ToManyAssociationMapping;
+use Override;
 use RuntimeException;
 use UnexpectedValueException;
 
@@ -41,9 +41,6 @@ use function spl_object_id;
  */
 final class PersistentCollection extends AbstractLazyCollection implements Selectable
 {
-    use CompatOrderings;
-    use PersistentCollectionImplementation;
-
     /**
      * A snapshot of the collection at the moment it was fetched from the database.
      * This is used to create a diff of the collection at commit time.
@@ -179,6 +176,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
      * Initializes the collection by loading its contents from the database
      * if the collection is not yet initialized.
      */
+    #[Override]
     public function initialize(): void
     {
         if ($this->initialized || ! $this->association) {
@@ -290,6 +288,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         $this->initialized = $bool;
     }
 
+    #[Override]
     public function remove(string|int $key): mixed
     {
         // TODO: If the keys are persistent as well (not yet implemented)
@@ -316,6 +315,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return $removed;
     }
 
+    #[Override]
     public function removeElement(mixed $element): bool
     {
         $removed = parent::removeElement($element);
@@ -338,6 +338,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return $removed;
     }
 
+    #[Override]
     public function containsKey(mixed $key): bool
     {
         if (
@@ -352,6 +353,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return parent::containsKey($key);
     }
 
+    #[Override]
     public function contains(mixed $element): bool
     {
         if (! $this->initialized && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
@@ -363,6 +365,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return parent::contains($element);
     }
 
+    #[Override]
     public function get(string|int $key): mixed
     {
         if (
@@ -382,6 +385,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return parent::get($key);
     }
 
+    #[Override]
     public function count(): int
     {
         if (! $this->initialized && $this->association !== null && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
@@ -393,6 +397,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return parent::count();
     }
 
+    #[Override]
     public function set(string|int $key, mixed $value): void
     {
         parent::set($key, $value);
@@ -404,7 +409,8 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         }
     }
 
-    private function doAdd(mixed $value): void
+    #[Override]
+    public function add(mixed $value): void
     {
         $this->unwrap()->add($value);
 
@@ -415,16 +421,19 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         }
     }
 
+    #[Override]
     public function offsetExists(mixed $offset): bool
     {
         return $this->containsKey($offset);
     }
 
+    #[Override]
     public function offsetGet(mixed $offset): mixed
     {
         return $this->get($offset);
     }
 
+    #[Override]
     public function offsetSet(mixed $offset, mixed $value): void
     {
         if (! isset($offset)) {
@@ -436,16 +445,19 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         $this->set($offset, $value);
     }
 
+    #[Override]
     public function offsetUnset(mixed $offset): void
     {
         $this->remove($offset);
     }
 
+    #[Override]
     public function isEmpty(): bool
     {
         return $this->unwrap()->isEmpty() && $this->count() === 0;
     }
 
+    #[Override]
     public function clear(): void
     {
         if ($this->initialized && $this->isEmpty()) {
@@ -504,7 +516,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         $this->em = null;
     }
 
-    /** {@inheritDoc} */
+    #[Override]
     public function first(): mixed
     {
         if (! $this->initialized && ! $this->isDirty && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
@@ -526,6 +538,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
      * @return mixed[]
      * @phpstan-return array<TKey,T>
      */
+    #[Override]
     public function slice(int $offset, int|null $length = null): array
     {
         if (! $this->initialized && ! $this->isDirty && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
@@ -570,6 +583,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
      *
      * @throws RuntimeException
      */
+    #[Override]
     public function matching(Criteria $criteria): Collection
     {
         if ($this->isDirty) {
@@ -595,7 +609,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         $criteria = clone $criteria;
         $criteria->where($expression);
 
-        $this->orderCriteriaByAssociation($criteria, $association);
+        $criteria->orderBy($criteria->getOrderings() ?: $association->orderBy());
 
         $persister = $this->getUnitOfWork()->getEntityPersister($association->targetEntity);
 
@@ -616,6 +630,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return $this->collection;
     }
 
+    #[Override]
     protected function doInitialize(): void
     {
         // Has NEW objects added through add(). Remember them.

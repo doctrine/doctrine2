@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Tools\Pagination;
 use ArrayIterator;
 use Closure;
 use LogicException;
+use Override;
 use Traversable;
 
 use function count;
@@ -51,6 +52,7 @@ final class WindowPage implements Page
      *
      * @return array<array-key, T>
      */
+    #[Override]
     public function getItems(): array
     {
         return $this->items;
@@ -61,6 +63,7 @@ final class WindowPage implements Page
      *
      * @return Traversable<array-key, T>
      */
+    #[Override]
     public function getIterator(): Traversable
     {
         return new ArrayIterator($this->items);
@@ -69,6 +72,7 @@ final class WindowPage implements Page
     /**
      * Returns the number of items on this page.
      */
+    #[Override]
     public function count(): int
     {
         return count($this->items);
@@ -80,6 +84,7 @@ final class WindowPage implements Page
      * When the page was built with a lazy total count, as {@see OffsetPaginator}
      * does, this runs the COUNT query on the first call and memoizes its result.
      */
+    #[Override]
     public function getTotalCount(): int
     {
         return $this->resolvedTotalCount ??= $this->totalCount instanceof Closure
@@ -118,12 +123,14 @@ final class WindowPage implements Page
         return max(1, intdiv($this->getTotalCount() + $maxResults - 1, $maxResults));
     }
 
+    #[Override]
     public function hasPreviousPage(): bool
     {
         return $this->window->getFirstResult() > 0;
     }
 
     /** Relies on {@see getTotalCount()}. */
+    #[Override]
     public function hasNextPage(): bool
     {
         return $this->window->getFirstResult() + count($this->items) < $this->getTotalCount();
@@ -133,6 +140,7 @@ final class WindowPage implements Page
      * Returns whether the result set spans more than one page. Relies on
      * {@see getTotalCount()}.
      */
+    #[Override]
     public function hasToPaginate(): bool
     {
         return $this->getTotalCount() > count($this->items);

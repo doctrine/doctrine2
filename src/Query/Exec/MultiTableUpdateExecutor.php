@@ -12,6 +12,7 @@ use Doctrine\ORM\Query\AST\UpdateStatement;
 use Doctrine\ORM\Query\ParameterTypeInferer;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 
 use function array_reverse;
 use function array_slice;
@@ -150,6 +151,7 @@ class MultiTableUpdateExecutor extends AbstractSqlExecutor
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function execute(Connection $conn, array $params, array $types): int
     {
         // Create temporary id table

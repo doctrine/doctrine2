@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Query\Exec;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Result;
+use Override;
 
 /**
  * SQL executor for a given, final, single SELECT SQL query
@@ -22,6 +23,7 @@ class FinalizedSelectExecutor extends AbstractSqlExecutor
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function execute(Connection $conn, array $params, array $types): Result
     {
         return $conn->executeQuery($this->getSqlStatements(), $params, $types, $this->queryCacheProfile);

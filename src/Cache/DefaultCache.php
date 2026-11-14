@@ -9,8 +9,8 @@ use Doctrine\ORM\Cache\Persister\CachedPersister;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMInvalidArgumentException;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\UnitOfWork;
+use Override;
 
 use function is_array;
 use function is_object;
@@ -40,6 +40,7 @@ class DefaultCache implements Cache
             ->getCacheFactory();
     }
 
+    #[Override]
     public function getEntityCacheRegion(string $className): Region|null
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -52,6 +53,7 @@ class DefaultCache implements Cache
         return $persister->getCacheRegion();
     }
 
+    #[Override]
     public function getCollectionCacheRegion(string $className, string $association): Region|null
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -64,6 +66,7 @@ class DefaultCache implements Cache
         return $persister->getCacheRegion();
     }
 
+    #[Override]
     public function containsEntity(string $className, mixed $identifier): bool
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -76,6 +79,7 @@ class DefaultCache implements Cache
         return $persister->getCacheRegion()->contains($this->buildEntityCacheKey($metadata, $identifier));
     }
 
+    #[Override]
     public function evictEntity(string $className, mixed $identifier): void
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -88,6 +92,7 @@ class DefaultCache implements Cache
         $persister->getCacheRegion()->evict($this->buildEntityCacheKey($metadata, $identifier));
     }
 
+    #[Override]
     public function evictEntityRegion(string $className): void
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -100,6 +105,7 @@ class DefaultCache implements Cache
         $persister->getCacheRegion()->evictAll();
     }
 
+    #[Override]
     public function evictEntityRegions(): void
     {
         $metadatas = $this->em->getMetadataFactory()->getAllMetadata();
@@ -115,6 +121,7 @@ class DefaultCache implements Cache
         }
     }
 
+    #[Override]
     public function containsCollection(string $className, string $association, mixed $ownerIdentifier): bool
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -127,6 +134,7 @@ class DefaultCache implements Cache
         return $persister->getCacheRegion()->contains($this->buildCollectionCacheKey($metadata, $association, $ownerIdentifier));
     }
 
+    #[Override]
     public function evictCollection(string $className, string $association, mixed $ownerIdentifier): void
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -139,6 +147,7 @@ class DefaultCache implements Cache
         $persister->getCacheRegion()->evict($this->buildCollectionCacheKey($metadata, $association, $ownerIdentifier));
     }
 
+    #[Override]
     public function evictCollectionRegion(string $className, string $association): void
     {
         $metadata  = $this->em->getClassMetadata($className);
@@ -151,6 +160,7 @@ class DefaultCache implements Cache
         $persister->getCacheRegion()->evictAll();
     }
 
+    #[Override]
     public function evictCollectionRegions(): void
     {
         $metadatas = $this->em->getMetadataFactory()->getAllMetadata();
@@ -172,11 +182,13 @@ class DefaultCache implements Cache
         }
     }
 
+    #[Override]
     public function containsQuery(string $regionName): bool
     {
         return isset($this->queryCaches[$regionName]);
     }
 
+    #[Override]
     public function evictQueryRegion(string|null $regionName = null): void
     {
         if ($regionName === null && $this->defaultQueryCache !== null) {
@@ -190,6 +202,7 @@ class DefaultCache implements Cache
         }
     }
 
+    #[Override]
     public function evictQueryRegions(): void
     {
         $this->getQueryCache()->clear();
@@ -199,6 +212,7 @@ class DefaultCache implements Cache
         }
     }
 
+    #[Override]
     public function getQueryCache(string|null $regionName = null): QueryCache
     {
         if ($regionName === null) {
@@ -233,7 +247,7 @@ class DefaultCache implements Cache
     private function toIdentifierArray(ClassMetadata $metadata, mixed $identifier): array
     {
         if (is_object($identifier)) {
-            $class = DefaultProxyClassNameResolver::getClass($identifier);
+            $class = $identifier::class;
             if ($this->em->getMetadataFactory()->hasMetadataFor($class)) {
                 $identifier = $this->uow->getSingleIdentifierValue($identifier)
                     ?? throw ORMInvalidArgumentException::invalidIdentifierBindingEntity($class);

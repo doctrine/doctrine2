@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Mapping;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\Internal\SQLResultCasing;
+use Override;
 
 use function array_map;
 use function array_merge;
@@ -24,6 +25,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
 {
     use SQLResultCasing;
 
+    #[Override]
     public function getColumnName(string $fieldName, ClassMetadata $class, AbstractPlatform $platform): string
     {
         return isset($class->fieldMappings[$fieldName]->quoted)
@@ -36,6 +38,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
      *
      * @todo Table names should be computed in DBAL depending on the platform
      */
+    #[Override]
     public function getTableName(ClassMetadata $class, AbstractPlatform $platform): string
     {
         $tableName = $class->table['name'];
@@ -58,6 +61,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getSequenceName(array $definition, ClassMetadata $class, AbstractPlatform $platform): string
     {
         return isset($definition['quoted'])
@@ -68,6 +72,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
             : $definition['sequenceName'];
     }
 
+    #[Override]
     public function getJoinColumnName(JoinColumnMapping $joinColumn, ClassMetadata $class, AbstractPlatform $platform): string
     {
         return isset($joinColumn->quoted)
@@ -75,6 +80,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
             : $joinColumn->name;
     }
 
+    #[Override]
     public function getReferencedJoinColumnName(
         JoinColumnMapping $joinColumn,
         ClassMetadata $class,
@@ -85,6 +91,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
             : $joinColumn->referencedColumnName;
     }
 
+    #[Override]
     public function getJoinTableName(
         ManyToManyOwningSideMapping $association,
         ClassMetadata $class,
@@ -108,6 +115,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getIdentifierColumnNames(ClassMetadata $class, AbstractPlatform $platform): array
     {
         $quotedColumnNames = [];
@@ -136,6 +144,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
         return $quotedColumnNames;
     }
 
+    #[Override]
     public function getColumnAlias(
         string $columnName,
         int $counter,

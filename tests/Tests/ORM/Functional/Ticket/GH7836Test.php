@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\Selectable;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -20,13 +19,10 @@ use PHPUnit\Framework\Attributes\Group;
 use SortDirection;
 
 use function assert;
-use function defined;
 
 #[Group('GH7836')]
 class GH7836Test extends OrmFunctionalTestCase
 {
-    use CompatOrderings;
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -48,7 +44,7 @@ class GH7836Test extends OrmFunctionalTestCase
         $parent = $this->_em->find(GH7836ParentEntity::class, 1);
         assert($parent instanceof GH7836ParentEntity);
 
-        $children = $parent->getChildren()->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $children = $parent->getChildren()->matching(Criteria::create());
 
         self::assertSame(100, $children[0]->position);
         self::assertSame('bar', $children[0]->name);
@@ -64,11 +60,7 @@ class GH7836Test extends OrmFunctionalTestCase
         assert($parent instanceof GH7836ParentEntity);
 
         $children = $parent->getChildren()->matching(
-            (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->orderBy(
-                $this->isCollections31()
-                    ? ['position' => SortDirection::Descending, 'name' => SortDirection::Ascending]
-                    : ['position' => 'DESC', 'name' => 'ASC'],
-            ),
+            Criteria::create()->orderBy(['position' => SortDirection::Descending, 'name' => SortDirection::Ascending]),
         );
 
         self::assertSame(200, $children[0]->position);
@@ -85,10 +77,8 @@ class GH7836Test extends OrmFunctionalTestCase
         assert($parent instanceof GH7836ParentEntity);
 
         $children = $parent->getChildren()->matching(
-            (defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->orderBy(
-                $this->isCollections31()
-                    ? ['name' => SortDirection::Ascending, 'position' => SortDirection::Ascending]
-                    : ['name' => 'ASC', 'position' => 'ASC'],
+            Criteria::create()->orderBy(
+                ['name' => SortDirection::Ascending, 'position' => SortDirection::Ascending],
             ),
         );
 

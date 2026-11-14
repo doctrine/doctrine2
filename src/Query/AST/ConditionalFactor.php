@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * ConditionalFactor ::= ["NOT"] ConditionalPrimary
@@ -19,6 +20,7 @@ class ConditionalFactor extends Node implements Phase2OptimizableConditional
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkConditionalFactor($this);

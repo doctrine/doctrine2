@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * AssociationPathExpression ::= CollectionValuedPathExpression | SingleValuedAssociationPathExpression
@@ -17,9 +18,9 @@ use Doctrine\ORM\Query\SqlWalker;
  */
 class PathExpression extends Node
 {
-    final public const TYPE_COLLECTION_VALUED_ASSOCIATION = 2;
-    final public const TYPE_SINGLE_VALUED_ASSOCIATION     = 4;
-    final public const TYPE_STATE_FIELD                   = 8;
+    final public const int TYPE_COLLECTION_VALUED_ASSOCIATION = 2;
+    final public const int TYPE_SINGLE_VALUED_ASSOCIATION     = 4;
+    final public const int TYPE_STATE_FIELD                   = 8;
 
     /** @phpstan-var self::TYPE_*|null */
     public int|null $type = null;
@@ -32,6 +33,7 @@ class PathExpression extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkPathExpression($this);

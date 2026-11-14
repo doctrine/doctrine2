@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Expr\Comparison;
 use Doctrine\Common\Collections\Expr\CompositeExpression;
 use Doctrine\Common\Collections\Expr\ExpressionVisitor;
 use Doctrine\Common\Collections\Expr\Value;
+use Override;
 use RuntimeException;
 
 use function count;
@@ -20,7 +21,7 @@ use function str_starts_with;
  */
 class QueryExpressionVisitor extends ExpressionVisitor
 {
-    private const OPERATOR_MAP = [
+    private const array OPERATOR_MAP = [
         Comparison::GT => Expr\Comparison::GT,
         Comparison::GTE => Expr\Comparison::GTE,
         Comparison::LT  => Expr\Comparison::LT,
@@ -63,6 +64,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
         return self::OPERATOR_MAP[$criteriaOperator] ?? null;
     }
 
+    #[Override]
     public function walkCompositeExpression(CompositeExpression $expr): mixed
     {
         $expressionList = [];
@@ -79,6 +81,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
         };
     }
 
+    #[Override]
     public function walkComparison(Comparison $comparison): mixed
     {
         if (! isset($this->queryAliases[0])) {
@@ -173,6 +176,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
         }
     }
 
+    #[Override]
     public function walkValue(Value $value): mixed
     {
         return $value->getValue();

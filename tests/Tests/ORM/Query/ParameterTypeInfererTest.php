@@ -19,7 +19,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 
 class ParameterTypeInfererTest extends OrmTestCase
 {
-    /** @phpstan-return Generator<string, array{mixed, (ParameterType::*|ArrayParameterType::*|string)}> */
+    /** @phpstan-return Generator<string, array{mixed, (ParameterType|ArrayParameterType|string)}> */
     public static function providerParameterTypeInferer(): Generator
     {
         yield 'integer' => [1, Types::INTEGER];
@@ -40,7 +40,7 @@ class ParameterTypeInfererTest extends OrmTestCase
     }
 
     #[DataProvider('providerParameterTypeInferer')]
-    public function testParameterTypeInferer(mixed $value, ParameterType|ArrayParameterType|int|string $expected): void
+    public function testParameterTypeInferer(mixed $value, ParameterType|ArrayParameterType|string $expected): void
     {
         self::assertEquals($expected, ParameterTypeInferer::inferType($value));
     }

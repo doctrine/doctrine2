@@ -13,6 +13,7 @@ use Doctrine\Persistence\Mapping\Driver\FileLocator;
 use DOMDocument;
 use InvalidArgumentException;
 use LogicException;
+use Override;
 use SimpleXMLElement;
 use SortDirection;
 
@@ -43,9 +44,7 @@ use function strtoupper;
  */
 class XmlDriver extends FileDriver
 {
-    use LoadMappingFileImplementation;
-
-    public const DEFAULT_FILE_EXTENSION = '.dcm.xml';
+    public const string DEFAULT_FILE_EXTENSION = '.dcm.xml';
 
     /**
      * {@inheritDoc}
@@ -79,6 +78,7 @@ class XmlDriver extends FileDriver
      *
      * @template T of object
      */
+    #[Override]
     public function loadMetadataForClass($className, PersistenceClassMetadata $metadata): void
     {
         $xmlRoot = $this->getElement($className);
@@ -950,8 +950,13 @@ class XmlDriver extends FileDriver
         return $cascades;
     }
 
-    /** @return array<class-string, SimpleXMLElement> */
-    private function doLoadMappingFile(string $file): array
+    /**
+     * {@inheritDoc}
+     *
+     * @return array<class-string, SimpleXMLElement>
+     */
+    #[Override]
+    protected function loadMappingFile(string $file): array
     {
         $this->validateMapping($file);
         $result = [];

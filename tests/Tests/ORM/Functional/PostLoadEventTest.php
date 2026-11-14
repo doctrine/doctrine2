@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional;
 
 use Doctrine\ORM\Event\PostLoadEventArgs;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\CMS\CmsEmail;
 use Doctrine\Tests\Models\CMS\CmsPhonenumber;
@@ -209,7 +208,7 @@ class PostLoadEventTest extends OrmFunctionalTestCase
     public function testEventRaisedCorrectTimesWhenOtherEntityLoadedInEventHandler(): void
     {
         $eventManager = $this->_em->getEventManager();
-        $listener     = new PostLoadListenerLoadEntityInEventHandler(! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled());
+        $listener     = new PostLoadListenerLoadEntityInEventHandler();
         $eventManager->addEventListener([Events::postLoad], $listener);
 
         $this->_em->find(CmsUser::class, $this->userId);
@@ -285,7 +284,7 @@ class PostLoadListenerCheckAssociationsArePopulated
 
 class PostLoadListenerLoadEntityInEventHandler
 {
-    public function __construct(private bool $resolveClassName)
+    public function __construct()
     {
     }
 
@@ -295,10 +294,7 @@ class PostLoadListenerLoadEntityInEventHandler
     public function postLoad(PostLoadEventArgs $event): void
     {
         $object = $event->getObject();
-        $class  = $this->resolveClassName ?
-            DefaultProxyClassNameResolver::getClass($object) :
-            $object::class;
-
+        $class  = $object::class;
         if (! isset($this->firedByClasses[$class])) {
             $this->firedByClasses[$class] = 1;
         } else {

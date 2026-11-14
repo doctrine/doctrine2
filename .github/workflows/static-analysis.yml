@@ -20,27 +20,10 @@ on:
       - phpstan*
       - tests/StaticAnalysis/**
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
-  cancel-in-progress: true
-
 jobs:
   static-analysis-phpstan:
     name: Static Analysis with PHPStan
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        include:
-        # The type provider API is only available in DBAL >= 4.6, which is not released yet,
-        # so the latest stable DBAL is analyzed with a config that tolerates its absence.
-        - dbal-version: default
-          config: phpstan-dbal4-stable.neon
-        # Analyze against 4.x-dev to cover the new type provider API.
-        - dbal-version: "4@dev"
-          config: phpstan.neon
-        - dbal-version: 3.8.2
-          config: phpstan-dbal3.neon
+    runs-on: ubuntu-22.04
 
     steps:
       - name: "Checkout code"
@@ -53,13 +36,8 @@ jobs:
           php-version: "8.4"
           tools: cs2pr
 
-      - name: Require specific DBAL version
-        run: "composer require doctrine/dbal ^${{ matrix.dbal-version }} --no-update"
-        if: "${{ matrix.dbal-version != 'default' }}"
-
-
       - name: Install dependencies with Composer
         uses: ramsey/composer-install@v4
 
       - name: Run static analysis with phpstan/phpstan
-        run: "vendor/bin/phpstan analyse -c ${{ matrix.config }}"
+        run: "vendor/bin/phpstan analyse --error-format=checkstyle | cs2pr"

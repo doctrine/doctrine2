@@ -12,6 +12,7 @@ use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\ParserResult;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Query\SqlOutputWalker;
+use Override;
 use RuntimeException;
 
 use function array_diff;
@@ -53,6 +54,7 @@ class CountOutputWalker extends SqlOutputWalker
         parent::__construct($query, $parserResult, $queryComponents);
     }
 
+    #[Override]
     protected function createSqlForFinalizer(SelectStatement $selectStatement): string
     {
         if ($this->platform instanceof SQLServerPlatform) {

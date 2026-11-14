@@ -10,7 +10,6 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\UnitOfWork;
-use Doctrine\Tests\TestUtil;
 
 /**
  * Special EntityManager mock used for testing purposes.
@@ -24,7 +23,6 @@ class EntityManagerMock extends EntityManager
     {
         if ($config === null) {
             $config = new Configuration();
-            TestUtil::configureProxies($config);
             $config->setMetadataDriverImpl(AttributeDriverFactory::createAttributeDriver());
         }
 

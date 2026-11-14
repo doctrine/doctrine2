@@ -8,6 +8,7 @@ use Doctrine\ORM\Query\AST\Node;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "SUBSTRING" "(" StringPrimary "," SimpleArithmeticExpression "," SimpleArithmeticExpression ")"
@@ -21,6 +22,7 @@ class SubstringFunction extends FunctionNode
     public Node|string $firstSimpleArithmeticExpression;
     public Node|string|null $secondSimpleArithmeticExpression = null;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         $optionalSecondSimpleArithmeticExpression = null;
@@ -35,6 +37,7 @@ class SubstringFunction extends FunctionNode
         );
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

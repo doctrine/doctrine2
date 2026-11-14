@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Id;
 
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
-use Serializable;
-
-use function serialize;
-use function unserialize;
+use Override;
 
 /**
  * Represents an ID generator that uses a database sequence.
  */
-class SequenceGenerator extends AbstractIdGenerator implements Serializable
+class SequenceGenerator extends AbstractIdGenerator
 {
     private int $nextValue     = 0;
     private int|null $maxValue = null;
@@ -32,6 +28,7 @@ class SequenceGenerator extends AbstractIdGenerator implements Serializable
     ) {
     }
 
+    #[Override]
     public function generateId(EntityManagerInterface $em, object|null $entity): int
     {
         if ($this->maxValue === null || $this->nextValue === $this->maxValue) {
@@ -66,20 +63,6 @@ class SequenceGenerator extends AbstractIdGenerator implements Serializable
         return $this->nextValue;
     }
 
-    /** @deprecated without replacement. */
-    final public function serialize(): string
-    {
-        Deprecation::trigger(
-            'doctrine/orm',
-            'https://github.com/doctrine/orm/pull/11468',
-            '%s() is deprecated, use __serialize() instead. %s won\'t implement the Serializable interface anymore in ORM 4.',
-            __METHOD__,
-            self::class,
-        );
-
-        return serialize($this->__serialize());
-    }
-
     /** @return array<string, mixed> */
     public function __serialize(): array
     {
@@ -87,20 +70,6 @@ class SequenceGenerator extends AbstractIdGenerator implements Serializable
             'allocationSize' => $this->allocationSize,
             'sequenceName' => $this->sequenceName,
         ];
-    }
-
-    /** @deprecated without replacement. */
-    final public function unserialize(string $serialized): void
-    {
-        Deprecation::trigger(
-            'doctrine/orm',
-            'https://github.com/doctrine/orm/pull/11468',
-            '%s() is deprecated, use __unserialize() instead. %s won\'t implement the Serializable interface anymore in ORM 4.',
-            __METHOD__,
-            self::class,
-        );
-
-        $this->__unserialize(unserialize($serialized));
     }
 
     /** @param array<string, mixed> $data */

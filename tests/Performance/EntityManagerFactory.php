@@ -13,11 +13,9 @@ use Doctrine\DBAL\Result;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Tests\Mocks\ArrayResultFactory;
 use Doctrine\Tests\Mocks\AttributeDriverFactory;
-use Doctrine\Tests\TestUtil;
 
 use function array_map;
 
@@ -27,8 +25,6 @@ final class EntityManagerFactory
     {
         $config = new Configuration();
 
-        TestUtil::configureProxies($config);
-        $config->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_EVAL);
         $config->setMetadataDriverImpl(AttributeDriverFactory::createAttributeDriver([
             __DIR__ . '/../Tests/Models/Cache',
             __DIR__ . '/../Tests/Models/GeoNames',
@@ -52,8 +48,6 @@ final class EntityManagerFactory
     {
         $config = new Configuration();
 
-        TestUtil::configureProxies($config);
-        $config->setAutoGenerateProxyClasses(ProxyFactory::AUTOGENERATE_EVAL);
         $config->setMetadataDriverImpl(AttributeDriverFactory::createAttributeDriver([
             __DIR__ . '/../Tests/Models/Cache',
             __DIR__ . '/../Tests/Models/Generic',

@@ -236,25 +236,24 @@ Typed functions
 ---------------
 By default, result of custom functions is fetched as-is from the database driver.
 If you want to be sure that the type is always the same, then your custom function needs to 
-implement ``Doctrine\ORM\Query\AST\TypedExpression``. Then, the result is wired
-through ``Doctrine\DBAL\Types\Type::convertToPhpValue()`` of the ``Type`` returned in ``getReturnType()``.
+implement ``Doctrine\ORM\Query\AST\ExpressionWithReturnType``. Then, the result is wired
+through ``Doctrine\DBAL\Types\Type::convertToPhpValue()`` of the type named by ``getReturnTypeName()``.
 
 .. code-block:: php
 
     <?php
 
-    use Doctrine\DBAL\Types\Type;
     use Doctrine\DBAL\Types\Types;
+    use Doctrine\ORM\Query\AST\ExpressionWithReturnType;
     use Doctrine\ORM\Query\AST\Functions\FunctionNode;
-    use Doctrine\ORM\Query\AST\TypedExpression;
 
-    class DateDiff extends FunctionNode implements TypedExpression
+    class DateDiff extends FunctionNode implements ExpressionWithReturnType
     {
         // ...
 
-        public function getReturnType(): Type
+        public function getReturnTypeName(): string
         {
-            return Type::getType(Types::INTEGER);
+            return Types::INTEGER;
         }
     }
 

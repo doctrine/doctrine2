@@ -11,7 +11,7 @@ use function sprintf;
 
 final class MultipleSelectorsFoundException extends LogicException implements ORMException
 {
-    public const MULTIPLE_SELECTORS_FOUND_EXCEPTION = 'Multiple selectors found: %s. Please select only one.';
+    final public const string MULTIPLE_SELECTORS_FOUND_EXCEPTION = 'Multiple selectors found: %s. Please select only one.';
 
     /** @param string[] $selectors */
     public static function create(array $selectors): self

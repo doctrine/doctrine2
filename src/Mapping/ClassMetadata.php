@@ -23,10 +23,9 @@ use Doctrine\Persistence\Mapping\ClassMetadata as PersistenceClassMetadata;
 use Doctrine\Persistence\Mapping\ReflectionService;
 use InvalidArgumentException;
 use LogicException;
+use Override;
 use ReflectionClass;
 use ReflectionNamedType;
-use ReflectionProperty;
-use SortDirection;
 use Stringable;
 
 use function array_column;
@@ -61,7 +60,6 @@ use function sprintf;
 use function str_contains;
 use function str_replace;
 use function strtolower;
-use function strtoupper;
 use function trait_exists;
 use function trim;
 use function usort;
@@ -93,40 +91,38 @@ use function usort;
  */
 class ClassMetadata implements PersistenceClassMetadata, Stringable
 {
-    use GetReflectionClassImplementation;
-
     /* The inheritance mapping types */
     /**
      * NONE means the class does not participate in an inheritance hierarchy
      * and therefore does not need an inheritance mapping type.
      */
-    public const INHERITANCE_TYPE_NONE = 1;
+    final public const int INHERITANCE_TYPE_NONE = 1;
 
     /**
      * JOINED means the class will be persisted according to the rules of
      * <tt>Class Table Inheritance</tt>.
      */
-    public const INHERITANCE_TYPE_JOINED = 2;
+    final public const int INHERITANCE_TYPE_JOINED = 2;
 
     /**
      * SINGLE_TABLE means the class will be persisted according to the rules of
      * <tt>Single Table Inheritance</tt>.
      */
-    public const INHERITANCE_TYPE_SINGLE_TABLE = 3;
+    final public const int INHERITANCE_TYPE_SINGLE_TABLE = 3;
 
     /* The Id generator types. */
     /**
      * AUTO means the generator type will depend on what the used platform prefers.
      * Offers full portability.
      */
-    public const GENERATOR_TYPE_AUTO = 1;
+    final public const int GENERATOR_TYPE_AUTO = 1;
 
     /**
      * SEQUENCE means a separate sequence object will be used. Platforms that do
      * not have native sequence support may emulate it. Full portability is currently
      * not guaranteed.
      */
-    public const GENERATOR_TYPE_SEQUENCE = 2;
+    final public const int GENERATOR_TYPE_SEQUENCE = 2;
 
     /**
      * IDENTITY means an identity column is used for id generation. The database
@@ -134,18 +130,18 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      * native identity columns may emulate them. Full portability is currently
      * not guaranteed.
      */
-    public const GENERATOR_TYPE_IDENTITY = 4;
+    final public const int GENERATOR_TYPE_IDENTITY = 4;
 
     /**
      * NONE means the class does not have a generated id. That means the class
      * must have a natural, manually assigned id.
      */
-    public const GENERATOR_TYPE_NONE = 5;
+    final public const int GENERATOR_TYPE_NONE = 5;
 
     /**
      * CUSTOM means that customer will use own ID generator that supposedly work
      */
-    public const GENERATOR_TYPE_CUSTOM = 7;
+    final public const int GENERATOR_TYPE_CUSTOM = 7;
 
     /**
      * DEFERRED_IMPLICIT means that changes of entities are calculated at commit-time
@@ -154,92 +150,92 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * This is the default change tracking policy.
      */
-    public const CHANGETRACKING_DEFERRED_IMPLICIT = 1;
+    final public const int CHANGETRACKING_DEFERRED_IMPLICIT = 1;
 
     /**
      * DEFERRED_EXPLICIT means that changes of entities are calculated at commit-time
      * by doing a property-by-property comparison with the original data. This will
      * be done only for entities that were explicitly saved (through persist() or a cascade).
      */
-    public const CHANGETRACKING_DEFERRED_EXPLICIT = 2;
+    final public const int CHANGETRACKING_DEFERRED_EXPLICIT = 2;
 
     /**
      * Specifies that an association is to be fetched when it is first accessed.
      */
-    public const FETCH_LAZY = 2;
+    final public const int FETCH_LAZY = 2;
 
     /**
      * Specifies that an association is to be fetched when the owner of the
      * association is fetched.
      */
-    public const FETCH_EAGER = 3;
+    final public const int FETCH_EAGER = 3;
 
     /**
      * Specifies that an association is to be fetched lazy (on first access) and that
      * commands such as Collection#count, Collection#slice are issued directly against
      * the database if the collection is not yet initialized.
      */
-    public const FETCH_EXTRA_LAZY = 4;
+    final public const int FETCH_EXTRA_LAZY = 4;
 
     /**
      * Identifies a one-to-one association.
      */
-    public const ONE_TO_ONE = 1;
+    final public const int ONE_TO_ONE = 1;
 
     /**
      * Identifies a many-to-one association.
      */
-    public const MANY_TO_ONE = 2;
+    final public const int MANY_TO_ONE = 2;
 
     /**
      * Identifies a one-to-many association.
      */
-    public const ONE_TO_MANY = 4;
+    final public const int ONE_TO_MANY = 4;
 
     /**
      * Identifies a many-to-many association.
      */
-    public const MANY_TO_MANY = 8;
+    final public const int MANY_TO_MANY = 8;
 
     /**
      * Combined bitmask for to-one (single-valued) associations.
      */
-    public const TO_ONE = 3;
+    final public const int TO_ONE = 3;
 
     /**
      * Combined bitmask for to-many (collection-valued) associations.
      */
-    public const TO_MANY = 12;
+    final public const int TO_MANY = 12;
 
     /**
      * ReadOnly cache can do reads, inserts and deletes, cannot perform updates or employ any locks,
      */
-    public const CACHE_USAGE_READ_ONLY = 1;
+    final public const int CACHE_USAGE_READ_ONLY = 1;
 
     /**
      * Nonstrict Read Write Cache doesn’t employ any locks but can do inserts, update and deletes.
      */
-    public const CACHE_USAGE_NONSTRICT_READ_WRITE = 2;
+    final public const int CACHE_USAGE_NONSTRICT_READ_WRITE = 2;
 
     /**
      * Read Write Attempts to lock the entity before update/delete.
      */
-    public const CACHE_USAGE_READ_WRITE = 3;
+    final public const int CACHE_USAGE_READ_WRITE = 3;
 
     /**
      * The value of this column is never generated by the database.
      */
-    public const GENERATED_NEVER = 0;
+    final public const int GENERATED_NEVER = 0;
 
     /**
      * The value of this column is generated by the database on INSERT, but not on UPDATE.
      */
-    public const GENERATED_INSERT = 1;
+    final public const int GENERATED_INSERT = 1;
 
     /**
      * The value of this column is generated by the database on both INSERT and UDPATE statements.
      */
-    public const GENERATED_ALWAYS = 2;
+    final public const int GENERATED_ALWAYS = 2;
 
     /**
      * READ-ONLY: The namespace the entity class is contained in.
@@ -539,9 +535,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * The ReflectionClass instance of the mapped class.
      *
-     * @var ReflectionClass<T>|null
+     * @var ReflectionClass<T>
      */
-    public ReflectionClass|null $reflClass = null;
+    public ReflectionClass $reflClass;
 
     /**
      * Is this entity marked as "read-only"?
@@ -556,15 +552,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      * NamingStrategy determining the default column and table names.
      */
     protected NamingStrategy $namingStrategy;
-
-    /**
-     * The ReflectionProperty instances of the mapped class.
-     *
-     * @deprecated Use $propertyAccessors instead.
-     *
-     * @var LegacyReflectionFields|array<string, ReflectionProperty>
-     */
-    public LegacyReflectionFields|array $reflFields = [];
 
     /** @var array<string, PropertyAccessor> */
     public array $propertyAccessors = [];
@@ -591,19 +578,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * Gets the ReflectionProperties of the mapped class.
      *
-     * @deprecated Use getPropertyAccessors() instead.
-     *
-     * @return LegacyReflectionFields|ReflectionProperty[] An array of ReflectionProperty instances.
-     * @phpstan-return LegacyReflectionFields|array<string, ReflectionProperty>
-     */
-    public function getReflectionProperties(): array|LegacyReflectionFields
-    {
-        return $this->reflFields;
-    }
-
-    /**
-     * Gets the ReflectionProperties of the mapped class.
-     *
      * @return array<string, PropertyAccessor> An array of PropertyAccessor instances by name.
      */
     public function getPropertyAccessors(): array
@@ -611,33 +585,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         return $this->propertyAccessors;
     }
 
-    /**
-     * Gets a ReflectionProperty for a specific field of the mapped class.
-     *
-     * @deprecated Use getPropertyAccessor() instead.
-     */
-    public function getReflectionProperty(string $name): ReflectionProperty|null
-    {
-        return $this->reflFields[$name];
-    }
-
     public function getPropertyAccessor(string $name): PropertyAccessor|null
     {
         return $this->propertyAccessors[$name] ?? null;
-    }
-
-    /**
-     * @deprecated Use getPropertyAccessor() instead.
-     *
-     * @throws BadMethodCallException If the class has a composite identifier.
-     */
-    public function getSingleIdReflectionProperty(): ReflectionProperty|null
-    {
-        if ($this->isIdentifierComposite) {
-            throw new BadMethodCallException('Class ' . $this->name . ' has a composite identifier.');
-        }
-
-        return $this->reflFields[$this->identifier[0]];
     }
 
     /** @throws BadMethodCallException If the class has a composite identifier. */
@@ -658,6 +608,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * @return array<string, mixed>
      */
+    #[Override]
     public function getIdentifierValues(object $entity): array
     {
         if ($this->isIdentifierComposite) {
@@ -721,6 +672,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * @todo Construct meaningful string representation.
      */
+    #[Override]
     public function __toString(): string
     {
         return self::class . '@' . spl_object_id($this);
@@ -733,9 +685,8 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      * That means any metadata properties that are not set or empty or simply have
      * their default value are NOT serialized.
      *
-     * Parts that are also NOT serialized because they can not be properly unserialized:
-     *      - reflClass (ReflectionClass)
-     *      - reflFields (ReflectionProperty array)
+     * Parts that are also NOT serialized because they can not be properly
+     * unserialized, e.g. reflClass (ReflectionClass)
      *
      * @return string[] The names of all the fields that should be serialized.
      */
@@ -845,9 +796,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function wakeupReflection(ReflectionService $reflService): void
     {
         // Restore ReflectionClass and properties
-        $this->reflClass = $reflService->getClass($this->name);
-        /** @phpstan-ignore property.deprecated */
-        $this->reflFields   = new LegacyReflectionFields($this, $reflService);
+        $this->reflClass    = $reflService->getClass($this->name);
         $this->instantiator = $this->instantiator ?: new Instantiator();
 
         $parentAccessors = [];
@@ -928,10 +877,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         $this->reflClass = $reflService->getClass($this->name);
         $this->namespace = $reflService->getClassNamespace($this->name);
-
-        if ($this->reflClass) {
-            $this->name = $this->rootEntityName = $this->reflClass->name;
-        }
+        $this->name      = $this->rootEntityName = $this->reflClass->name;
 
         $this->table['name'] = $this->namingStrategy->classToTableName($this->name);
     }
@@ -989,6 +935,12 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 }
             }
         }
+    }
+
+    #[Override]
+    public function getReflectionClass(): ReflectionClass
+    {
+        return $this->reflClass;
     }
 
     /** @phpstan-param array{usage?: mixed, region?: mixed} $cache */
@@ -1057,6 +1009,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * Checks whether a field is part of the identifier/primary key field(s).
      */
+    #[Override]
     public function isIdentifier(string $fieldName): bool
     {
         if (! $this->identifier) {
@@ -1290,11 +1243,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                 $this->containsEnumIdentifier = true;
             }
 
-            if (
-                defined('Doctrine\DBAL\Types\Types::ENUM')
-                && $mapping->type === Types::ENUM
-                && ! isset($mapping->options['values'])
-            ) {
+            if ($mapping->type === Types::ENUM && ! isset($mapping->options['values'])) {
                 $mapping->options['values'] = array_column($mapping->enumType::cases(), 'value');
             }
         }
@@ -1483,6 +1432,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getIdentifierFieldNames(): array
     {
         return $this->identifier;
@@ -1542,11 +1492,13 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getIdentifier(): array
     {
         return $this->identifier;
     }
 
+    #[Override]
     public function hasField(string $fieldName): bool
     {
         return isset($this->fieldMappings[$fieldName]) || isset($this->embeddedClasses[$fieldName]);
@@ -1673,6 +1625,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * @todo 3.0 Remove this. PersisterHelper should fix it somehow
      */
+    #[Override]
     public function getTypeOfField(string $fieldName): string|null
     {
         return isset($this->fieldMappings[$fieldName])
@@ -2032,10 +1985,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         $mapping['type'] = self::ONE_TO_MANY;
 
-        if (isset($mapping['orderBy'])) {
-            $mapping['orderBy'] = $this->normalizeOrderBy($mapping['orderBy'], $mapping['fieldName']);
-        }
-
         $mapping = $this->_validateAndCompleteAssociationMapping($mapping);
 
         $this->_storeAssociationMapping($mapping);
@@ -2063,10 +2012,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function mapManyToMany(array $mapping): void
     {
         $mapping['type'] = self::MANY_TO_MANY;
-
-        if (isset($mapping['orderBy'])) {
-            $mapping['orderBy'] = $this->normalizeOrderBy($mapping['orderBy'], $mapping['fieldName']);
-        }
 
         $mapping = $this->_validateAndCompleteAssociationMapping($mapping);
 
@@ -2354,17 +2299,20 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
     }
 
+    #[Override]
     public function hasAssociation(string $fieldName): bool
     {
         return isset($this->associationMappings[$fieldName]);
     }
 
+    #[Override]
     public function isSingleValuedAssociation(string $fieldName): bool
     {
         return isset($this->associationMappings[$fieldName])
             && ($this->associationMappings[$fieldName]->isToOne());
     }
 
+    #[Override]
     public function isCollectionValuedAssociation(string $fieldName): bool
     {
         return isset($this->associationMappings[$fieldName])
@@ -2560,6 +2508,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getFieldNames(): array
     {
         return array_keys($this->fieldMappings);
@@ -2568,6 +2517,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getAssociationNames(): array
     {
         return array_keys($this->associationMappings);
@@ -2580,23 +2530,27 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * @throws InvalidArgumentException
      */
+    #[Override]
     public function getAssociationTargetClass(string $assocName): string
     {
         return $this->associationMappings[$assocName]->targetEntity
             ?? throw new InvalidArgumentException("Association name expected, '" . $assocName . "' is not an association.");
     }
 
+    #[Override]
     public function getName(): string
     {
         return $this->name;
     }
 
+    #[Override]
     public function isAssociationInverseSide(string $assocName): bool
     {
         return isset($this->associationMappings[$assocName])
             && ! $this->associationMappings[$assocName]->isOwningSide();
     }
 
+    #[Override]
     public function getAssociationMappedByTargetField(string $assocName): string
     {
         $assoc = $this->getAssociationMapping($assocName);
@@ -2620,24 +2574,12 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * @param C $className
      *
-     * @return string|null null if and only if the input value is null
-     * @phpstan-return (C is class-string ? class-string : (C is string ? string : null))
+     * @phpstan-return (C is class-string ? class-string : string)
      *
-     * @template C of string|null
+     * @template C of string
      */
-    public function fullyQualifiedClassName(string|null $className): string|null
+    public function fullyQualifiedClassName(string $className): string
     {
-        if ($className === null) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/11294',
-                'Passing null to %s is deprecated and will not be supported in Doctrine ORM 4.0',
-                __METHOD__,
-            );
-
-            return null;
-        }
-
         if (! str_contains($className, '\\') && $this->namespace) {
             return $this->namespace . '\\' . $className;
         }
@@ -2703,8 +2645,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             if (! empty($this->embeddedClasses[$property]->columnPrefix)) {
                 $fieldMapping['columnName'] = $this->embeddedClasses[$property]->columnPrefix . $fieldMapping['columnName'];
             } elseif ($this->embeddedClasses[$property]->columnPrefix !== false) {
-                assert($this->reflClass !== null);
-                assert($embeddable->reflClass !== null);
                 $fieldMapping['columnName'] = $this->namingStrategy
                     ->embeddedFieldToColumnName(
                         $property,
@@ -2771,44 +2711,5 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             $this->identifier,
             fn (string $field1, string $field2) => $this->identifierPositions[$field1] <=> $this->identifierPositions[$field2],
         );
-    }
-
-    /**
-     * Normalizes orderBy array values to SortDirection instances.
-     *
-     * @param array<string, SortDirection|string> $orderBy
-     *
-     * @return array<string, SortDirection>
-     */
-    private function normalizeOrderBy(array $orderBy, string $fieldName): array
-    {
-        $normalized = [];
-
-        foreach ($orderBy as $field => $direction) {
-            if ($direction instanceof SortDirection) {
-                $normalized[$field] = $direction;
-            } else {
-                Deprecation::trigger(
-                    'doctrine/orm',
-                    'https://github.com/doctrine/orm/issues/11313',
-                    '%s::%s : Using "%s" as an order by direction is deprecated in favor of passing a SortDirection instance',
-                    $this->name,
-                    $fieldName,
-                    $direction,
-                );
-                $normalized[$field] = match (strtoupper($direction)) {
-                    'ASC' => SortDirection::Ascending,
-                    'DESC' => SortDirection::Descending,
-                    default => throw MappingException::invalidOrderByDirection(
-                        $direction,
-                        $field,
-                        $fieldName,
-                        $this->name,
-                    ),
-                };
-            }
-        }
-
-        return $normalized;
     }
 }

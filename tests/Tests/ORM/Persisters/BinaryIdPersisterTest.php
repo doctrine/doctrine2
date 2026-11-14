@@ -21,8 +21,6 @@ use Doctrine\Tests\OrmTestCase;
 
 use function method_exists;
 
-use const PHP_VERSION_ID;
-
 final class BinaryIdPersisterTest extends OrmTestCase
 {
     private EntityManager|null $entityManager = null;
@@ -70,12 +68,10 @@ final class BinaryIdPersisterTest extends OrmTestCase
             return $this->entityManager;
         }
 
-        $method = PHP_VERSION_ID >= 80400 ? 'createAttributeMetadataConfig' : 'createAttributeMetadataConfiguration';
-        $config = ORMSetup::$method(
+        $config = ORMSetup::createAttributeMetadataConfig(
             $this->getClassLocator(),
             isDevMode: true,
         );
-        $config->enableNativeLazyObjects(PHP_VERSION_ID >= 80400);
 
         if (method_exists(Schema::class, 'edit')) {
             $config->setUseSchemaEditorApi(true);

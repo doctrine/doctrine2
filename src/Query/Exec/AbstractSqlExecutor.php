@@ -17,7 +17,7 @@ use Doctrine\DBAL\Types\Type;
  * @link        http://www.doctrine-project.org
  *
  * @todo Rename: AbstractSQLExecutor
- * @phpstan-type WrapperParameterType = string|Type|ParameterType::*|ArrayParameterType::*
+ * @phpstan-type WrapperParameterType = string|Type|ParameterType|ArrayParameterType
  * @phpstan-type WrapperParameterTypeArray = array<int<0, max>, WrapperParameterType>|array<string, WrapperParameterType>
  */
 abstract class AbstractSqlExecutor

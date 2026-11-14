@@ -7,7 +7,6 @@ namespace Doctrine\ORM\Mapping;
 use Doctrine\Common\EventDispatcher;
 use Doctrine\DBAL\Platforms;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
@@ -19,11 +18,11 @@ use Doctrine\ORM\Id\IdentityGenerator;
 use Doctrine\ORM\Id\SequenceGenerator;
 use Doctrine\ORM\Mapping\Exception\InvalidCustomGenerator;
 use Doctrine\ORM\Mapping\Exception\UnknownGeneratorType;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\Persistence\Mapping\AbstractClassMetadataFactory;
 use Doctrine\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Persistence\Mapping\ReflectionService;
+use Override;
 use ReflectionClass;
 use ReflectionException;
 
@@ -36,13 +35,10 @@ use function in_array;
 use function is_a;
 use function is_int;
 use function is_subclass_of;
-use function method_exists;
 use function str_contains;
 use function strlen;
 use function strtolower;
 use function substr;
-
-use const PHP_VERSION_ID;
 
 /**
  * The ClassMetadataFactory is used to create ClassMetadata objects that contain all the
@@ -61,16 +57,12 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /** @var mixed[] */
     private array $embeddablesActiveNesting = [];
 
-    private const NON_IDENTITY_DEFAULT_STRATEGY = [
+    private const array NON_IDENTITY_DEFAULT_STRATEGY = [
         Platforms\OraclePlatform::class => ClassMetadata::GENERATOR_TYPE_SEQUENCE,
     ];
 
     public function setEntityManager(EntityManagerInterface $em): void
     {
-        if (! $em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            parent::setProxyClassNameResolver(new DefaultProxyClassNameResolver());
-        }
-
         $this->em = $em;
     }
 
@@ -108,6 +100,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         return $owningSide;
     }
 
+    #[Override]
     protected function initialize(): void
     {
         $this->driver          = $this->em->getConfiguration()->getMetadataDriverImpl();
@@ -115,6 +108,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         $this->initialized     = true;
     }
 
+    #[Override]
     protected function onNotFoundMetadata(string $className): ClassMetadata|null
     {
         $eventArgs = new OnClassMetadataNotFoundEventArgs($className, $this->em);
@@ -129,6 +123,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function doLoadMetadata(
         ClassMetadataInterface $class,
         ClassMetadataInterface|null $parent,
@@ -259,11 +254,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      */
     protected function validateRuntimeMetadata(ClassMetadata $class, ClassMetadataInterface|null $parent): void
     {
-        if (! $class->reflClass) {
-            // only validate if there is a reflection class instance
-            return;
-        }
-
         $class->validateIdentifier();
         $class->validateAssociations();
         $class->validateLifecycleCallbacks($this->getReflectionService());
@@ -299,6 +289,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
     }
 
+    #[Override]
     protected function newClassMetadataInstance(string $className): ClassMetadata
     {
         return new ClassMetadata(
@@ -652,39 +643,8 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
             }
         }
 
-        $nonIdentityDefaultStrategy = self::NON_IDENTITY_DEFAULT_STRATEGY;
-
-        // DBAL 3
-        if (method_exists($platform, 'getIdentitySequenceName')) {
-            $nonIdentityDefaultStrategy[Platforms\PostgreSQLPlatform::class] = ClassMetadata::GENERATOR_TYPE_SEQUENCE;
-        }
-
-        foreach ($nonIdentityDefaultStrategy as $platformFamily => $strategy) {
+        foreach (self::NON_IDENTITY_DEFAULT_STRATEGY as $platformFamily => $strategy) {
             if (is_a($platform, $platformFamily)) {
-                if ($platform instanceof Platforms\PostgreSQLPlatform) {
-                    Deprecation::trigger(
-                        'doctrine/orm',
-                        'https://github.com/doctrine/orm/issues/8893',
-                        <<<'DEPRECATION'
-                        Relying on non-optimal defaults for ID generation is deprecated, and IDENTITY
-                        results in SERIAL, which is not recommended.
-                        Instead, configure identifier generation strategies explicitly through
-                        configuration.
-                        We currently recommend "SEQUENCE" for "%s", when using DBAL 3,
-                        and "IDENTITY" when using DBAL 4,
-                        so you should probably use the following configuration before upgrading to DBAL 4,
-                        and remove it after deploying that upgrade:
-
-                        $configuration->setIdentityGenerationPreferences([
-                            "%s" => ClassMetadata::GENERATOR_TYPE_SEQUENCE,
-                        ]);
-
-                        DEPRECATION,
-                        $platformFamily,
-                        $platformFamily,
-                    );
-                }
-
                 return $strategy;
             }
         }
@@ -726,13 +686,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
     }
 
+    #[Override]
     protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
         $class->wakeupReflection($reflService);
-
-        if (PHP_VERSION_ID < 80400) {
-            return;
-        }
 
         foreach ($class->propertyAccessors as $propertyAccessor) {
             $property = $propertyAccessor->getUnderlyingReflector();
@@ -743,11 +700,13 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
     }
 
+    #[Override]
     protected function initializeReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
         $class->initializeReflection($reflService);
     }
 
+    #[Override]
     protected function getDriver(): MappingDriver
     {
         assert($this->driver !== null);
@@ -755,6 +714,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         return $this->driver;
     }
 
+    #[Override]
     protected function isEntity(ClassMetadataInterface $class): bool
     {
         return ! $class->isMappedSuperclass;

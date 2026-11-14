@@ -10,6 +10,7 @@ use Doctrine\Common\Collections\Criteria;
 use Doctrine\Common\Collections\ReadableCollection;
 use Doctrine\Common\Collections\Selectable;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
+use Override;
 
 /**
  * A lazy collection that allows a fast count when using criteria object
@@ -36,6 +37,7 @@ class LazyCriteriaCollection extends AbstractLazyCollection implements Selectabl
     /**
      * Do an efficient count on the collection
      */
+    #[Override]
     public function count(): int
     {
         if ($this->isInitialized()) {
@@ -53,6 +55,7 @@ class LazyCriteriaCollection extends AbstractLazyCollection implements Selectabl
     /**
      * check if collection is empty without loading it
      */
+    #[Override]
     public function isEmpty(): bool
     {
         if ($this->isInitialized()) {
@@ -69,6 +72,7 @@ class LazyCriteriaCollection extends AbstractLazyCollection implements Selectabl
      *
      * @return bool TRUE if the collection contains $element, FALSE otherwise.
      */
+    #[Override]
     public function contains(mixed $element): bool
     {
         if ($this->isInitialized()) {
@@ -79,6 +83,7 @@ class LazyCriteriaCollection extends AbstractLazyCollection implements Selectabl
     }
 
     /** @return ReadableCollection<TKey, TValue>&Selectable<TKey, TValue> */
+    #[Override]
     public function matching(Criteria $criteria): ReadableCollection&Selectable
     {
         $this->initialize();
@@ -86,6 +91,7 @@ class LazyCriteriaCollection extends AbstractLazyCollection implements Selectabl
         return $this->collection->matching($criteria);
     }
 
+    #[Override]
     protected function doInitialize(): void
     {
         $elements         = $this->entityPersister->loadCriteria($this->criteria);

@@ -16,6 +16,7 @@ use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\ORM\Repository\Exception\InvalidMagicMethodCall;
 use Doctrine\Persistence\ObjectRepository;
+use Override;
 use SortDirection;
 
 use function array_slice;
@@ -75,15 +76,13 @@ class EntityRepository implements ObjectRepository, Selectable
     /**
      * Finds an entity by its primary key / identifier.
      *
-     * @param LockMode|int|null $lockMode One of the \Doctrine\DBAL\LockMode::* constants.
-     *                                    Passing NULL is deprecated, use LockMode::NONE
-     *                                    instead.
-     * @phpstan-param LockMode::*|null $lockMode
+     * @param LockMode $lockMode One of the \Doctrine\DBAL\LockMode::* cases.
      *
      * @return object|null The entity instance or NULL if the entity can not be found.
      * @phpstan-return ?T
      */
-    public function find(mixed $id, LockMode|int|null $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null
+    #[Override]
+    public function find(mixed $id, LockMode $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null
     {
         return $this->em->find($this->entityName, $id, $lockMode, $lockVersion);
     }
@@ -93,6 +92,7 @@ class EntityRepository implements ObjectRepository, Selectable
      *
      * @phpstan-return list<T> The entities.
      */
+    #[Override]
     public function findAll(): array
     {
         return $this->findBy([]);
@@ -103,10 +103,11 @@ class EntityRepository implements ObjectRepository, Selectable
      *
      * {@inheritDoc}
      *
-     * @phpstan-param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
+     * @param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
      *
      * @phpstan-return list<T>
      */
+    #[Override]
     public function findBy(array $criteria, array|null $orderBy = null, int|null $limit = null, int|null $offset = null): array
     {
         $persister = $this->em->getUnitOfWork()->getEntityPersister($this->entityName);
@@ -117,11 +118,12 @@ class EntityRepository implements ObjectRepository, Selectable
     /**
      * Finds a single entity by a set of criteria.
      *
+     * @param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
      * @phpstan-param array<string, mixed> $criteria
-     * @phpstan-param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
      *
      * @phpstan-return T|null
      */
+    #[Override]
     public function findOneBy(array $criteria, array|null $orderBy = null): object|null
     {
         $persister = $this->em->getUnitOfWork()->getEntityPersister($this->entityName);
@@ -179,6 +181,7 @@ class EntityRepository implements ObjectRepository, Selectable
         return $this->entityName;
     }
 
+    #[Override]
     public function getClassName(): string
     {
         return $this->getEntityName();
@@ -206,6 +209,7 @@ class EntityRepository implements ObjectRepository, Selectable
      *
      * @phpstan-return AbstractLazyCollection<int, T>&Selectable<int, T>
      */
+    #[Override]
     public function matching(Criteria $criteria): AbstractLazyCollection&Selectable
     {
         $persister = $this->em->getUnitOfWork()->getEntityPersister($this->entityName);

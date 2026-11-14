@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Cache;
 
+use Override;
+
 use function microtime;
 
 class TimestampQueryCacheValidator implements QueryCacheValidator
@@ -12,6 +14,7 @@ class TimestampQueryCacheValidator implements QueryCacheValidator
     {
     }
 
+    #[Override]
     public function isValid(QueryCacheKey $key, QueryCacheEntry $entry): bool
     {
         if ($this->regionUpdated($key, $entry)) {

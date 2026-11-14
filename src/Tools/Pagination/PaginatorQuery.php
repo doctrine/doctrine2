@@ -19,8 +19,8 @@ use function is_array;
 use function is_string;
 
 /**
- * Provides the implementation shared by {@see Paginator}, {@see OffsetPaginator}
- * and {@see CursorPaginator}.
+ * Provides the implementation shared by {@see OffsetPaginator} and
+ * {@see CursorPaginator}.
  *
  * Every method takes the query it works on as an argument, so that the
  * stateless paginators can serve any query.
@@ -31,8 +31,7 @@ trait PaginatorQuery
 {
     /**
      * Whether to force the use of an output walker. Null lets the paginator
-     * decide. The legacy {@see Paginator} exposes a setter for it, the
-     * stateless paginators take it as a constructor argument.
+     * decide. Paginators take it as a constructor argument.
      */
     private bool|null $useOutputWalkers = null;
 
@@ -128,9 +127,9 @@ trait PaginatorQuery
     /**
      * Executes the query for the given offset window and returns the entities.
      *
-     * Shared by {@see Paginator} and {@see OffsetPaginator}: when a to-many
-     * collection is fetch-joined, it uses the ID subquery + WHERE IN strategy to
-     * return the correct number of root entities despite duplicate rows.
+     * Used by {@see OffsetPaginator}: when a to-many collection is fetch-joined,
+     * it uses the ID subquery + WHERE IN strategy to return the correct number
+     * of root entities despite duplicate rows.
      *
      * The result keys are preserved (e.g. for DQL ``INDEX BY``); callers that
      * need a list should apply {@see array_values()} themselves.

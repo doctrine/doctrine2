@@ -12,12 +12,12 @@ class ToolEvents
      * the current non-complete Schema instance, the Entity Metadata Class instance and
      * the Schema Table instance of this entity.
      */
-    public const postGenerateSchemaTable = 'postGenerateSchemaTable';
+    final public const string postGenerateSchemaTable = 'postGenerateSchemaTable';
 
     /**
      * The postGenerateSchema event is triggered in SchemaTool#getSchemaFromMetadata()
      * after all entity classes have been transformed into the related Schema structure.
      * The EventArgs contain the EntityManager and the created Schema instance.
      */
-    public const postGenerateSchema = 'postGenerateSchema';
+    final public const string postGenerateSchema = 'postGenerateSchema';
 }

@@ -13,7 +13,7 @@ use Doctrine\Persistence\Mapping\ClassMetadata as PersistenceClassMetadata;
 use Doctrine\Persistence\Mapping\Driver\ClassLocator;
 use Doctrine\Persistence\Mapping\Driver\ColocatedMappingDriver;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
-use InvalidArgumentException;
+use Override;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -21,33 +21,22 @@ use function assert;
 use function class_exists;
 use function constant;
 use function defined;
-use function sprintf;
 
 class AttributeDriver implements MappingDriver
 {
     use ColocatedMappingDriver;
     use ReflectionBasedDriver;
 
-    private const ENTITY_ATTRIBUTE_CLASSES = [
+    private const array ENTITY_ATTRIBUTE_CLASSES = [
         Mapping\Entity::class => 1,
         Mapping\MappedSuperclass::class => 2,
     ];
 
     private readonly AttributeReader $reader;
 
-    /**
-     * @param string[]|ClassLocator $paths                     a ClassLocator, or an array of directories.
-     * @param true                  $reportFieldsWhereDeclared no-op, to be removed in 4.0
-     */
-    public function __construct(array|ClassLocator $paths, bool $reportFieldsWhereDeclared = true)
+    /** @param string[]|ClassLocator $paths a ClassLocator, or an array of directories. */
+    public function __construct(array|ClassLocator $paths)
     {
-        if (! $reportFieldsWhereDeclared) {
-            throw new InvalidArgumentException(sprintf(
-                'The $reportFieldsWhereDeclared argument is no longer supported, make sure to omit it when calling %s.',
-                __METHOD__,
-            ));
-        }
-
         $this->reader = new AttributeReader();
 
         if ($paths instanceof ClassLocator) {
@@ -57,6 +46,7 @@ class AttributeDriver implements MappingDriver
         }
     }
 
+    #[Override]
     public function isTransient(string $className): bool
     {
         $classAttributes = $this->reader->getClassAttributes(new ReflectionClass($className));
@@ -79,6 +69,7 @@ class AttributeDriver implements MappingDriver
      *
      * @template T of object
      */
+    #[Override]
     public function loadMetadataForClass(string $className, PersistenceClassMetadata $metadata): void
     {
         $reflectionClass = $metadata->getReflectionClass()

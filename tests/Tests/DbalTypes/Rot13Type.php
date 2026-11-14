@@ -49,9 +49,4 @@ class Rot13Type extends Type
     {
         return $platform->getStringTypeDeclarationSQL($column);
     }
-
-    public function getName(): string
-    {
-        return 'rot13';
-    }
 }

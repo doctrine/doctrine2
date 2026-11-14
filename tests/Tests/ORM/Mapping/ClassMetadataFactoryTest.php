@@ -41,7 +41,6 @@ use Doctrine\Tests\Models\Quote\Group;
 use Doctrine\Tests\Models\Quote\Phone;
 use Doctrine\Tests\Models\Quote\User;
 use Doctrine\Tests\OrmTestCase;
-use Doctrine\Tests\TestUtil;
 use Exception;
 use InvalidArgumentException;
 use PHPUnit\Framework\Assert;
@@ -50,7 +49,6 @@ use ReflectionClass;
 use function array_search;
 use function assert;
 use function count;
-use function method_exists;
 use function sprintf;
 
 class ClassMetadataFactoryTest extends OrmTestCase
@@ -126,28 +124,8 @@ class ClassMetadataFactoryTest extends OrmTestCase
         return $cmf;
     }
 
-    public function testPostgresSticksWithSequencesWhenDbal3IsUsed(): void
+    public function testPostgresSwitchesToIdentityColumns(): void
     {
-        if (! method_exists(AbstractPlatform::class, 'getIdentitySequenceName')) {
-            self::markTestSkipped('This test requires DBAL 3');
-        }
-
-        $cm = $this->createValidClassMetadata();
-        $cm->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
-        $cmf = $this->setUpCmfForPlatform(new PostgreSQLPlatform());
-        $cmf->setMetadataForClass($cm->name, $cm);
-
-        $metadata = $cmf->getMetadataFor($cm->name);
-
-        self::assertSame(ClassMetadata::GENERATOR_TYPE_SEQUENCE, $metadata->generatorType);
-    }
-
-    public function testPostgresSwitchesToIdentityColumnsWhenDbal4IsUsed(): void
-    {
-        if (method_exists(AbstractPlatform::class, 'getIdentitySequenceName')) {
-            self::markTestSkipped('This test requires DBAL 4');
-        }
-
         $cm = $this->createValidClassMetadata();
         $cm->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
         $cmf = $this->setUpCmfForPlatform(new PostgreSQLPlatform());
@@ -234,13 +212,7 @@ class ClassMetadataFactoryTest extends OrmTestCase
     public function testGetAllMetadataWorksWithBadConnection(): void
     {
         // DDC-3551
-        $conn = $this->createStub(Connection::class);
-
-        if (method_exists($conn, 'getEventManager')) {
-            $conn->method('getEventManager')
-                ->willReturn(new EventManager());
-        }
-
+        $conn       = $this->createMock(Connection::class);
         $mockDriver = new MetadataDriverMock();
         $em         = $this->createEntityManager($mockDriver, $conn);
 
@@ -258,8 +230,7 @@ class ClassMetadataFactoryTest extends OrmTestCase
 
     protected function createEntityManager(MappingDriver $metadataDriver, $conn = null): EntityManagerMock
     {
-        $config = new Configuration();
-        TestUtil::configureProxies($config);
+        $config       = new Configuration();
         $eventManager = new EventManager();
         if (! $conn) {
             $platform = $this->createStub(AbstractPlatform::class);

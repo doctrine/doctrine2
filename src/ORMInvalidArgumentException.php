@@ -155,26 +155,6 @@ EXCEPTION
         return new self(sprintf('Missing value for primary key %s on %s', $idField, $className));
     }
 
-    public static function proxyDirectoryRequired(): self
-    {
-        return new self('You must configure a proxy directory. See docs for details');
-    }
-
-    public static function lazyGhostUnavailable(): self
-    {
-        return new self('Symfony LazyGhost is not available. Please install the "symfony/var-exporter" package version 6.4 or 7 to use this feature or enable PHP 8.4 native lazy objects.');
-    }
-
-    public static function proxyNamespaceRequired(): self
-    {
-        return new self('You must configure a proxy namespace');
-    }
-
-    public static function proxyDirectoryNotWritable(string $proxyDirectory): self
-    {
-        return new self(sprintf('Your proxy directory "%s" must be writable', $proxyDirectory));
-    }
-
     /**
      * Helper method to show an object as string.
      */

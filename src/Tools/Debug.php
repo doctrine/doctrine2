@@ -8,8 +8,6 @@ use ArrayIterator;
 use ArrayObject;
 use DateTimeInterface;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
-use Doctrine\Persistence\Proxy;
 use stdClass;
 
 use function array_keys;
@@ -121,12 +119,7 @@ final class Debug
             return $return;
         }
 
-        $return->__CLASS__ = DefaultProxyClassNameResolver::getClass($var);
-
-        if ($var instanceof Proxy) {
-            $return->__IS_PROXY__          = true;
-            $return->__PROXY_INITIALIZED__ = $var->__isInitialized();
-        }
+        $return->__CLASS__ = $var::class;
 
         if ($var instanceof ArrayObject || $var instanceof ArrayIterator) {
             $return->__STORAGE__ = self::export($var->getArrayCopy(), $maxDepth - 1);

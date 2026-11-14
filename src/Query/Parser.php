@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query;
 
 use Doctrine\Common\Lexer\Token;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Exception\DuplicateFieldException;
 use Doctrine\ORM\Exception\NoMatchingPropertyException;
@@ -13,7 +12,6 @@ use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\AST\Functions;
-use Doctrine\ORM\Query\Exec\SqlFinalizer;
 use LogicException;
 use ReflectionClass;
 
@@ -163,7 +161,7 @@ final class Parser
     /**
      * The custom last tree walker, if any, that is responsible for producing the output.
      *
-     * @var class-string<SqlWalker>|null
+     * @var class-string<OutputWalker>|null
      */
     private $customOutputWalker;
 
@@ -180,24 +178,6 @@ final class Parser
         $this->em           = $query->getEntityManager();
         $this->lexer        = new Lexer((string) $query->getDQL());
         $this->parserResult = new ParserResult();
-    }
-
-    /**
-     * Sets a custom tree walker that produces output.
-     * This tree walker will be run last over the AST, after any other walkers.
-     *
-     * @param class-string<SqlWalker> $className
-     */
-    public function setCustomOutputTreeWalker(string $className): void
-    {
-        Deprecation::trigger(
-            'doctrine/orm',
-            'https://github.com/doctrine/orm/pull/11641',
-            '%s is deprecated, set the output walker class with the \Doctrine\ORM\Query::HINT_CUSTOM_OUTPUT_WALKER query hint instead',
-            __METHOD__,
-        );
-
-        $this->customOutputWalker = $className;
     }
 
     /**
@@ -364,23 +344,7 @@ final class Parser
         $outputWalkerClass = $this->customOutputWalker ?: SqlOutputWalker::class;
         $outputWalker      = new $outputWalkerClass($this->query, $this->parserResult, $this->queryComponents);
 
-        if ($outputWalker instanceof OutputWalker) {
-            $finalizer = $outputWalker->getFinalizer($AST);
-            $this->parserResult->setSqlFinalizer($finalizer);
-        } else {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/11188/',
-                'Your output walker class %s should implement %s in order to provide a %s. This also means the output walker should not use the query firstResult/maxResult values, which should be read from the query by the SqlFinalizer only.',
-                $outputWalkerClass,
-                OutputWalker::class,
-                SqlFinalizer::class,
-            );
-            // @phpstan-ignore method.deprecated
-            $executor = $outputWalker->getExecutor($AST);
-            // @phpstan-ignore method.deprecated
-            $this->parserResult->setSqlExecutor($executor);
-        }
+        $this->parserResult->setSqlFinalizer($outputWalker->getFinalizer($AST));
 
         return $this->parserResult;
     }
@@ -1614,7 +1578,7 @@ final class Parser
 
     /**
      * Join ::= ["LEFT" ["OUTER"] | "INNER"] "JOIN"
-     *          (JoinAssociationDeclaration ["WITH" ConditionalExpression] | RangeVariableDeclaration [("ON" | "WITH") ConditionalExpression])
+     *          (JoinAssociationDeclaration ["WITH" ConditionalExpression] | RangeVariableDeclaration ["ON" ConditionalExpression])
      */
     public function Join(): AST\Join
     {
@@ -1671,10 +1635,6 @@ final class Parser
             if ($this->lexer->isNextToken(TokenType::T_ON)) {
                 $this->match(TokenType::T_ON);
                 $conditionalExpression = $this->ConditionalExpression();
-            } elseif ($this->lexer->isNextToken(TokenType::T_WITH)) {
-                $this->match(TokenType::T_WITH);
-                $conditionalExpression = $this->ConditionalExpression();
-                Deprecation::trigger('doctrine/orm', 'https://github.com/doctrine/orm/issues/12192', 'Using WITH for the join condition of arbitrary joins is deprecated. Use ON instead.');
             }
         }
 

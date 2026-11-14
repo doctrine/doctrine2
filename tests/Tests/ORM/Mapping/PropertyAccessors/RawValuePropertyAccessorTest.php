@@ -7,12 +7,10 @@ namespace Doctrine\Tests\ORM\Mapping\PropertyAccessors;
 use Doctrine\ORM\Mapping\PropertyAccessors\RawValuePropertyAccessor;
 use Doctrine\Tests\Models\PropertyHooks\User;
 use Doctrine\Tests\OrmTestCase;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 use ReflectionObject;
 
 use function trim;
 
-#[RequiresPhp('>= 8.4.0')]
 class RawValuePropertyAccessorTest extends OrmTestCase
 {
     public function testSetGetValue(): void

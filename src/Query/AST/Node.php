@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 use Stringable;
 
 use function get_debug_type;
@@ -38,6 +39,7 @@ abstract class Node implements Stringable
     /**
      * Dumps the AST Node into a string representation for information purpose only.
      */
+    #[Override]
     public function __toString(): string
     {
         return $this->dump($this);

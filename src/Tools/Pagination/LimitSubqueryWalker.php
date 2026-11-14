@@ -12,6 +12,7 @@ use Doctrine\ORM\Query\AST\PathExpression;
 use Doctrine\ORM\Query\AST\SelectExpression;
 use Doctrine\ORM\Query\AST\SelectStatement;
 use Doctrine\ORM\Query\TreeWalkerAdapter;
+use Override;
 use RuntimeException;
 
 use function count;
@@ -23,15 +24,16 @@ use function reset;
  */
 class LimitSubqueryWalker extends TreeWalkerAdapter
 {
-    public const IDENTIFIER_TYPE = 'doctrine_paginator.id.type';
+    final public const string IDENTIFIER_TYPE = 'doctrine_paginator.id.type';
 
-    public const FORCE_DBAL_TYPE_CONVERSION = 'doctrine_paginator.scalar_result.force_dbal_type_conversion';
+    final public const string FORCE_DBAL_TYPE_CONVERSION = 'doctrine_paginator.scalar_result.force_dbal_type_conversion';
 
     /**
      * Counter for generating unique order column aliases.
      */
     private int $aliasCounter = 0;
 
+    #[Override]
     public function walkSelectStatement(SelectStatement $selectStatement): void
     {
         // Get the root entity and alias from the AST fromClause

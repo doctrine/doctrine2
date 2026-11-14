@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping\Builder;
 
+use Override;
 use SortDirection;
 
 /**
@@ -33,6 +34,7 @@ class OneToManyAssociationBuilder extends AssociationBuilder
         return $this;
     }
 
+    #[Override]
     public function build(): ClassMetadataBuilder
     {
         $mapping = $this->mapping;

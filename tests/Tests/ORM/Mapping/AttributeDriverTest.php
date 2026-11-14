@@ -16,7 +16,6 @@ use Doctrine\Tests\Mocks\AttributeDriverFactory;
 use Doctrine\Tests\Models\Cache\City;
 use Doctrine\Tests\ORM\Mapping\Fixtures\AttributeEntityWithNestedJoinColumns;
 use Doctrine\Tests\ORM\Mapping\Fixtures\CompositeIdWithPosition;
-use InvalidArgumentException;
 use stdClass;
 
 class AttributeDriverTest extends MappingDriverTestCase
@@ -112,13 +111,6 @@ class AttributeDriverTest extends MappingDriverTestCase
         $metadata = $factory->getMetadataFor(CompositeIdWithPosition::class);
 
         self::assertSame(['first', 'second'], $metadata->identifier);
-    }
-
-    public function testItThrowsWhenSettingReportFieldsWhereDeclaredToFalse(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new AttributeDriver([], false);
     }
 }
 

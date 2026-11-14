@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
@@ -48,11 +47,6 @@ class PersistentCollectionTest extends OrmTestCase
             ->willReturn(true);
 
         $connection = $this->createConnectionStub($platform);
-
-        if (method_exists($connection, 'getEventManager')) {
-            $connection->method('getEventManager')
-                ->willReturn(new EventManager());
-        }
 
         $connection->method('executeQuery')
             ->willReturn($this->createStub(Result::class));

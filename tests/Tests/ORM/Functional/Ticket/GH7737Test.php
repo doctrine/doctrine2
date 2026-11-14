@@ -17,8 +17,6 @@ use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 
-use function defined;
-
 #[Group('GH7737')]
 class GH7737Test extends OrmFunctionalTestCase
 {
@@ -45,7 +43,7 @@ class GH7737Test extends OrmFunctionalTestCase
         $query = $this->_em->createQueryBuilder()
             ->select('person')
             ->from(GH7737Person::class, 'person')
-            ->addCriteria((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(Criteria::expr()->memberOf(':group', 'person.groups')))
+            ->addCriteria(Criteria::create()->where(Criteria::expr()->memberOf(':group', 'person.groups')))
             ->getQuery();
 
         $group1   = $this->_em->find(GH7737Group::class, 1);

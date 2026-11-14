@@ -8,6 +8,7 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Utility\LockSqlHelper;
+use Override;
 
 /**
  * SingleSelectSqlFinalizer finalizes a given SQL query by applying
@@ -51,6 +52,7 @@ class SingleSelectSqlFinalizer implements SqlFinalizer
     }
 
     /** @return FinalizedSelectExecutor */
+    #[Override]
     public function createExecutor(Query $query): AbstractSqlExecutor
     {
         return new FinalizedSelectExecutor($this->finalizeSql($query));

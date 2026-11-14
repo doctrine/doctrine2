@@ -20,9 +20,9 @@ use function spl_object_id;
  */
 final class TopologicalSort
 {
-    private const NOT_VISITED = 1;
-    private const IN_PROGRESS = 2;
-    private const VISITED     = 3;
+    private const int NOT_VISITED = 1;
+    private const int IN_PROGRESS = 2;
+    private const int VISITED     = 3;
 
     /**
      * Array of all nodes, indexed by object ids.

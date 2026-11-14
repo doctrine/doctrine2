@@ -9,6 +9,7 @@ use Doctrine\ORM\Cache\EntityCacheKey;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
+use Override;
 
 /**
  * Specific read-write entity persister
@@ -20,6 +21,7 @@ class ReadWriteCachedEntityPersister extends AbstractEntityPersister
         parent::__construct($persister, $region, $em, $class);
     }
 
+    #[Override]
     public function afterTransactionComplete(): void
     {
         $isChanged = true;
@@ -47,6 +49,7 @@ class ReadWriteCachedEntityPersister extends AbstractEntityPersister
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function afterTransactionRolledBack(): void
     {
         if (isset($this->queuedCache['update'])) {
@@ -64,6 +67,7 @@ class ReadWriteCachedEntityPersister extends AbstractEntityPersister
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function delete(object $entity): bool
     {
         $key     = new EntityCacheKey($this->class->rootEntityName, $this->uow->getEntityIdentifier($entity));
@@ -86,6 +90,7 @@ class ReadWriteCachedEntityPersister extends AbstractEntityPersister
         return $deleted;
     }
 
+    #[Override]
     public function update(object $entity): void
     {
         $key  = new EntityCacheKey($this->class->rootEntityName, $this->uow->getEntityIdentifier($entity));

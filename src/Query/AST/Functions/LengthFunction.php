@@ -4,26 +4,24 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query\AST\Functions;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Query\AST\ExpressionWithReturnType;
 use Doctrine\ORM\Query\AST\Node;
-use Doctrine\ORM\Query\AST\TypedExpression;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "LENGTH" "(" StringPrimary ")"
  *
  * @link    www.doctrine-project.org
- *
- * @phpstan-ignore class.implementsDeprecatedInterface
  */
-class LengthFunction extends FunctionNode implements ExpressionWithReturnType, TypedExpression
+class LengthFunction extends FunctionNode implements ExpressionWithReturnType
 {
     public Node $stringPrimary;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return $sqlWalker->getConnection()->getDatabasePlatform()->getLengthExpression(
@@ -31,6 +29,7 @@ class LengthFunction extends FunctionNode implements ExpressionWithReturnType, T
         );
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);
@@ -41,14 +40,9 @@ class LengthFunction extends FunctionNode implements ExpressionWithReturnType, T
         $parser->match(TokenType::T_CLOSE_PARENTHESIS);
     }
 
+    #[Override]
     public function getReturnTypeName(): string
     {
         return Types::INTEGER;
-    }
-
-    /** @deprecated Use {@see getReturnTypeName()} instead. */
-    public function getReturnType(): Type
-    {
-        return Type::getType($this->getReturnTypeName());
     }
 }

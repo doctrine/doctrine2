@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\OraclePlatform;
-use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
 use Doctrine\ORM\Mapping\DiscriminatorMap;
@@ -17,8 +16,6 @@ use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Mapping\Version;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
-
-use function method_exists;
 
 class DDC832Test extends OrmFunctionalTestCase
 {
@@ -45,12 +42,6 @@ class DDC832Test extends OrmFunctionalTestCase
         $sm->dropTable($platform->quoteSingleIdentifier('TREE_INDEX'));
         $sm->dropTable($platform->quoteSingleIdentifier('INDEX'));
         $sm->dropTable($platform->quoteSingleIdentifier('LIKE'));
-
-        // DBAL 3
-        if ($platform instanceof PostgreSQLPlatform && method_exists($platform, 'getIdentitySequenceName')) {
-            $sm->dropSequence($platform->quoteSingleIdentifier('INDEX_id_seq'));
-            $sm->dropSequence($platform->quoteSingleIdentifier('LIKE_id_seq'));
-        }
     }
 
     #[Group('DDC-832')]

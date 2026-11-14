@@ -109,7 +109,7 @@ class DDC69Test extends OrmFunctionalTestCase
 #[Entity]
 class Lemma
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'lemma_id')]
@@ -169,7 +169,7 @@ class Lemma
 #[Entity]
 class Relation
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'relation_id')]
@@ -241,7 +241,7 @@ class Relation
 #[Entity]
 class RelationType
 {
-    public const CLASS_NAME = self::class;
+    final public const string CLASS_NAME = self::class;
 
     #[Id]
     #[Column(type: 'integer', name: 'relation_type_id')]

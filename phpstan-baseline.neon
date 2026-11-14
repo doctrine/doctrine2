@@ -133,6 +133,12 @@ parameters:
 			path: src/Cache/DefaultEntityHydrator.php
 
 		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Cache/DefaultEntityHydrator.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Cache\\DefaultEntityHydrator\:\:buildCacheEntry\(\) has parameter \$metadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -481,6 +487,12 @@ parameters:
 			path: src/Cache/TimestampQueryCacheValidator.php
 
 		-
+			message: '#^Call to function is_a\(\) with arguments class\-string\<Doctrine\\ORM\\EntityRepository\>, ''Doctrine\\\\ORM\\\\EntityRepository'' and true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Configuration.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Configuration\:\:getDefaultRepositoryClassName\(\) return type with generic class Doctrine\\ORM\\EntityRepository does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -655,38 +667,8 @@ parameters:
 			path: src/Id/AssignedGenerator.php
 
 		-
-			message: '#^Call to method ReflectionEnum\<BackedEnum\>\:\:isBacked\(\) will always evaluate to false\.$#'
-			identifier: method.impossibleType
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
-			identifier: missingType.generics
 			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
@@ -699,6 +681,30 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) should return array\{data\: array\<array\>, newObjects\?\: array\<array\{class\: ReflectionClass, args\: array, obj\: object\}\>, scalars\?\: array\} but returns array\{data\: array\<string, mixed\>, newObjects\: array\<array\{class\?\: ReflectionClass\<object\>, args\: array, obj\: object\}\>, scalars\?\: non\-empty\-array\}\.$#'
 			identifier: return.type
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
+			identifier: missingType.generics
 			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
@@ -757,6 +763,12 @@ parameters:
 			path: src/Internal/Hydration/ObjectHydrator.php
 
 		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\ObjectHydrator\:\:onClear\(\) overrides method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:onClear\(\) but is missing the \#\[\\Override\] attribute\.$#'
+			identifier: method.missingOverride
+			count: 1
+			path: src/Internal/Hydration/ObjectHydrator.php
+
+		-
 			message: '#^Property Doctrine\\ORM\\Internal\\Hydration\\ObjectHydrator\:\:\$uninitializedCollections with generic class Doctrine\\ORM\\PersistentCollection does not specify its types\: TKey, T$#'
 			identifier: missingType.generics
 			count: 1
@@ -791,6 +803,18 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Internal/HydrationCompleteHandler.php
+
+		-
+			message: '#^Offset ''backtick'' on array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: '''', 2\: '''', bracket\: '''', 3\: '''', unquoted\: non\-empty\-string, \.\.\.\}\|array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: '''', 2\: '''', bracket\: non\-empty\-string, 3\: non\-empty\-string\}\|array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: non\-empty\-string, 2\: non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Internal/Name/NameParser.php
+
+		-
+			message: '#^Call to function array_is_list\(\) with list\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Internal/NoUnknownNamedArguments.php
 
 		-
 			message: '#^Offset int\|null might not exist on array\<int, object\>\.$#'
@@ -871,6 +895,18 @@ parameters:
 			path: src/Mapping/AssociationMapping.php
 
 		-
+			message: '#^Instanceof between Doctrine\\ORM\\Mapping\\AssociationOverride and Doctrine\\ORM\\Mapping\\AssociationOverride will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Mapping/AssociationOverrides.php
+
+		-
+			message: '#^Instanceof between Doctrine\\ORM\\Mapping\\AttributeOverride and Doctrine\\ORM\\Mapping\\AttributeOverride will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Mapping/AttributeOverrides.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\Builder\\ClassMetadataBuilder\:\:__construct\(\) has parameter \$cm with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -901,10 +937,10 @@ parameters:
 			path: src/Mapping/Builder/EntityListenerBuilder.php
 
 		-
-			message: '#^If condition is always true\.$#'
-			identifier: if.alwaysTrue
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
 			count: 1
-			path: src/Mapping/ClassMetadata.php
+			path: src/Mapping/ChainTypedFieldMapper.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadata\:\:inlineEmbeddable\(\) has parameter \$embeddable with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
@@ -921,6 +957,12 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadata\:\:setCustomRepositoryClass\(\) has parameter \$repositoryClassName with generic class Doctrine\\ORM\\EntityRepository but does not specify its types\: T$#'
 			identifier: missingType.generics
+			count: 1
+			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
 			count: 1
 			path: src/Mapping/ClassMetadata.php
 
@@ -1019,6 +1061,12 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: src/Mapping/ClassMetadataFactory.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadataFactory\:\:addDefaultDiscriminatorMap\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
@@ -1237,6 +1285,12 @@ parameters:
 			path: src/Mapping/DefaultQuoteStrategy.php
 
 		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Mapping/Driver/AttributeDriver.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\AttributeDriver\:\:isRepeatedPropertyDeclaration\(\) has parameter \$metadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1253,84 +1307,6 @@ parameters:
 			identifier: argument.templateType
 			count: 1
 			path: src/Mapping/Driver/AttributeDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\ForeignKeyConstraint'' and ''getReferencedColumn…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\ForeignKeyConstraint'' and ''getReferencedTableN…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\ForeignKeyConstraint'' and ''getReferencingColum…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\Index'' and ''getIndexedColumns'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\Table'' and ''getPrimaryKeyConstr…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Call to function method_exists\(\) with Doctrine\\DBAL\\Schema\\Table and ''getPrimaryKeyConstr…'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:__construct\(\) has parameter \$sm with generic class Doctrine\\DBAL\\Schema\\AbstractSchemaManager but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:buildFieldMappings\(\) has parameter \$metadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:buildIndexes\(\) has parameter \$metadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:buildToOneAssociationMappings\(\) has parameter \$metadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:getAssetName\(\) has parameter \$asset with generic class Doctrine\\DBAL\\Schema\\AbstractAsset but does not specify its types\: N$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:getClassNameForTable\(\) should return class\-string but returns string\.$#'
-			identifier: return.type
-			count: 2
-			path: src/Mapping/Driver/DatabaseDriver.php
-
-		-
-			message: '#^Parameter \#2 \$columnName of method Doctrine\\ORM\\Mapping\\Driver\\DatabaseDriver\:\:getFieldNameForColumn\(\) expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Mapping/Driver/DatabaseDriver.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\Driver\\SimplifiedXmlDriver\:\:__construct\(\) has parameter \$fileExtension with no type specified\.$#'
@@ -1429,13 +1405,7 @@ parameters:
 			path: src/Mapping/JoinTableMapping.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\LegacyReflectionFields\:\:__construct\(\) has parameter \$classMetadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Mapping/LegacyReflectionFields.php
-
-		-
-			message: '#^Strict comparison using \!\=\= between array and null will always evaluate to true\.$#'
+			message: '#^Strict comparison using \!\=\= between array\<string, string\> and null will always evaluate to true\.$#'
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: src/Mapping/ManyToManyOwningSideMapping.php
@@ -1507,12 +1477,6 @@ parameters:
 			path: src/Mapping/QuoteStrategy.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Mapping\\ReflectionEnumProperty\:\:getValue\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Mapping/ReflectionEnumProperty.php
-
-		-
 			message: '#^Asserted type string for \$this\-\>indexBy\(\) with type string does not narrow down the type\.$#'
 			identifier: assert.alreadyNarrowedType
 			count: 1
@@ -1535,6 +1499,12 @@ parameters:
 			identifier: return.type
 			count: 1
 			path: src/Mapping/ToOneOwningSideMapping.php
+
+		-
+			message: '#^Call to function is_int\(\) with string will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/NativeQuery.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\NativeQuery\:\:_doExecute\(\) never returns int so it can be removed from the return type\.$#'
@@ -1879,6 +1849,12 @@ parameters:
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Persisters/Entity/BasicEntityPersister.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Entity\\BasicEntityPersister\:\:__construct\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1951,12 +1927,6 @@ parameters:
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
-			message: '#^Parameter \#2 \$lockMode of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:appendLockHint\(\) expects Doctrine\\DBAL\\LockMode, Doctrine\\DBAL\\LockMode\:\:NONE\|Doctrine\\DBAL\\LockMode\:\:OPTIMISTIC\|Doctrine\\DBAL\\LockMode\:\:PESSIMISTIC_READ\|Doctrine\\DBAL\\LockMode\:\:PESSIMISTIC_WRITE\|int given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Persisters/Entity/BasicEntityPersister.php
-
-		-
 			message: '#^Parameter \#3 \$hints of method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:hydrateAll\(\) expects array\<string, string\>, array\<string, Doctrine\\ORM\\PersistentCollection\|true\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2017,12 +1987,6 @@ parameters:
 			path: src/Persisters/Entity/JoinedSubclassPersister.php
 
 		-
-			message: '#^Parameter \#2 \$lockMode of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:appendLockHint\(\) expects Doctrine\\DBAL\\LockMode, Doctrine\\DBAL\\LockMode\:\:NONE\|Doctrine\\DBAL\\LockMode\:\:OPTIMISTIC\|Doctrine\\DBAL\\LockMode\:\:PESSIMISTIC_READ\|Doctrine\\DBAL\\LockMode\:\:PESSIMISTIC_WRITE\|int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Persisters/Entity/JoinedSubclassPersister.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Entity\\SingleTablePersister\:\:generateFilterConditionSQL\(\) has parameter \$targetEntity with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2039,138 +2003,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Persisters/SqlValueVisitor.php
-
-		-
-			message: '#^Parameter \#3 \$className of static method Doctrine\\ORM\\Proxy\\Autoloader\:\:resolveFile\(\) expects class\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/Autoloader.php
-
-		-
-			message: '#^Parameter \#3 of closure expects class\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/Autoloader.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\DefaultProxyClassNameResolver\:\:resolveClassName\(\) should return class\-string\<T of object\> but returns class\-string\<Doctrine\\Persistence\\Proxy\<T of object\>\>\|class\-string\<T of object\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Proxy/DefaultProxyClassNameResolver.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\DefaultProxyClassNameResolver\:\:resolveClassName\(\) should return class\-string\<T of object\> but returns string\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Proxy/DefaultProxyClassNameResolver.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\Persistence\\Mapping\\ClassMetadata\:\:\$isEmbeddedClass\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\Persistence\\Mapping\\ClassMetadata\:\:\$isMappedSuperclass\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Call to an undefined static method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:createLazyGhost\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Call to function is_bool\(\) with bool will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:createLazyInitializer\(\) has Doctrine\\ORM\\EntityNotFoundException in PHPDoc @throws tag but it''s not thrown\.$#'
-			identifier: throws.unusedType
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:createLazyInitializer\(\) has parameter \$classMetadata with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:createLazyInitializer\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:createLazyInitializer\(\) return type with generic interface Doctrine\\ORM\\Proxy\\InternalProxy does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:generateProxyClass\(\) has parameter \$class with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:generateProxyClasses\(\) has parameter \$classes with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:generateSerializeImpl\(\) has parameter \$class with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:generateUseLazyGhostTrait\(\) has parameter \$class with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:loadProxyClass\(\) has parameter \$class with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Proxy\\ProxyFactory\:\:skipClass\(\) has parameter \$metadata with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Parameter \#1 \$class of method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:flattenIdentifier\(\) expects Doctrine\\ORM\\Mapping\\ClassMetadata, Doctrine\\Persistence\\Mapping\\ClassMetadata given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Parameter \#1 \$filename of function filemtime expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Parameter \#3 \$length of function substr expects int\|null, int\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
-			message: '#^Parameter \#3 \$newScope of static method Closure\:\:bind\(\) expects ''static''\|class\-string\|object\|null, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Proxy/ProxyFactory.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Query\:\:processParameterMappings\(\) return type has no value type specified in iterable type array\.$#'
@@ -2263,12 +2095,6 @@ parameters:
 			path: src/Query/AST/Functions/LocateFunction.php
 
 		-
-			message: '#^Parameter \#2 \$mode of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getTrimExpression\(\) expects Doctrine\\DBAL\\Platforms\\TrimMode, Doctrine\\DBAL\\Platforms\\TrimMode\:\:BOTH\|Doctrine\\DBAL\\Platforms\\TrimMode\:\:LEADING\|Doctrine\\DBAL\\Platforms\\TrimMode\:\:TRAILING\|Doctrine\\DBAL\\Platforms\\TrimMode\:\:UNSPECIFIED\|int given\.$#'
-			identifier: argument.type
-			count: 2
-			path: src/Query/AST/Functions/TrimFunction.php
-
-		-
 			message: '#^Call to an undefined method Doctrine\\ORM\\Query\\SqlWalker\:\:walkJoinPathExpression\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -2335,18 +2161,6 @@ parameters:
 			path: src/Query/Exec/MultiTableUpdateExecutor.php
 
 		-
-			message: '#^Parameter \#3 \$types of method Doctrine\\DBAL\\Connection\:\:executeStatement\(\) expects array\<int\<0, max\>\|string, Doctrine\\DBAL\\ArrayParameterType\|Doctrine\\DBAL\\ParameterType\|Doctrine\\DBAL\\Types\\Type\|string\>, list\<Doctrine\\DBAL\\ArrayParameterType\:\:ASCII\|Doctrine\\DBAL\\ArrayParameterType\:\:BINARY\|Doctrine\\DBAL\\ArrayParameterType\:\:INTEGER\|Doctrine\\DBAL\\ArrayParameterType\:\:STRING\|Doctrine\\DBAL\\ParameterType\:\:ASCII\|Doctrine\\DBAL\\ParameterType\:\:BINARY\|Doctrine\\DBAL\\ParameterType\:\:BOOLEAN\|Doctrine\\DBAL\\ParameterType\:\:INTEGER\|Doctrine\\DBAL\\ParameterType\:\:LARGE_OBJECT\|Doctrine\\DBAL\\ParameterType\:\:NULL\|Doctrine\\DBAL\\ParameterType\:\:STRING\|Doctrine\\DBAL\\Types\\Type\|int\|string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Query/Exec/MultiTableUpdateExecutor.php
-
-		-
-			message: '#^Parameter \#1 \$sql of method Doctrine\\DBAL\\Connection\:\:executeQuery\(\) expects string, list\<string\>\|string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Query/Exec/SingleSelectExecutor.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Query\\Exec\\SingleTableDeleteUpdateExecutor\:\:execute\(\) should return int but returns int\|string\.$#'
 			identifier: return.type
 			count: 1
@@ -2359,22 +2173,22 @@ parameters:
 			path: src/Query/Exec/SingleTableDeleteUpdateExecutor.php
 
 		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: src/Query/Expr.php
+
+		-
+			message: '#^Call to function is_object\(\) with Stringable will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Query/Expr/Base.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Query\\Expr\\Func\:\:getArguments\(\) should return list\<mixed\> but returns array\<mixed\>\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Query/Expr/Func.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''datetime_utc…'' so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: src/Query/ParameterTypeInferer.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns int so it can be removed from the return type\.$#'
-			identifier: return.unusedType
-			count: 1
-			path: src/Query/ParameterTypeInferer.php
 
 		-
 			message: '#^@readonly property cannot have a default value\.$#'
@@ -2431,6 +2245,12 @@ parameters:
 			path: src/Query/Parser.php
 
 		-
+			message: '#^Strict comparison using \=\=\= between 102 and 102 will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: src/Query/Parser.php
+
+		-
 			message: '#^Unreachable statement \- code above always terminates\.$#'
 			identifier: deadCode.unreachable
 			count: 2
@@ -2455,9 +2275,27 @@ parameters:
 			path: src/Query/SqlOutputWalker.php
 
 		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isManyToMany\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Query/SqlWalker.php
+
+		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Query/SqlWalker.php
+
+		-
 			message: '#^Cannot assign new offset to list\<string\>\|string\.$#'
 			identifier: offsetAssign.dimType
 			count: 2
+			path: src/Query/SqlWalker.php
+
+		-
+			message: '#^Match arm comparison between 4 and 4 is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
 			path: src/Query/SqlWalker.php
 
 		-
@@ -2551,6 +2389,18 @@ parameters:
 			path: src/QueryBuilder.php
 
 		-
+			message: '#^Parameter \#3 \$type of method Doctrine\\ORM\\QueryBuilder\:\:setParameter\(\) expects Doctrine\\DBAL\\ArrayParameterType\|Doctrine\\DBAL\\ParameterType\|string\|null, Doctrine\\DBAL\\ArrayParameterType\|Doctrine\\DBAL\\ParameterType\|int\|string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Repository\\DefaultRepositoryFactory\:\:createRepository\(\) return type with generic class Doctrine\\ORM\\EntityRepository does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2561,24 +2411,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Repository/DefaultRepositoryFactory.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\Persistence\\Mapping\\ClassMetadata\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Tools/Console/Command/GenerateProxiesCommand.php
-
-		-
-			message: '#^Parameter \#1 \$filename of function file_exists expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/Console/Command/GenerateProxiesCommand.php
-
-		-
-			message: '#^Parameter \#1 \$filename of function is_writable expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/Console/Command/GenerateProxiesCommand.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\Console\\Command\\MappingDescribeCommand\:\:getClassMetadata\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
@@ -2677,8 +2509,20 @@ parameters:
 			path: src/Tools/Event/GenerateSchemaTableEventArgs.php
 
 		-
+			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\FieldMapping\:\:\$default\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
 			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Call to static method createForDbal5\(\) on an unknown class Doctrine\\ORM\\Tools\\NotSupportedException\.$#'
+			identifier: class.notFound
 			count: 1
 			path: src/Tools/ExperimentalSchemaTool.php
 
@@ -2743,6 +2587,12 @@ parameters:
 			path: src/Tools/ExperimentalSchemaTool.php
 
 		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
 			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2791,10 +2641,16 @@ parameters:
 			path: src/Tools/Pagination/LimitSubqueryOutputWalker.php
 
 		-
-			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\Paginator\:\:count\(\) should return int\<0, max\> but returns int\.$#'
-			identifier: return.type
+			message: '#^Comparison operation "\<" between int\<0, max\> and 0 is always false\.$#'
+			identifier: smaller.alwaysFalse
 			count: 1
-			path: src/Tools/Pagination/Paginator.php
+			path: src/Tools/Pagination/Window.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<1, max\> and 1 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 2
+			path: src/Tools/Pagination/Window.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\Window\:\:getPageNumber\(\) should return int\<1, max\> but returns int\.$#'
@@ -2803,10 +2659,34 @@ parameters:
 			path: src/Tools/Pagination/Window.php
 
 		-
+			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\WindowPage\:\:hasToPaginate\(\) overrides method Doctrine\\ORM\\Tools\\Pagination\\Page\<T\>\:\:hasToPaginate\(\) but is missing the \#\[\\Override\] attribute\.$#'
+			identifier: method.missingOverride
+			count: 1
+			path: src/Tools/Pagination/WindowPage.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\ResolveTargetEntityListener\:\:remapAssociation\(\) has parameter \$classMetadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/ResolveTargetEntityListener.php
+
+		-
+			message: '''
+				#^Call to deprecated method dropSequence\(\) of class Doctrine\\DBAL\\Schema\\Schema\:
+				since doctrine/dbal 4\.5\. Use \{@see edit\(\)\} and \{@see SchemaEditor\:\:dropSequence\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method dropTable\(\) of class Doctrine\\DBAL\\Schema\\Schema\:
+				since doctrine/dbal 4\.5\. Use \{@see edit\(\)\} and \{@see SchemaEditor\:\:dropTable\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: src/Tools/SchemaTool.php
 
 		-
 			message: '''
@@ -2848,6 +2728,30 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
+			message: '#^Call to function method_exists\(\) with Doctrine\\DBAL\\Schema\\Table and ''getPrimaryKeyConstr…'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentDate not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentTime not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentTimestamp not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:addDiscriminatorColumnDefinition\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2885,12 +2789,6 @@ parameters:
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:gatherRelationsSql\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:getAssetName\(\) has parameter \$asset with generic class Doctrine\\DBAL\\Schema\\AbstractAsset but does not specify its types\: N$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/SchemaTool.php
@@ -2940,6 +2838,12 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:processingNotRequired\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
 			count: 1
 			path: src/Tools/SchemaTool.php
 
@@ -3012,6 +2916,18 @@ parameters:
 		-
 			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\AssociationMapping\:\:\$joinColumns\.$#'
 			identifier: property.notFound
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToMany\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/UnitOfWork.php
 
@@ -3094,12 +3010,6 @@ parameters:
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Unable to resolve the template type T in call to static method Symfony\\Component\\VarExporter\\Hydrator\:\:hydrate\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Access to an undefined property Doctrine\\Persistence\\Mapping\\ClassMetadata\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -3130,6 +3040,12 @@ parameters:
 			path: src/Utility/IdentifierFlattener.php
 
 		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Utility/PersisterHelper.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Utility\\PersisterHelper\:\:getTypeOfColumn\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -3144,11 +3060,5 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Utility\\PersisterHelper\:\:inferParameterTypes\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
-			count: 1
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Utility\\PersisterHelper\:\:inferParameterTypes\(\) should return list\<Doctrine\\DBAL\\ArrayParameterType\:\:ASCII\|Doctrine\\DBAL\\ArrayParameterType\:\:BINARY\|Doctrine\\DBAL\\ArrayParameterType\:\:INTEGER\|Doctrine\\DBAL\\ArrayParameterType\:\:STRING\|Doctrine\\DBAL\\ParameterType\:\:ASCII\|Doctrine\\DBAL\\ParameterType\:\:BINARY\|Doctrine\\DBAL\\ParameterType\:\:BOOLEAN\|Doctrine\\DBAL\\ParameterType\:\:INTEGER\|Doctrine\\DBAL\\ParameterType\:\:LARGE_OBJECT\|Doctrine\\DBAL\\ParameterType\:\:NULL\|Doctrine\\DBAL\\ParameterType\:\:STRING\|string\> but returns list\<Doctrine\\DBAL\\ArrayParameterType\:\:ASCII\|Doctrine\\DBAL\\ArrayParameterType\:\:BINARY\|Doctrine\\DBAL\\ArrayParameterType\:\:INTEGER\|Doctrine\\DBAL\\ArrayParameterType\:\:STRING\|int\>\.$#'
-			identifier: return.type
 			count: 1
 			path: src/Utility/PersisterHelper.php

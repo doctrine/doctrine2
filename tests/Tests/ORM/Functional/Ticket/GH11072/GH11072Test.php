@@ -6,9 +6,7 @@ namespace Doctrine\Tests\ORM\Functional\Ticket\GH11072;
 
 use Doctrine\ORM\Tools\SchemaValidator;
 use Doctrine\Tests\OrmFunctionalTestCase;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 
-#[RequiresPhp('>=8.2.0')]
 final class GH11072Test extends OrmFunctionalTestCase
 {
     /** @var SchemaValidator */

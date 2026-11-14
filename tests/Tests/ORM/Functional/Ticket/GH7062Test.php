@@ -21,8 +21,8 @@ use function assert;
 
 class GH7062Test extends OrmFunctionalTestCase
 {
-    private const SEASON_ID = 'season_18';
-    private const TEAM_ID   = 'team_A';
+    private const string SEASON_ID = 'season_18';
+    private const string TEAM_ID   = 'team_A';
 
     protected function setUp(): void
     {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Tools\Console\Command\SchemaTool;
 
 use Doctrine\ORM\Tools\SchemaTool;
+use Override;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -20,6 +21,7 @@ use function sprintf;
  */
 class DropCommand extends AbstractCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:schema-tool:drop')
@@ -49,6 +51,7 @@ EOT);
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function executeSchemaCommand(InputInterface $input, OutputInterface $output, SchemaTool $schemaTool, array $metadatas, SymfonyStyle $ui): int
     {
         $isFullDatabaseDrop = $input->getOption('full-database');

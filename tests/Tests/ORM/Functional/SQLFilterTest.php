@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
-use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Configuration;
@@ -34,7 +33,6 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 use function count;
 use function in_array;
-use function method_exists;
 use function serialize;
 
 /**
@@ -206,13 +204,7 @@ class SQLFilterTest extends OrmFunctionalTestCase
 
     private function getMockConnection(): Connection&MockObject
     {
-        $connection = $this->createMock(Connection::class);
-        if (method_exists($connection, 'getEventManager')) {
-            $connection->method('getEventManager')
-                ->willReturn(new EventManager());
-        }
-
-        return $connection;
+        return $this->createMock(Connection::class);
     }
 
     private function getMockEntityManager(): EntityManagerInterface&MockObject

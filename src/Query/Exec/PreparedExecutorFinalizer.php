@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\Exec;
 
 use Doctrine\ORM\Query;
+use Override;
 
 /**
  * PreparedExecutorFinalizer is a wrapper for the SQL finalization
@@ -20,6 +21,7 @@ final class PreparedExecutorFinalizer implements SqlFinalizer
         $this->executor = $exeutor;
     }
 
+    #[Override]
     public function createExecutor(Query $query): AbstractSqlExecutor
     {
         return $this->executor;

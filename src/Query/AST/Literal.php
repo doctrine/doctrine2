@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 class Literal extends Node
 {
-    final public const STRING  = 1;
-    final public const BOOLEAN = 2;
-    final public const NUMERIC = 3;
-    final public const NULL    = 4;
+    final public const int STRING  = 1;
+    final public const int BOOLEAN = 2;
+    final public const int NUMERIC = 3;
+    final public const int NULL    = 4;
 
     /** @phpstan-param self::* $type */
     public function __construct(
@@ -20,6 +21,7 @@ class Literal extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkLiteral($this);

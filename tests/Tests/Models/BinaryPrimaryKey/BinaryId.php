@@ -12,7 +12,7 @@ use function random_bytes;
 
 class BinaryId
 {
-    public const LENGTH = 6;
+    public const int LENGTH = 6;
 
     private string $hexId;
 

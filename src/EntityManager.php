@@ -10,7 +10,6 @@ use Doctrine\Common\EventManager;
 use Doctrine\Common\EventManagerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\LockMode;
-use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Exception\EntityManagerClosed;
 use Doctrine\ORM\Exception\InvalidHydrationMode;
 use Doctrine\ORM\Exception\MissingIdentifierField;
@@ -20,18 +19,17 @@ use Doctrine\ORM\Exception\UnrecognizedIdentifierFields;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Proxy\ProxyFactory;
 use Doctrine\ORM\Query\Expr;
 use Doctrine\ORM\Query\FilterCollection;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\ORM\Repository\RepositoryFactory;
+use Override;
 
 use function array_keys;
 use function is_array;
 use function is_object;
 use function ltrim;
-use function method_exists;
 
 /**
  * The EntityManager is the central access point to ORM functionality.
@@ -74,7 +72,7 @@ class EntityManager implements EntityManagerInterface
     /**
      * The event manager that is the central point of the event system.
      */
-    private EventManager $eventManager;
+    private EventManagerInterface $eventManager;
 
     /**
      * The proxy factory used to create dynamic proxies.
@@ -115,17 +113,13 @@ class EntityManager implements EntityManagerInterface
     public function __construct(
         private Connection $conn,
         private Configuration $config,
-        EventManager|null $eventManager = null,
+        EventManagerInterface|null $eventManager = null,
     ) {
         if (! $config->getMetadataDriverImpl()) {
             throw MissingMappingDriverImplementation::create();
         }
 
-        $this->eventManager = $eventManager
-            ?? (method_exists($conn, 'getEventManager')
-                ? $conn->getEventManager()
-                : new EventManager()
-            );
+        $this->eventManager = $eventManager ?? new EventManager();
 
         $metadataFactoryClassName = $config->getClassMetadataFactoryName();
 
@@ -136,16 +130,7 @@ class EntityManager implements EntityManagerInterface
 
         $this->repositoryFactory = $config->getRepositoryFactory();
         $this->unitOfWork        = new UnitOfWork($this);
-        if ($config->isNativeLazyObjectsEnabled()) {
-            $this->proxyFactory = new ProxyFactory($this);
-        } else {
-            $this->proxyFactory = new ProxyFactory(
-                $this,
-                $config->getProxyDir(),
-                $config->getProxyNamespace(),
-                $config->getAutoGenerateProxyClasses(),
-            );
-        }
+        $this->proxyFactory      = new ProxyFactory($this);
 
         if ($config->isSecondLevelCacheEnabled()) {
             $cacheConfig  = $config->getSecondLevelCacheConfiguration();
@@ -154,31 +139,37 @@ class EntityManager implements EntityManagerInterface
         }
     }
 
+    #[Override]
     public function getConnection(): Connection
     {
         return $this->conn;
     }
 
+    #[Override]
     public function getMetadataFactory(): ClassMetadataFactory
     {
         return $this->metadataFactory;
     }
 
+    #[Override]
     public function getExpressionBuilder(): Expr
     {
         return $this->expressionBuilder ??= new Expr();
     }
 
+    #[Override]
     public function beginTransaction(): void
     {
         $this->conn->beginTransaction();
     }
 
+    #[Override]
     public function getCache(): Cache|null
     {
         return $this->cache;
     }
 
+    #[Override]
     public function wrapInTransaction(callable $func): mixed
     {
         $this->conn->beginTransaction();
@@ -204,11 +195,13 @@ class EntityManager implements EntityManagerInterface
         }
     }
 
+    #[Override]
     public function commit(): void
     {
         $this->conn->commit();
     }
 
+    #[Override]
     public function rollback(): void
     {
         $this->conn->rollBack();
@@ -221,11 +214,13 @@ class EntityManager implements EntityManagerInterface
      *
      * {@inheritDoc}
      */
+    #[Override]
     public function getClassMetadata(string $className): Mapping\ClassMetadata
     {
         return $this->metadataFactory->getMetadataFor($className);
     }
 
+    #[Override]
     public function createQuery(string $dql = ''): Query
     {
         $query = new Query($this);
@@ -237,6 +232,7 @@ class EntityManager implements EntityManagerInterface
         return $query;
     }
 
+    #[Override]
     public function createNativeQuery(string $sql, ResultSetMapping $rsm): NativeQuery
     {
         $query = new NativeQuery($this);
@@ -247,6 +243,7 @@ class EntityManager implements EntityManagerInterface
         return $query;
     }
 
+    #[Override]
     public function createQueryBuilder(): QueryBuilder
     {
         return new QueryBuilder($this);
@@ -264,6 +261,7 @@ class EntityManager implements EntityManagerInterface
      * makes use of optimistic locking fails.
      * @throws ORMException
      */
+    #[Override]
     public function flush(): void
     {
         $this->errorIfClosed();
@@ -273,19 +271,9 @@ class EntityManager implements EntityManagerInterface
     /**
      * {@inheritDoc}
      */
-    public function find($className, mixed $id, LockMode|int|null $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null
+    #[Override]
+    public function find($className, mixed $id, LockMode $lockMode = LockMode::NONE, int|null $lockVersion = null): object|null
     {
-        if ($lockMode === null) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12548',
-                'Passing null as lock mode to %s() is deprecated and will not be possible in Doctrine ORM 4.0, pass LockMode::NONE instead.',
-                __METHOD__,
-            );
-
-            $lockMode = LockMode::NONE;
-        }
-
         $class = $this->metadataFactory->getMetadataFor(ltrim($className, '\\'));
 
         $this->checkLockRequirements($lockMode, $class);
@@ -300,7 +288,7 @@ class EntityManager implements EntityManagerInterface
 
         foreach ($id as $i => $value) {
             if (is_object($value)) {
-                $className = DefaultProxyClassNameResolver::getClass($value);
+                $className = $value::class;
                 if ($this->metadataFactory->hasMetadataFor($className)) {
                     $id[$i] = $this->unitOfWork->getSingleIdentifierValue($value);
 
@@ -377,6 +365,7 @@ class EntityManager implements EntityManagerInterface
         }
     }
 
+    #[Override]
     public function getReference(string $entityName, mixed $id): object|null
     {
         $class = $this->metadataFactory->getMetadataFor(ltrim($entityName, '\\'));
@@ -422,11 +411,13 @@ class EntityManager implements EntityManagerInterface
      * Clears the EntityManager. All entities that are currently managed
      * by this EntityManager become detached.
      */
+    #[Override]
     public function clear(): void
     {
         $this->unitOfWork->clear();
     }
 
+    #[Override]
     public function close(): void
     {
         $this->clear();
@@ -446,6 +437,7 @@ class EntityManager implements EntityManagerInterface
      * @throws ORMInvalidArgumentException
      * @throws ORMException
      */
+    #[Override]
     public function persist(object $object): void
     {
         $this->errorIfClosed();
@@ -462,6 +454,7 @@ class EntityManager implements EntityManagerInterface
      * @throws ORMInvalidArgumentException
      * @throws ORMException
      */
+    #[Override]
     public function remove(object $object): void
     {
         $this->errorIfClosed();
@@ -469,19 +462,9 @@ class EntityManager implements EntityManagerInterface
         $this->unitOfWork->remove($object);
     }
 
-    public function refresh(object $object, LockMode|int|null $lockMode = LockMode::NONE): void
+    #[Override]
+    public function refresh(object $object, LockMode $lockMode = LockMode::NONE): void
     {
-        if ($lockMode === null) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/12548',
-                'Passing null as lock mode to %s() is deprecated and will not be possible in Doctrine ORM 4.0, pass LockMode::NONE instead.',
-                __METHOD__,
-            );
-
-            $lockMode = LockMode::NONE;
-        }
-
         $this->errorIfClosed();
 
         $this->unitOfWork->refresh($object, $lockMode);
@@ -496,12 +479,14 @@ class EntityManager implements EntityManagerInterface
      *
      * @throws ORMInvalidArgumentException
      */
+    #[Override]
     public function detach(object $object): void
     {
         $this->unitOfWork->detach($object);
     }
 
-    public function lock(object $entity, LockMode|int $lockMode, DateTimeInterface|int|null $lockVersion = null): void
+    #[Override]
+    public function lock(object $entity, LockMode $lockMode, DateTimeInterface|int|null $lockVersion = null): void
     {
         $this->unitOfWork->lock($entity, $lockMode, $lockVersion);
     }
@@ -515,6 +500,7 @@ class EntityManager implements EntityManagerInterface
      *
      * @template T of object
      */
+    #[Override]
     public function getRepository(string $className): EntityRepository
     {
         return $this->repositoryFactory->getRepository($this, $className);
@@ -525,6 +511,7 @@ class EntityManager implements EntityManagerInterface
      *
      * @return bool TRUE if this EntityManager currently manages the given entity, FALSE otherwise.
      */
+    #[Override]
     public function contains(object $object): bool
     {
         return $this->unitOfWork->isScheduledForInsert($object)
@@ -532,11 +519,13 @@ class EntityManager implements EntityManagerInterface
             && ! $this->unitOfWork->isScheduledForDelete($object);
     }
 
+    #[Override]
     public function getEventManager(): EventManagerInterface
     {
         return $this->eventManager;
     }
 
+    #[Override]
     public function getConfiguration(): Configuration
     {
         return $this->config;
@@ -554,16 +543,19 @@ class EntityManager implements EntityManagerInterface
         }
     }
 
+    #[Override]
     public function isOpen(): bool
     {
         return ! $this->closed;
     }
 
+    #[Override]
     public function getUnitOfWork(): UnitOfWork
     {
         return $this->unitOfWork;
     }
 
+    #[Override]
     public function newHydrator(string|int $hydrationMode): AbstractHydrator
     {
         return match ($hydrationMode) {
@@ -577,11 +569,13 @@ class EntityManager implements EntityManagerInterface
         };
     }
 
+    #[Override]
     public function getProxyFactory(): ProxyFactory
     {
         return $this->proxyFactory;
     }
 
+    #[Override]
     public function initializeObject(object $obj): void
     {
         $this->unitOfWork->initializeObject($obj);
@@ -590,33 +584,35 @@ class EntityManager implements EntityManagerInterface
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function isUninitializedObject($value): bool
     {
         return $this->unitOfWork->isUninitializedObject($value);
     }
 
+    #[Override]
     public function getFilters(): FilterCollection
     {
         return $this->filterCollection ??= new FilterCollection($this);
     }
 
+    #[Override]
     public function isFiltersStateClean(): bool
     {
         return $this->filterCollection === null || $this->filterCollection->isClean();
     }
 
+    #[Override]
     public function hasFilters(): bool
     {
         return $this->filterCollection !== null;
     }
 
     /**
-     * @phpstan-param LockMode::* $lockMode
-     *
      * @throws OptimisticLockException
      * @throws TransactionRequiredException
      */
-    private function checkLockRequirements(LockMode|int $lockMode, ClassMetadata $class): void
+    private function checkLockRequirements(LockMode $lockMode, ClassMetadata $class): void
     {
         switch ($lockMode) {
             case LockMode::OPTIMISTIC:

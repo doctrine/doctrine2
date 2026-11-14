@@ -83,8 +83,6 @@ The following Commands are currently available:
    cache drivers.
 -  ``orm:clear-cache:result`` Clear result cache of the various
    cache drivers.
--  ``orm:generate-proxies`` Generates proxy classes for entity
-   classes. Deprecated in favor of using native lazy objects.
 -  ``orm:run-dql`` Executes arbitrary DQL directly from the command
    line.
 -  ``orm:schema-tool:create`` Processes the schema and either

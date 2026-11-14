@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Mapping;
 
 use Doctrine\ORM\Internal\NoUnknownNamedArguments;
+use Override;
 use ReflectionProperty;
 
 final class ChainTypedFieldMapper implements TypedFieldMapper
@@ -25,6 +26,7 @@ final class ChainTypedFieldMapper implements TypedFieldMapper
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function validateAndComplete(array $mapping, ReflectionProperty $field): array
     {
         foreach ($this->typedFieldMappers as $typedFieldMapper) {

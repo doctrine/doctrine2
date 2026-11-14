@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
+use Override;
+
 use function str_contains;
 use function strrpos;
 use function strtolower;
@@ -16,6 +18,7 @@ use function substr;
  */
 class DefaultNamingStrategy implements NamingStrategy
 {
+    #[Override]
     public function classToTableName(string $className): string
     {
         if (str_contains($className, '\\')) {
@@ -25,11 +28,13 @@ class DefaultNamingStrategy implements NamingStrategy
         return $className;
     }
 
+    #[Override]
     public function propertyToColumnName(string $propertyName, string $className): string
     {
         return $propertyName;
     }
 
+    #[Override]
     public function embeddedFieldToColumnName(
         string $propertyName,
         string $embeddedColumnName,
@@ -39,16 +44,19 @@ class DefaultNamingStrategy implements NamingStrategy
         return $propertyName . '_' . $embeddedColumnName;
     }
 
+    #[Override]
     public function referenceColumnName(): string
     {
         return 'id';
     }
 
+    #[Override]
     public function joinColumnName(string $propertyName, string $className): string
     {
         return $propertyName . '_' . $this->referenceColumnName();
     }
 
+    #[Override]
     public function joinTableName(
         string $sourceEntity,
         string $targetEntity,
@@ -58,6 +66,7 @@ class DefaultNamingStrategy implements NamingStrategy
             $this->classToTableName($targetEntity));
     }
 
+    #[Override]
     public function joinKeyColumnName(
         string $entityName,
         string|null $referencedColumnName,

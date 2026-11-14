@@ -250,7 +250,7 @@ class DummyHydrator extends AbstractHydrator
 
 class RowStateHydrator extends AbstractHydrator
 {
-    public const EMPTY_STATE = ['result' => [], 'idTemplate' => [], 'rowId' => [], 'nonemptyComponents' => []];
+    public const array EMPTY_STATE = ['result' => [], 'idTemplate' => [], 'rowId' => [], 'nonemptyComponents' => []];
 
     /** @return array{result: mixed[], idTemplate: array<string, string>, rowId: array<string, string>, nonemptyComponents: array<string, bool>} */
     public function state(): array

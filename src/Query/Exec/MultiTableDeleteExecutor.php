@@ -11,6 +11,7 @@ use Doctrine\ORM\Query\AST;
 use Doctrine\ORM\Query\AST\DeleteStatement;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 use Throwable;
 
 use function array_reverse;
@@ -109,6 +110,7 @@ class MultiTableDeleteExecutor extends AbstractSqlExecutor
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function execute(Connection $conn, array $params, array $types): int
     {
         // Create temporary id table

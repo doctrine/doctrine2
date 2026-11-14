@@ -17,7 +17,6 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\TypeProvider;
 use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\DBAL\Types\Types;
-use Doctrine\ORM\Cache\Persister\CompatOrderings;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\AssociationMapping;
@@ -42,6 +41,7 @@ use Doctrine\ORM\Utility\IdentifierFlattener;
 use Doctrine\ORM\Utility\LockSqlHelper;
 use Doctrine\ORM\Utility\PersisterHelper;
 use LengthException;
+use Override;
 use SortDirection;
 
 use function array_combine;
@@ -100,7 +100,6 @@ use function trim;
  */
 class BasicEntityPersister implements EntityPersister
 {
-    use CompatOrderings;
     use LockSqlHelper;
 
     /** @var array<string,string> */
@@ -216,16 +215,19 @@ class BasicEntityPersister implements EntityPersister
         return $this->typeProvider->get($name);
     }
 
+    #[Override]
     public function getClassMetadata(): ClassMetadata
     {
         return $this->class;
     }
 
+    #[Override]
     public function getResultSetMapping(): ResultSetMapping
     {
         return $this->currentPersisterContext->rsm;
     }
 
+    #[Override]
     public function addInsert(object $entity): void
     {
         $this->queuedInserts[spl_object_id($entity)] = $entity;
@@ -234,11 +236,13 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getInserts(): array
     {
         return $this->queuedInserts;
     }
 
+    #[Override]
     public function executeInserts(): void
     {
         if (! $this->queuedInserts) {
@@ -356,8 +360,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * @param mixed[] $id
      *
-     * @return list<ParameterType|int|string>
-     * @phpstan-return list<ParameterType::*|ArrayParameterType::*|string>
+     * @return list<ParameterType|ArrayParameterType|string>
      */
     final protected function extractIdentifierTypes(array $id, ClassMetadata $versionedClass): array
     {
@@ -370,6 +373,7 @@ class BasicEntityPersister implements EntityPersister
         return $types;
     }
 
+    #[Override]
     public function update(object $entity): void
     {
         $tableName  = $this->class->getTableName();
@@ -566,6 +570,7 @@ class BasicEntityPersister implements EntityPersister
         }
     }
 
+    #[Override]
     public function delete(object $entity): bool
     {
         $class      = $this->class;
@@ -727,6 +732,7 @@ class BasicEntityPersister implements EntityPersister
         return $this->prepareUpdateData($entity, true);
     }
 
+    #[Override]
     public function getOwningTable(string $fieldName): string
     {
         return $this->class->getTableName();
@@ -735,12 +741,13 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function load(
         array $criteria,
         object|null $entity = null,
         AssociationMapping|null $assoc = null,
         array $hints = [],
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         array|null $orderBy = null,
     ): object|null {
@@ -764,6 +771,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadById(array $identifier, object|null $entity = null): object|null
     {
         return $this->load($identifier, $entity);
@@ -772,6 +780,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadOneToOneEntity(AssociationMapping $assoc, object $sourceEntity, array $identifier = []): object|null
     {
         $foundEntity = $this->em->getUnitOfWork()->tryGetById($identifier, $assoc->targetEntity);
@@ -859,7 +868,8 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
-    public function refresh(array $id, object $entity, LockMode|int|null $lockMode = null): void
+    #[Override]
+    public function refresh(array $id, object $entity, LockMode|null $lockMode = null): void
     {
         $sql              = $this->getSelectSQL($id, null, $lockMode);
         [$params, $types] = $this->expandParameters($id);
@@ -869,6 +879,7 @@ class BasicEntityPersister implements EntityPersister
         $hydrator->hydrateAll($stmt, $this->currentPersisterContext->rsm, [Query::HINT_REFRESH => true]);
     }
 
+    #[Override]
     public function count(array|Criteria $criteria = []): int
     {
         $sql = $this->getCountSQL($criteria);
@@ -886,9 +897,13 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadCriteria(Criteria $criteria): array
     {
-        $orderBy = $this->getOrderingsAsStringMap($criteria);
+        $orderBy = array_map(
+            static fn (SortDirection $order): string => $order === SortDirection::Ascending ? 'ASC' : 'DESC',
+            $criteria->getOrderings(),
+        );
 
         $limit  = $criteria->getMaxResults();
         $offset = $criteria->getFirstResult();
@@ -905,6 +920,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function expandCriteriaParameters(Criteria $criteria): array
     {
         $expression = $criteria->getWhereExpression();
@@ -971,6 +987,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadAll(
         array $criteria = [],
         array|null $orderBy = null,
@@ -991,6 +1008,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getManyToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -1050,6 +1068,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function loadManyToManyCollection(AssociationMapping $assoc, object $sourceEntity, PersistentCollection $collection): array
     {
         assert($assoc->isManyToMany());
@@ -1127,10 +1146,11 @@ class BasicEntityPersister implements EntityPersister
         return $this->conn->executeQuery($sql, $params, $types);
     }
 
+    #[Override]
     public function getSelectSQL(
         array|Criteria $criteria,
         AssociationMapping|null $assoc = null,
-        LockMode|int|null $lockMode = null,
+        LockMode|null $lockMode = null,
         int|null $limit = null,
         int|null $offset = null,
         array|null $orderBy = null,
@@ -1187,6 +1207,7 @@ class BasicEntityPersister implements EntityPersister
         return $this->platform->modifyLimitQuery($query, $limit, $offset ?? 0) . $lockSql;
     }
 
+    #[Override]
     public function getCountSQL(array|Criteria $criteria = []): string
     {
         $tableName  = $this->quoteStrategy->getTableName($this->class, $this->platform);
@@ -1456,6 +1477,7 @@ class BasicEntityPersister implements EntityPersister
         return ' INNER JOIN ' . $joinTableName . ' ON ' . implode(' AND ', $conditions);
     }
 
+    #[Override]
     public function getInsertSQL(): string
     {
         $columns   = $this->getInsertColumnList();
@@ -1595,7 +1617,8 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
-    public function lock(array $criteria, LockMode|int $lockMode): void
+    #[Override]
+    public function lock(array $criteria, LockMode $lockMode): void
     {
         $conditionSql = $this->getSelectConditionSQL($criteria);
 
@@ -1619,10 +1642,8 @@ class BasicEntityPersister implements EntityPersister
 
     /**
      * Gets the FROM and optionally JOIN conditions to lock the entity managed by this persister.
-     *
-     * @phpstan-param LockMode::* $lockMode
      */
-    protected function getLockTablesSql(LockMode|int $lockMode): string
+    protected function getLockTablesSql(LockMode $lockMode): string
     {
         return $this->platform->appendLockHint(
             'FROM '
@@ -1648,6 +1669,7 @@ class BasicEntityPersister implements EntityPersister
         return $expression->visit($visitor);
     }
 
+    #[Override]
     public function getSelectConditionStatementSQL(
         string $field,
         mixed $value,
@@ -1819,6 +1841,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function getOneToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -1833,6 +1856,7 @@ class BasicEntityPersister implements EntityPersister
         return $this->loadArrayFromResult($assoc, $stmt);
     }
 
+    #[Override]
     public function loadOneToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -1900,6 +1924,7 @@ class BasicEntityPersister implements EntityPersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function expandParameters(array $criteria): array
     {
         $params = [];
@@ -1947,7 +1972,7 @@ class BasicEntityPersister implements EntityPersister
      *                             - class to which the field belongs to
      *
      * @return mixed[][]
-     * @phpstan-return array{0: array, 1: list<ParameterType::*|ArrayParameterType::*|string>}
+     * @phpstan-return array{0: array, 1: list<ParameterType|ArrayParameterType|string>}
      */
     private function expandToManyParameters(array $criteria): array
     {
@@ -1966,6 +1991,7 @@ class BasicEntityPersister implements EntityPersister
         return [$params, $types];
     }
 
+    #[Override]
     public function exists(object $entity, Criteria|null $extraConditions = null): bool
     {
         $criteria = $this->class->getIdentifierValues($entity);

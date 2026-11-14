@@ -33,18 +33,7 @@ steps of configuration.
     $config->setMetadataDriverImpl($driverImpl);
     $config->setQueryCache($queryCache);
 
-    if (PHP_VERSION_ID > 80400) {
-        $config->enableNativeLazyObjects(true);
-    } else {
-        $config->setProxyDir('/path/to/myproject/lib/MyProject/Proxies');
-        $config->setProxyNamespace('MyProject\Proxies');
-
-        if ($applicationMode === "development") {
-            $config->setAutoGenerateProxyClasses(true);
-        } else {
-            $config->setAutoGenerateProxyClasses(false);
-        }
-    }
+    $config->enableNativeLazyObjects(true);
 
     $connection = DriverManager::getConnection([
         'driver' => 'pdo_sqlite',
@@ -75,55 +64,6 @@ Configuration Options
 
 The following sections describe all the configuration options
 available on a ``Doctrine\ORM\Configuration`` instance.
-
-.. _reference-native-lazy-objects:
-
-Native Lazy Objects (**OPTIONAL**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-With PHP 8.4 we recommend that you use native lazy objects instead of
-the code generation approach using the ``symfony/var-exporter`` Ghost trait.
-
-With Doctrine 4, the minimal requirement will become PHP 8.4 and native lazy objects
-will become the only approach to lazy loading.
-
-.. code-block:: php
-
-    <?php
-    $config->enableNativeLazyObjects(true);
-
-Proxy Directory
-~~~~~~~~~~~~~~~
-
-Required except if you use native lazy objects with PHP 8.4.
-This setting will be removed in the future.
-
-.. code-block:: php
-
-    <?php
-    $config->setProxyDir($dir);
-    $config->getProxyDir();
-
-Gets or sets the directory where Doctrine generates any proxy
-classes. For a detailed explanation on proxy classes and how they
-are used in Doctrine, refer to the "Proxy Objects" section further
-down.
-
-Proxy Namespace
-~~~~~~~~~~~~~~~
-
-Required except if you use native lazy objects with PHP 8.4.
-This setting will be removed in the future.
-
-.. code-block:: php
-
-    <?php
-    $config->setProxyNamespace($namespace);
-    $config->getProxyNamespace();
-
-Gets or sets the namespace to use for generated proxy classes. For
-a detailed explanation on proxy classes and how they are used in
-Doctrine, refer to the "Proxy Objects" section further down.
 
 Metadata Driver (**REQUIRED**)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -286,63 +226,6 @@ Gets or sets the logger to use for logging all SQL statements
 executed by Doctrine. The logger class must implement the
 deprecated ``Doctrine\DBAL\Logging\SQLLogger`` interface.
 
-Auto-generating Proxy Classes (**OPTIONAL**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This setting is not required if you use native lazy objects with PHP 8.4
-and will be removed in the future.
-
-Proxy classes can either be generated manually through the Doctrine
-Console or automatically at runtime by Doctrine. The configuration
-option that controls this behavior is:
-
-.. code-block:: php
-
-    <?php
-    $config->setAutoGenerateProxyClasses($mode);
-
-Possible values for ``$mode`` are:
-
--  ``Doctrine\ORM\Proxy\ProxyFactory::AUTOGENERATE_NEVER``
-
-Never autogenerate a proxy. You will need to generate the proxies
-manually, for this use the Doctrine Console like so:
-
-.. code-block:: php
-
-    $ ./doctrine orm:generate-proxies
-
-When you do this in a development environment,
-be aware that you may get class/file not found errors if certain proxies
-are not yet generated. You may also get failing lazy-loads if new
-methods were added to the entity class that are not yet in the proxy class.
-In such a case, simply use the Doctrine Console to (re)generate the
-proxy classes.
-
--  ``Doctrine\ORM\Proxy\ProxyFactory::AUTOGENERATE_ALWAYS``
-
-Always generates a new proxy in every request and writes it to disk.
-
--  ``Doctrine\ORM\Proxy\ProxyFactory::AUTOGENERATE_FILE_NOT_EXISTS``
-
-Generate the proxy class when the proxy file does not exist.
-This strategy causes a file exists call whenever any proxy is
-used the first time in a request.
-
--  ``Doctrine\ORM\Proxy\ProxyFactory::AUTOGENERATE_EVAL``
-
-Generate the proxy classes and evaluate them on the fly via eval(),
-avoiding writing the proxies to disk.
-This strategy is only sane for development.
-
-In a production environment, it is highly recommended to use
-AUTOGENERATE_NEVER to allow for optimal performances. The other
-options are interesting in development environment.
-
-``setAutoGenerateProxyClasses`` can accept a boolean
-value. This is still possible, ``FALSE`` being equivalent to
-AUTOGENERATE_NEVER and ``TRUE`` to AUTOGENERATE_ALWAYS.
-
 Development vs Production Configuration
 ---------------------------------------
 
@@ -457,55 +340,6 @@ transparently initialize itself on first access.
     essentially means eager loading of that association in that query.
     This will override the 'fetch' option specified in the mapping for
     that association, but only for that query.
-
-
-Generating Proxy classes
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-In a production environment, it is highly recommended to use
-``AUTOGENERATE_NEVER`` to allow for optimal performances.
-However you will be required to generate the proxies manually
-using the Doctrine Console:
-
-.. code-block:: php
-
-    $ ./doctrine orm:generate-proxies
-
-The other options are interesting in development environment:
-
-- ``AUTOGENERATE_ALWAYS`` will require you to create and configure
-  a proxy directory. Proxies will be generated and written to file
-  on each request, so any modification to your code will be acknowledged.
-
-- ``AUTOGENERATE_FILE_NOT_EXISTS`` will not overwrite an existing
-  proxy file. If your code changes, you will need to regenerate the
-  proxies manually.
-
-- ``AUTOGENERATE_EVAL`` will regenerate each proxy on each request,
-  but without writing them to disk.
-
-Autoloading Proxies
--------------------
-
-When you deserialize proxy objects from the session or any other storage
-it is necessary to have an autoloading mechanism in place for these classes.
-For implementation reasons Proxy class names are not PSR-0 compliant. This
-means that you have to register a special autoloader for these classes:
-
-.. code-block:: php
-
-    <?php
-    use Doctrine\ORM\Proxy\Autoloader;
-
-    $proxyDir = "/path/to/proxies";
-    $proxyNamespace = "MyProxies";
-
-    Autoloader::register($proxyDir, $proxyNamespace);
-
-If you want to execute additional logic to intercept the proxy file not found
-state you can pass a closure as the third argument. It will be called with
-the arguments proxydir, namespace and className when the proxy file could not
-be found.
 
 Multiple Metadata Sources
 -------------------------

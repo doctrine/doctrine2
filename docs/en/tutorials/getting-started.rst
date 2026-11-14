@@ -48,9 +48,7 @@ An entity contains persistable properties. A persistable property
 is an instance variable of the entity that is saved into and retrieved from the database
 by Doctrine's data mapping capabilities.
 
-An entity class can be final or read-only when you use
-:ref:`native lazy objects <reference-native-lazy-objects>`.
-It may contain final methods or read-only properties too.
+An entity class can be final or read-only. It may contain final methods or read-only properties too.
 
 An Example Model: Bug Tracker
 -----------------------------

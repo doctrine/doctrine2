@@ -9,6 +9,7 @@ use Doctrine\ORM\Internal\SQLResultCasing;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Utility\PersisterHelper;
+use Override;
 
 use function array_flip;
 use function array_intersect;
@@ -27,11 +28,13 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
 {
     use SQLResultCasing;
 
+    #[Override]
     protected function getDiscriminatorColumnTableName(): string
     {
         return $this->class->getTableName();
     }
 
+    #[Override]
     protected function getSelectColumnsSQL(): string
     {
         $columnList = [];
@@ -97,6 +100,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function getInsertColumnList(): array
     {
         $columns = parent::getInsertColumnList();
@@ -107,6 +111,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
         return $columns;
     }
 
+    #[Override]
     protected function getSQLTableAlias(string $className, string $assocName = ''): string
     {
         return parent::getSQLTableAlias($this->class->rootEntityName, $assocName);
@@ -115,6 +120,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
     /**
      * {@inheritDoc}
      */
+    #[Override]
     protected function getSelectConditionSQL(array $criteria, AssociationMapping|null $assoc = null): string
     {
         $conditionSql = parent::getSelectConditionSQL($criteria, $assoc);
@@ -126,6 +132,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
         return $conditionSql . $this->getSelectConditionDiscriminatorValueSQL();
     }
 
+    #[Override]
     protected function getSelectConditionCriteriaSQL(Criteria $criteria): string
     {
         $conditionSql = parent::getSelectConditionCriteriaSQL($criteria);
@@ -156,6 +163,7 @@ class SingleTablePersister extends AbstractEntityInheritancePersister
         return $tableAlias . '.' . $discColumnName . ' IN (' . $values . ')';
     }
 
+    #[Override]
     protected function generateFilterConditionSQL(ClassMetadata $targetEntity, string $targetTableAlias): string
     {
         // Ensure that the filters are applied to the root entity of the inheritance tree

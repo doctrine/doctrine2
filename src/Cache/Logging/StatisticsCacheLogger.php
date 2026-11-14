@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Cache\Logging;
 use Doctrine\ORM\Cache\CollectionCacheKey;
 use Doctrine\ORM\Cache\EntityCacheKey;
 use Doctrine\ORM\Cache\QueryCacheKey;
+use Override;
 
 use function array_sum;
 
@@ -24,54 +25,63 @@ class StatisticsCacheLogger implements CacheLogger
     /** @var array<string, int> */
     private array $cachePutCountMap = [];
 
+    #[Override]
     public function collectionCacheMiss(string $regionName, CollectionCacheKey $key): void
     {
         $this->cacheMissCountMap[$regionName]
             = ($this->cacheMissCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function collectionCacheHit(string $regionName, CollectionCacheKey $key): void
     {
         $this->cacheHitCountMap[$regionName]
             = ($this->cacheHitCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function collectionCachePut(string $regionName, CollectionCacheKey $key): void
     {
         $this->cachePutCountMap[$regionName]
             = ($this->cachePutCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function entityCacheMiss(string $regionName, EntityCacheKey $key): void
     {
         $this->cacheMissCountMap[$regionName]
             = ($this->cacheMissCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function entityCacheHit(string $regionName, EntityCacheKey $key): void
     {
         $this->cacheHitCountMap[$regionName]
             = ($this->cacheHitCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function entityCachePut(string $regionName, EntityCacheKey $key): void
     {
         $this->cachePutCountMap[$regionName]
             = ($this->cachePutCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function queryCacheHit(string $regionName, QueryCacheKey $key): void
     {
         $this->cacheHitCountMap[$regionName]
             = ($this->cacheHitCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function queryCacheMiss(string $regionName, QueryCacheKey $key): void
     {
         $this->cacheMissCountMap[$regionName]
             = ($this->cacheMissCountMap[$regionName] ?? 0) + 1;
     }
 
+    #[Override]
     public function queryCachePut(string $regionName, QueryCacheKey $key): void
     {
         $this->cachePutCountMap[$regionName]

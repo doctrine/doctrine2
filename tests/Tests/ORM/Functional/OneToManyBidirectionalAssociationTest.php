@@ -11,8 +11,6 @@ use Doctrine\Tests\Models\ECommerce\ECommerceProduct;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
 
-use function defined;
-
 /**
  * Tests a bidirectional one-to-one association mapping (without inheritance).
  */
@@ -166,14 +164,14 @@ class OneToManyBidirectionalAssociationTest extends OrmFunctionalTestCase
         $product  = $this->_em->find(ECommerceProduct::class, $this->product->getId());
         $features = $product->getFeatures();
 
-        $results = $features->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $results = $features->matching(Criteria::create()->where(
             Criteria::expr()->eq('description', 'Model writing tutorial'),
         ));
 
         self::assertInstanceOf(Collection::class, $results);
         self::assertCount(1, $results);
 
-        $results = $features->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $results = $features->matching(Criteria::create());
 
         self::assertInstanceOf(Collection::class, $results);
         self::assertCount(2, $results);
@@ -192,7 +190,7 @@ class OneToManyBidirectionalAssociationTest extends OrmFunctionalTestCase
         $features = $product->getFeatures();
         $features->add($thirdFeature);
 
-        $results = $features->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $results = $features->matching(Criteria::create()->where(
             Criteria::expr()->eq('description', 'Model writing tutorial'),
         ));
 
@@ -210,14 +208,14 @@ class OneToManyBidirectionalAssociationTest extends OrmFunctionalTestCase
         $thirdFeature->setDescription('Third feature');
         $product->addFeature($thirdFeature);
 
-        $results = $features->matching((defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create())->where(
+        $results = $features->matching(Criteria::create()->where(
             Criteria::expr()->eq('description', 'Third feature'),
         ));
 
         self::assertInstanceOf(Collection::class, $results);
         self::assertCount(1, $results);
 
-        $results = $features->matching(defined(Criteria::class . '::ASC') ? Criteria::create(true) : Criteria::create());
+        $results = $features->matching(Criteria::create());
 
         self::assertInstanceOf(Collection::class, $results);
         self::assertCount(3, $results);

@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\Persisters\Collection\CollectionPersister;
+use Override;
 
 use function spl_object_id;
 
@@ -24,6 +25,7 @@ class ReadWriteCachedCollectionPersister extends AbstractCollectionPersister
         parent::__construct($persister, $region, $em, $association);
     }
 
+    #[Override]
     public function afterTransactionComplete(): void
     {
         if (isset($this->queuedCache['update'])) {
@@ -41,6 +43,7 @@ class ReadWriteCachedCollectionPersister extends AbstractCollectionPersister
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function afterTransactionRolledBack(): void
     {
         if (isset($this->queuedCache['update'])) {
@@ -58,6 +61,7 @@ class ReadWriteCachedCollectionPersister extends AbstractCollectionPersister
         $this->queuedCache = [];
     }
 
+    #[Override]
     public function delete(PersistentCollection $collection): void
     {
         $ownerId = $this->uow->getEntityIdentifier($collection->getOwner());
@@ -76,6 +80,7 @@ class ReadWriteCachedCollectionPersister extends AbstractCollectionPersister
         ];
     }
 
+    #[Override]
     public function update(PersistentCollection $collection): void
     {
         $isInitialized = $collection->isInitialized();

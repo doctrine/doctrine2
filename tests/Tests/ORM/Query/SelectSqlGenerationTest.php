@@ -33,11 +33,6 @@ use Exception;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
-use function class_exists;
-
-// DBAL 3 compatibility
-class_exists('Doctrine\\DBAL\\Platforms\\SqlitePlatform');
-
 class SelectSqlGenerationTest extends OrmTestCase
 {
     private EntityManagerInterface $entityManager;
@@ -815,13 +810,9 @@ class SelectSqlGenerationTest extends OrmTestCase
             ->setMaxResults(10)
             ->setFirstResult(0);
 
-        // DBAL 2.8+ doesn't add OFFSET part when offset is 0
-        self::assertThat(
+        self::assertSame(
+            'SELECT c0_.id AS id_0, c0_.status AS status_1, c0_.username AS username_2, c0_.name AS name_3, c0_.email_id AS email_id_4 FROM cms_users c0_ LIMIT 10',
             $q->getSql(),
-            self::logicalOr(
-                self::identicalTo('SELECT c0_.id AS id_0, c0_.status AS status_1, c0_.username AS username_2, c0_.name AS name_3, c0_.email_id AS email_id_4 FROM cms_users c0_ LIMIT 10'),
-                self::identicalTo('SELECT c0_.id AS id_0, c0_.status AS status_1, c0_.username AS username_2, c0_.name AS name_3, c0_.email_id AS email_id_4 FROM cms_users c0_ LIMIT 10 OFFSET 0'),
-            ),
         );
     }
 

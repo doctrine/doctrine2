@@ -6,6 +6,7 @@ namespace Doctrine\ORM;
 
 use Doctrine\DBAL\Result;
 use Doctrine\ORM\Query\ParameterTypeInferer;
+use Override;
 
 use function array_values;
 use function is_int;
@@ -29,11 +30,13 @@ class NativeQuery extends AbstractQuery
         return $this;
     }
 
+    #[Override]
     public function getSQL(): string
     {
         return $this->sql;
     }
 
+    #[Override]
     protected function _doExecute(): Result|int
     {
         $parameters = [];

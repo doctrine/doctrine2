@@ -9,9 +9,7 @@ use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\Tests\Models\PropertyHooks\MappingVirtualProperty;
 use Doctrine\Tests\Models\PropertyHooks\User;
 use Doctrine\Tests\OrmFunctionalTestCase;
-use PHPUnit\Framework\Attributes\RequiresPhp;
 
-#[RequiresPhp('>= 8.4.0')]
 class PropertyHooksTest extends OrmFunctionalTestCase
 {
     protected function setUp(): void
@@ -20,10 +18,6 @@ class PropertyHooksTest extends OrmFunctionalTestCase
 
         if ($this->_em->getConnection()->getDatabasePlatform() instanceof AbstractMySQLPlatform) {
             self::markTestSkipped('MySQL/MariaDB is case-insensitive by default, and the logic of this test relies on case sensitivity.');
-        }
-
-        if (! $this->_em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            $this->markTestSkipped('Property hooks require native lazy objects to be enabled.');
         }
 
         $this->createSchemaForModels(

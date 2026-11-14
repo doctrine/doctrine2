@@ -13,6 +13,6 @@ interface ToManyAssociationMapping
 
     public function indexBy(): string;
 
-    /** @return array<string, SortDirection|'asc'|'desc'> */
+    /** @return array<string, SortDirection> */
     public function orderBy(): array;
 }

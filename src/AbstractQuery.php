@@ -16,7 +16,6 @@ use Doctrine\ORM\Cache\QueryCacheKey;
 use Doctrine\ORM\Cache\TimestampCacheKey;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException as ORMMappingException;
-use Doctrine\ORM\Proxy\DefaultProxyClassNameResolver;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Persistence\Mapping\MappingException;
@@ -51,32 +50,32 @@ abstract class AbstractQuery
     /**
      * Hydrates an object graph. This is the default behavior.
      */
-    public const HYDRATE_OBJECT = 1;
+    final public const int HYDRATE_OBJECT = 1;
 
     /**
      * Hydrates an array graph.
      */
-    public const HYDRATE_ARRAY = 2;
+    final public const int HYDRATE_ARRAY = 2;
 
     /**
      * Hydrates a flat, rectangular result set with scalar values.
      */
-    public const HYDRATE_SCALAR = 3;
+    final public const int HYDRATE_SCALAR = 3;
 
     /**
      * Hydrates a single scalar value.
      */
-    public const HYDRATE_SINGLE_SCALAR = 4;
+    final public const int HYDRATE_SINGLE_SCALAR = 4;
 
     /**
      * Very simple object hydrator (optimized for performance).
      */
-    public const HYDRATE_SIMPLEOBJECT = 5;
+    final public const int HYDRATE_SIMPLEOBJECT = 5;
 
     /**
      * Hydrates scalar column value.
      */
-    public const HYDRATE_SCALAR_COLUMN = 6;
+    final public const int HYDRATE_SCALAR_COLUMN = 6;
 
     /**
      * The parameter map of this query.
@@ -320,16 +319,16 @@ abstract class AbstractQuery
     /**
      * Sets a query parameter.
      *
-     * @param string|int                                       $key   The parameter position or name.
-     * @param mixed                                            $value The parameter value.
-     * @param ParameterType|ArrayParameterType|string|int|null $type  The parameter type. If specified, the given value
-     *                                                                will be run through the type conversion of this
-     *                                                                type. This is usually not needed for strings and
-     *                                                                numeric types.
+     * @param string|int                                   $key   The parameter position or name.
+     * @param mixed                                        $value The parameter value.
+     * @param ParameterType|ArrayParameterType|string|null $type  The parameter type. If specified, the given value
+     *                                                            will be run through the type conversion of this
+     *                                                            type. This is usually not needed for strings and
+     *                                                            numeric types.
      *
      * @return $this
      */
-    public function setParameter(string|int $key, mixed $value, ParameterType|ArrayParameterType|string|int|null $type = null): static
+    public function setParameter(string|int $key, mixed $value, ParameterType|ArrayParameterType|string|null $type = null): static
     {
         $existingParameter = $this->getParameter($key);
 
@@ -378,7 +377,7 @@ abstract class AbstractQuery
         }
 
         try {
-            $class = DefaultProxyClassNameResolver::getClass($value);
+            $class = $value::class;
             $value = $this->em->getUnitOfWork()->getSingleIdentifierValue($value);
 
             if ($value === null) {

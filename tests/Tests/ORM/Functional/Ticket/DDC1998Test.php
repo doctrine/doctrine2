@@ -61,7 +61,7 @@ class DDC1998Entity
 
 class DDC1998Type extends StringType
 {
-    public const NAME = 'ddc1998';
+    final public const string NAME = 'ddc1998';
 
     /**
      * {@inheritDoc}

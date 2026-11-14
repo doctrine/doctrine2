@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * ConditionalPrimary ::= SimpleConditionalExpression | "(" ConditionalExpression ")"
@@ -27,6 +28,7 @@ class ConditionalPrimary extends Node implements Phase2OptimizableConditional
         return (bool) $this->conditionalExpression;
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkConditionalPrimary($this);

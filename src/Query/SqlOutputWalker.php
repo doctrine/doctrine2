@@ -8,9 +8,11 @@ use Doctrine\ORM\Query\Exec\PreparedExecutorFinalizer;
 use Doctrine\ORM\Query\Exec\SingleSelectSqlFinalizer;
 use Doctrine\ORM\Query\Exec\SqlFinalizer;
 use LogicException;
+use Override;
 
 class SqlOutputWalker extends SqlWalker implements OutputWalker
 {
+    #[Override]
     public function getFinalizer(AST\DeleteStatement|AST\UpdateStatement|AST\SelectStatement $AST): SqlFinalizer
     {
         switch (true) {

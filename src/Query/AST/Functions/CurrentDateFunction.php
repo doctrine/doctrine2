@@ -7,6 +7,7 @@ namespace Doctrine\ORM\Query\AST\Functions;
 use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 /**
  * "CURRENT_DATE"
@@ -15,11 +16,13 @@ use Doctrine\ORM\Query\TokenType;
  */
 class CurrentDateFunction extends FunctionNode
 {
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         return $sqlWalker->getConnection()->getDatabasePlatform()->getCurrentDateSQL();
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

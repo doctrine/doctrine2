@@ -11,7 +11,7 @@ use Doctrine\Persistence\Mapping\Driver\SymfonyFileLocator;
  */
 class SimplifiedXmlDriver extends XmlDriver
 {
-    public const DEFAULT_FILE_EXTENSION = '.orm.xml';
+    final public const string DEFAULT_FILE_EXTENSION = '.orm.xml';
 
     /**
      * {@inheritDoc}

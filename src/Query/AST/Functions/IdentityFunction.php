@@ -9,6 +9,7 @@ use Doctrine\ORM\Query\Parser;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\SqlWalker;
 use Doctrine\ORM\Query\TokenType;
+use Override;
 
 use function assert;
 use function reset;
@@ -25,6 +26,7 @@ class IdentityFunction extends FunctionNode
 
     public string|null $fieldMapping = null;
 
+    #[Override]
     public function getSql(SqlWalker $sqlWalker): string
     {
         assert($this->pathExpression->field !== null);
@@ -72,6 +74,7 @@ class IdentityFunction extends FunctionNode
         return $tableAlias . '.' . $columnName;
     }
 
+    #[Override]
     public function parse(Parser $parser): void
     {
         $parser->match(TokenType::T_IDENTIFIER);

@@ -9,6 +9,7 @@ use Doctrine\ORM\NoResultException;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use InvalidArgumentException;
+use Override;
 
 use function array_map;
 use function array_sum;
@@ -69,6 +70,7 @@ final class OffsetPaginator implements PaginatorInterface
      *
      * @throws InvalidArgumentException If $position is not a {@see Window}.
      */
+    #[Override]
     public function paginate(Query|QueryBuilder $query, mixed $position = null): WindowPage
     {
         if (! $position instanceof Window) {

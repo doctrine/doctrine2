@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping\FieldMapping;
 use Doctrine\Persistence\Mapping\MappingException;
 use InvalidArgumentException;
 use JsonException;
+use Override;
 use Symfony\Component\Console\Completion\CompletionInput;
 use Symfony\Component\Console\Completion\CompletionSuggestions;
 use Symfony\Component\Console\Input\InputArgument;
@@ -50,6 +51,7 @@ use const JSON_UNESCAPED_UNICODE;
  */
 final class MappingDescribeCommand extends AbstractEntityManagerCommand
 {
+    #[Override]
     protected function configure(): void
     {
         $this->setName('orm:mapping:describe')
@@ -82,6 +84,7 @@ To use a specific entity manager (e.g., for multi-DB projects), use the <info>--
 EOT);
     }
 
+    #[Override]
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $ui = new SymfonyStyle($input, $output);
@@ -95,6 +98,7 @@ EOT);
         return 0;
     }
 
+    #[Override]
     public function complete(CompletionInput $input, CompletionSuggestions $suggestions): void
     {
         if ($input->mustSuggestArgumentValuesFor('entityName')) {

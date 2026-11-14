@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * Join ::= ["LEFT" ["OUTER"] | "INNER"] "JOIN" JoinAssociationPathExpression
@@ -14,9 +15,9 @@ use Doctrine\ORM\Query\SqlWalker;
  */
 class Join extends Node
 {
-    final public const JOIN_TYPE_LEFT      = 1;
-    final public const JOIN_TYPE_LEFTOUTER = 2;
-    final public const JOIN_TYPE_INNER     = 3;
+    final public const int JOIN_TYPE_LEFT      = 1;
+    final public const int JOIN_TYPE_LEFTOUTER = 2;
+    final public const int JOIN_TYPE_INNER     = 3;
 
     public ConditionalExpression|Phase2OptimizableConditional|null $conditionalExpression = null;
 
@@ -27,6 +28,7 @@ class Join extends Node
     ) {
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkJoin($this);

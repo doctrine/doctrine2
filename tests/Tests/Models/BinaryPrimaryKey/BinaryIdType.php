@@ -7,14 +7,11 @@ namespace Doctrine\Tests\Models\BinaryPrimaryKey;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\Tests\Mocks\CompatibilityType;
 use LogicException;
 
 final class BinaryIdType extends Type
 {
-    use CompatibilityType;
-
-    public const NAME = 'binary_id';
+    public const string NAME = 'binary_id';
 
     public function convertToPHPValue(
         mixed $value,

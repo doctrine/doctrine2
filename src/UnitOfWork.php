@@ -49,14 +49,13 @@ use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
 use Doctrine\ORM\Persisters\Entity\EntityPersister;
 use Doctrine\ORM\Persisters\Entity\JoinedSubclassPersister;
 use Doctrine\ORM\Persisters\Entity\SingleTablePersister;
-use Doctrine\ORM\Proxy\InternalProxy;
 use Doctrine\ORM\Utility\IdentifierFlattener;
 use Doctrine\Persistence\PropertyChangedListener;
 use Exception;
 use InvalidArgumentException;
+use Override;
 use RuntimeException;
 use Stringable;
-use Symfony\Component\VarExporter\Hydrator;
 use UnexpectedValueException;
 
 use function array_chunk;
@@ -73,8 +72,6 @@ use function array_values;
 use function assert;
 use function count;
 use function current;
-use function deepclone_hydrate;
-use function extension_loaded;
 use function get_debug_type;
 use function implode;
 use function in_array;
@@ -101,26 +98,26 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * An entity is in MANAGED state when its persistence is managed by an EntityManager.
      */
-    public const STATE_MANAGED = 1;
+    final public const int STATE_MANAGED = 1;
 
     /**
      * An entity is new if it has just been instantiated (i.e. using the "new" operator)
      * and is not (yet) managed by an EntityManager.
      */
-    public const STATE_NEW = 2;
+    final public const int STATE_NEW = 2;
 
     /**
      * A detached entity is an instance with persistent state and identity that is not
      * (or no longer) associated with an EntityManager (and a UnitOfWork).
      */
-    public const STATE_DETACHED = 3;
+    final public const int STATE_DETACHED = 3;
 
     /**
      * A removed entity instance is an instance with a persistent identity,
      * associated with an EntityManager, whose persistent state will be deleted
      * on commit.
      */
-    public const STATE_REMOVED = 4;
+    final public const int STATE_REMOVED = 4;
 
     /**
      * Hint used to collect all primary keys of associated entities during hydration
@@ -128,7 +125,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @see https://www.doctrine-project.org/projects/doctrine-orm/en/stable/reference/dql-doctrine-query-language.html#temporarily-change-fetch-mode-in-dql
      */
-    public const HINT_DEFEREAGERLOAD = 'deferEagerLoad';
+    final public const string HINT_DEFEREAGERLOAD = 'deferEagerLoad';
 
     /**
      * The identity map that holds references to all managed entities that have
@@ -467,17 +464,10 @@ class UnitOfWork implements PropertyChangedListener
                 $this->executeDeletions();
             }
 
-            $commitFailed = false;
             try {
-                if ($connection->commit() === false) {
-                    $commitFailed = true;
-                }
+                $connection->commit();
             } catch (DBAL\Exception $e) {
-                $commitFailed = true;
-            }
-
-            if ($commitFailed) {
-                throw new OptimisticLockException('Commit failed', null, $e ?? null);
+                throw new OptimisticLockException('Commit failed', null, $e);
             }
 
             $successful = true;
@@ -2145,12 +2135,10 @@ class UnitOfWork implements PropertyChangedListener
      * Refreshes the state of the given entity from the database, overwriting
      * any local, unpersisted changes.
      *
-     * @phpstan-param LockMode::*|null $lockMode
-     *
      * @throws InvalidArgumentException If the entity is not MANAGED.
      * @throws TransactionRequiredException
      */
-    public function refresh(object $entity, LockMode|int|null $lockMode = null): void
+    public function refresh(object $entity, LockMode|null $lockMode = null): void
     {
         $visited = [];
 
@@ -2161,12 +2149,11 @@ class UnitOfWork implements PropertyChangedListener
      * Executes a refresh operation on an entity.
      *
      * @phpstan-param array<int, object>  $visited The already visited entities during cascades.
-     * @phpstan-param LockMode::*|null $lockMode
      *
      * @throws ORMInvalidArgumentException If the entity is not MANAGED.
      * @throws TransactionRequiredException
      */
-    private function doRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null): void
+    private function doRefresh(object $entity, array &$visited, LockMode|null $lockMode = null): void
     {
         switch (true) {
             case $lockMode === LockMode::PESSIMISTIC_READ:
@@ -2203,9 +2190,8 @@ class UnitOfWork implements PropertyChangedListener
      * Cascades a refresh operation to associated entities.
      *
      * @phpstan-param array<int, object> $visited
-     * @phpstan-param LockMode::*|null $lockMode
      */
-    private function cascadeRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null): void
+    private function cascadeRefresh(object $entity, array &$visited, LockMode|null $lockMode = null): void
     {
         $class = $this->em->getClassMetadata($entity::class);
 
@@ -2394,13 +2380,11 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Acquire a lock on the given entity.
      *
-     * @phpstan-param LockMode::* $lockMode
-     *
      * @throws ORMInvalidArgumentException
      * @throws TransactionRequiredException
      * @throws OptimisticLockException
      */
-    public function lock(object $entity, LockMode|int $lockMode, DateTimeInterface|int|null $lockVersion = null): void
+    public function lock(object $entity, LockMode $lockMode, DateTimeInterface|int|null $lockVersion = null): void
     {
         if ($this->getEntityState($entity, self::STATE_DETACHED) !== self::STATE_MANAGED) {
             throw ORMInvalidArgumentException::entityNotManaged($entity);
@@ -2590,21 +2574,10 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if ($this->isUninitializedObject($entity)) {
-                if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-                    $class->reflClass->markLazyObjectAsInitialized($entity);
-                } else {
-                    $entity->__setInitialized(true);
-
-                    if (extension_loaded('deepclone')) {
-                        deepclone_hydrate($entity, (array) $class->reflClass->newInstanceWithoutConstructor());
-                    } else {
-                        /** @phpstan-ignore staticMethod.deprecatedClass */
-                        Hydrator::hydrate($entity, (array) $class->reflClass->newInstanceWithoutConstructor());
-                    }
-                }
+                $class->reflClass->markLazyObjectAsInitialized($entity);
             } elseif (
-                    ! isset($hints[Query::HINT_REFRESH])
-                    || (isset($hints[Query::HINT_REFRESH_ENTITY]) && $hints[Query::HINT_REFRESH_ENTITY] !== $entity)
+                ! isset($hints[Query::HINT_REFRESH])
+                || (isset($hints[Query::HINT_REFRESH_ENTITY]) && $hints[Query::HINT_REFRESH_ENTITY] !== $entity)
             ) {
                 return $entity;
             }
@@ -2622,8 +2595,7 @@ class UnitOfWork implements PropertyChangedListener
             // longer be considered partially loaded.
             unset($this->partialObjectLoadedFields[$oid]);
         } else {
-            $allowsPartialLazyObject = $this->em->getConfiguration()->isNativeLazyObjectsEnabled()
-                && isset($hints['isPartial']) && $hints['isPartial'];
+            $allowsPartialLazyObject = isset($hints['isPartial']) && $hints['isPartial'];
             if ($allowsPartialLazyObject) {
                 $entity = $this->em->getProxyFactory()->getProxy($class->name, $id, false);
 
@@ -3247,10 +3219,6 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function markAsPartiallyLoaded(object $entity, array $loadedFields): void
     {
-        if (! $this->em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            return;
-        }
-
         $this->partialObjectLoadedFields[spl_object_id($entity)] = $loadedFields;
     }
 
@@ -3261,6 +3229,7 @@ class UnitOfWork implements PropertyChangedListener
      *
      * {@inheritDoc}
      */
+    #[Override]
     public function propertyChanged(object $sender, string $propertyName, mixed $oldValue, mixed $newValue): void
     {
         $oid   = spl_object_id($sender);
@@ -3335,40 +3304,32 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function initializeObject(object $obj): void
     {
-        if ($obj instanceof InternalProxy) {
-            $obj->__load();
-
-            return;
-        }
-
         if ($obj instanceof PersistentCollection) {
             $obj->initialize();
 
             return;
         }
 
-        if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled()) {
-            if (! $this->isMappedClass($obj::class)) {
-                return;
-            }
-
-            $reflection = $this->em->getClassMetadata($obj::class)->getReflectionClass();
-            $reflection->initializeLazyObject($obj);
+        if (! $this->isMappedClass($obj::class)) {
+            return;
         }
+
+        $reflection = $this->em->getClassMetadata($obj::class)->getReflectionClass();
+        $reflection->initializeLazyObject($obj);
     }
 
     /** Tests if a value is an uninitialized entity. */
     public function isUninitializedObject(mixed $obj): bool
     {
-        if ($this->em->getConfiguration()->isNativeLazyObjectsEnabled() && ! ($obj instanceof Collection) && is_object($obj)) {
-            if (! $this->isMappedClass($obj::class)) {
-                return false;
-            }
-
-            return $this->em->getClassMetadata($obj::class)->reflClass->isUninitializedLazyObject($obj);
+        if (($obj instanceof Collection) || ! is_object($obj)) {
+            return false;
         }
 
-        return $obj instanceof InternalProxy && ! $obj->__isInitialized();
+        if (! $this->isMappedClass($obj::class)) {
+            return false;
+        }
+
+        return $this->em->getClassMetadata($obj::class)->reflClass->isUninitializedLazyObject($obj);
     }
 
     /**

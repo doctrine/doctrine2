@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping;
 
-use ArrayAccess;
 use BackedEnum;
 use Exception;
 
 use function in_array;
 use function property_exists;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class DiscriminatorColumnMapping implements ArrayAccess
+final class DiscriminatorColumnMapping
 {
-    use ArrayAccessImplementation;
-
     /** The database length of the column. Optional. Default value taken from the type. */
     public int|null $length = null;
 

@@ -8,6 +8,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
 use Doctrine\ORM\Query\AST;
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 /**
  * Executor that executes the SQL statements for DQL DELETE/UPDATE statements on classes
@@ -29,6 +30,7 @@ class SingleTableDeleteUpdateExecutor extends AbstractSqlExecutor
     /**
      * {@inheritDoc}
      */
+    #[Override]
     public function execute(Connection $conn, array $params, array $types): int
     {
         if ($conn instanceof PrimaryReadReplicaConnection) {

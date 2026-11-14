@@ -6,6 +6,350 @@ awareness about deprecated code.
 - Use of our low-overhead runtime deprecation API, details:
   https://github.com/doctrine/deprecations/
 
+# Upgrade to 4.0
+
+## Removed `Doctrine\ORM\Tools\Pagination\Paginator`
+
+The class deprecated in 3.7 has been removed. Use
+`Doctrine\ORM\Tools\Pagination\OffsetPaginator` instead: the first result and the
+maximum number of results are no longer read implicitly from the query, they are
+passed together as a `Window` value object to `paginate()`, which returns an
+immutable, iterable `WindowPage`.
+
+```diff
+-use Doctrine\ORM\Tools\Pagination\Paginator;
++use Doctrine\ORM\Tools\Pagination\OffsetPaginator;
++use Doctrine\ORM\Tools\Pagination\Window;
+
+-$query = $entityManager->createQuery($dql)
+-    ->setFirstResult(0)
+-    ->setMaxResults(25);
++$query = $entityManager->createQuery($dql);
+
+-$paginator = new Paginator($query, fetchJoinCollection: true);
++$page = (new OffsetPaginator(fetchJoinCollection: true))
++    ->paginate($query, new Window(0, 25));
+
+-$total = count($paginator);
++$total = $page->getTotalCount();
+
+-foreach ($paginator as $post) {
++foreach ($page as $post) {
+     // ...
+ }
+```
+
+`Paginator::setUseOutputWalkers()` becomes the `useOutputWalkers` constructor
+argument of `OffsetPaginator`.
+
+A `Window` always carries a page size, so paginating without a limit is no longer
+possible: run the query itself when you want every row.
+
+`WindowPage::getItems()` returns a list, whereas iterating the legacy `Paginator`
+preserved the result keys of a DQL `INDEX BY` clause.
+
+## Removed `Paginator::HINT_ENABLE_DISTINCT`
+
+The constant deprecated in 3.7 has been removed along with its class. Use
+`Doctrine\ORM\Tools\Pagination\PaginatorInterface::HINT_ENABLE_DISTINCT` instead, which
+applies to both `OffsetPaginator` and `CursorPaginator`. Its value is unchanged,
+so hints set as a raw string keep working.
+
+```diff
+-use Doctrine\ORM\Tools\Pagination\Paginator;
++use Doctrine\ORM\Tools\Pagination\PaginatorInterface;
+
+-$query->setHint(Paginator::HINT_ENABLE_DISTINCT, false);
++$query->setHint(PaginatorInterface::HINT_ENABLE_DISTINCT, false);
+```
+
+## Forbid passing `null` as lock mode
+
+Passing `null` as lock mode to `EntityManager::find()`,
+`EntityManager::refresh()` or `EntityRepository::find()` is no longer possible.
+Since `LockMode::NONE` is a no-op, omit the argument or pass `LockMode::NONE`
+instead.
+
+```diff
+-$entityManager->find(User::class, $id, null);
++$entityManager->find(User::class, $id);
+```
+
+## Forbid using the `WITH` keyword for arbitrary DQL joins
+
+Using the `WITH` keyword to specify the condition for an arbitrary DQL join is
+forbidden. Instead, use the `ON` keyword (similar to the SQL syntax for joins).
+The `WITH` keyword is now meant to be used only for filtering conditions in
+association joins.
+
+## Removed support for string expression for default values of temporal fields in mappings
+
+Using a string expression for default values of temporal fields is no longer supported.
+Use `Doctrine\DBAL\Schema\DefaultExpression` instances instead.
+
+Here is how to do so using PHP attributes:
+
+```diff
+ use DateTime;
++use Doctrine\DBAL\Schema\DefaultExpression\CurrentDate;
++use Doctrine\DBAL\Schema\DefaultExpression\CurrentTime;
++use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
+ use Doctrine\ORM\Mapping as ORM;
+
+ #[ORM\Entity]
+ final class TimeEntity
+ {
+     #[ORM\Id]
+     #[ORM\Column]
+     public int $id;
+
+-    #[ORM\Column(options: ['default' => 'CURRENT_TIMESTAMP'], insertable: false, updatable: false)]
++    #[ORM\Column(options: ['default' => new CurrentTimestamp()], insertable: false, updatable: false)]
+     public DateTime $createdAt;
+
+-    #[ORM\Column(options: ['default' => 'CURRENT_TIME'], insertable: false, updatable: false)]
++    #[ORM\Column(options: ['default' => new CurrentTime()], insertable: false, updatable: false)]
+     public DateTime $createdTime;
+
+-    #[ORM\Column(options: ['default' => 'CURRENT_DATE'], insertable: false, updatable: false)]
++    #[ORM\Column(options: ['default' => new CurrentDate()], insertable: false, updatable: false)]
+     public DateTime $createdDate;
+ }
+```
+
+Here is how to do the same when mapping entities using XML:
+
+```diff
+ <?xml version="1.0" encoding="UTF-8"?>
+
+ <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
+                           https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+
+     <entity name="Doctrine\Tests\ORM\Functional\XmlTimeEntity">
+         <id name="id" type="integer" column="id">
+             <generator strategy="AUTO"/>
+         </id>
+
+         <field name="createdAt" type="datetime" insertable="false" updatable="false">
+             <options>
+-                <option name="default">CURRENT_TIMESTAMP</option>
++                <option name="default">
++                    <object class="Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp"/>
++                </option>
+             </options>
+         </field>
+
+         <field name="createdAtImmutable" type="datetime_immutable" insertable="false" updatable="false">
+             <options>
+-                <option name="default">CURRENT_TIMESTAMP</option>
++                <option name="default">
++                    <object class="Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp"/>
++                </option>
+             </options>
+         </field>
+
+         <field name="createdTime" type="time" insertable="false" updatable="false">
+             <options>
+-                <option name="default">CURRENT_TIME</option>
++                <option name="default">
++                    <object class="Doctrine\DBAL\Schema\DefaultExpression\CurrentTime"/>
++                </option>
+             </options>
+         </field>
+         <field name="createdDate" type="date" insertable="false" updatable="false">
+             <options>
+-                <option name="default">CURRENT_DATE</option>
++                <option name="default">
++                    <object class="Doctrine\DBAL\Schema\DefaultExpression\CurrentDate"/>
++                </option>
+             </options>
+         </field>
+     </entity>
+ </doctrine-mapping>
+```
+
+## BC BREAK: SortDirection usage is now required
+
+PHP 8.6 provides a native `\SortDirection` enum that must be used instead of
+strings such as `'ASC'` and `'DESC'`.
+
+`\SortDirection` is polyfilled by the `symfony/polyfill-php86` package, that we
+require.
+
+This applies to the following methods:
+
+- `Doctrine\ORM\QueryBuilder::addOrderBy()`
+- `Doctrine\ORM\QueryBuilder::orderBy()`
+- `Doctrine\ORM\Query\Expr\OrderBy::__construct()`
+- `Doctrine\ORM\Query\Expr\OrderBy::add()`
+
+It also applies to mapping when using either the attribute driver or the static
+PHP driver, and it applies when using the class metadata builder API as well.
+
+## BC BREAK: EventManager to EventManagerInterface migration
+
+The following methods used to return an instance of `Doctrine\Common\EventManager`,
+and now return an instance of `Doctrine\Common\EventManagerInterface`:
+
+- `Doctrine\ORM\EntityManager::getEventManager()`
+- `Doctrine\ORM\EntityManagerDecorator::getEventManager()`
+- `Doctrine\ORM\EntityManagerInterface::getEventManager()`
+
+## BC BREAK: Remove `FieldMapping::$default`
+
+The `default` property of `Doctrine\ORM\Mapping\FieldMapping` has been removed.
+Use `FieldMapping::$options['default']` instead.
+
+## BC BREAK: throw on `nullable` on columns that end up being used in a primary key
+
+Specifying `nullable` on join columns that are part of a primary key is
+an error and will cause an exception to be thrown.
+
+## BC BREAK: `Doctrine\ORM\Mapping\LegacyReflectionFields` is removed
+
+The `Doctrine\ORM\Mapping\LegacyReflectionFields` class has been removed.
+Also, `Doctrine\ORM\Mapping\ClassMetadata::$reflFields` has been removed, as
+well as methods depending on it.
+
+## BC BREAK: Userland lazy objects are no longer supported
+
+Userland lazy objects are no longer supported.
+[Native lazy objects](https://www.php.net/manual/en/language.oop5.lazy-objects.php)
+are used instead.
+
+## BC BREAK: type declarations on constants
+
+All constants in the ORM now have type declarations and are final. You may no
+longer override them in extending types.
+
+## Remove methods for configuring no longer configurable features
+
+Since 3.0, lazy ghosts are enabled unconditionally, and so is rejecting ID
+collisions in the identity map.
+
+As a consequence, the following methods are removed:
+
+* `Doctrine\ORM\Configuration::setLazyGhostObjectEnabled()`
+* `Doctrine\ORM\Configuration::isLazyGhostObjectEnabled()`
+* `Doctrine\ORM\Configuration::setRejectIdCollisionInIdentityMap()`
+* `Doctrine\ORM\Configuration::isRejectIdCollisionInIdentityMapEnabled()`
+
+## BC BREAK: New argument to `NewObjectExpression::dispatch()`
+
+```diff
+ <?php
+ class NewObjectExpression extends Node
+ {
+     // …
+
+-    public function dispatch(SqlWalker $walker): string
++    public function dispatch(SqlWalker $walker, string|null $parentAlias = null): string
+     {
+         // …
+     }
+ }
+```
+
+## BC BREAK: New argument to `AbstractEntityPersister::buildCollectionCacheKey()`
+
+
+```diff
+ <?php
+ abstract class AbstractEntityPersister implements CachedEntityPersister
+ {
+     // …
+
+     protected function buildCollectionCacheKey(
+         AssociationMapping $association,
+         array $ownerId,
++        string $filterHash
+     ): CollectionCacheKey {
+         // …
+     }
+ }
+```
+
+## Require implementation of `OutputWalker`, remove `SqlWalker::getExecutor()`
+
+The `SqlWalker::getExecutor()` method is removed. Output walkers should
+implement the `\Doctrine\ORM\Query\OutputWalker` interface and create
+`Doctrine\ORM\Query\Exec\SqlFinalizer` instances.
+`Doctrine\ORM\Query\Exec\SingleSelectExecutor` is removed as well.
+
+## Remove `DatabaseDriver`
+
+The class `Doctrine\ORM\Mapping\Driver\DatabaseDriver` is removed.
+
+## Remove the `NotSupported` exception
+
+The class `Doctrine\ORM\Exception\NotSupported` has been removed without replacement.
+
+## Remove remaining `Serializable` implementation
+
+`SequenceGenerator` does not implement the `Serializable` interface anymore.
+
+The following methods have been removed:
+
+* `SequenceGenerator::serialize()`
+* `SequenceGenerator::unserialize()`
+
+## Remove `orm:schema-tool:update` option `--complete`
+
+That option was a no-op.
+
+## Remove `Doctrine\ORM\Mapping\ReflectionEnumProperty`
+
+This class has been removed.
+Instead, use `Doctrine\Persistence\Reflection\EnumReflectionProperty` from
+`doctrine/persistence`.
+
+## Forbid passing null to `ClassMetadata::fullyQualifiedClassName()`
+
+Passing `null` to `Doctrine\ORM\ClassMetadata::fullyQualifiedClassName()` is
+no longer possible.
+
+## Remove array access
+
+Using array access on instances of the following classes is no longer possible:
+
+- `Doctrine\ORM\Mapping\DiscriminatorColumnMapping`
+- `Doctrine\ORM\Mapping\EmbedClassMapping`
+- `Doctrine\ORM\Mapping\FieldMapping`
+- `Doctrine\ORM\Mapping\JoinColumnMapping`
+- `Doctrine\ORM\Mapping\JoinTableMapping`
+
+## Remove `Doctrine\ORM\Query\AST\TypedExpression`
+
+The interface `Doctrine\ORM\Query\AST\TypedExpression` is removed. Implement
+`Doctrine\ORM\Query\AST\ExpressionWithReturnType` instead, which returns the
+DBAL type name as a string.
+
+```diff
+-use Doctrine\DBAL\Types\Type;
+ use Doctrine\DBAL\Types\Types;
+-use Doctrine\ORM\Query\AST\TypedExpression;
++use Doctrine\ORM\Query\AST\ExpressionWithReturnType;
+
+-class MyFunction extends FunctionNode implements TypedExpression
++class MyFunction extends FunctionNode implements ExpressionWithReturnType
+ {
+-    public function getReturnType(): Type
++    public function getReturnTypeName(): string
+     {
+-        return Type::getType(Types::INTEGER);
++        return Types::INTEGER;
+     }
+ }
+```
+
+## Remove properties `$indexes` and `$uniqueConstraints` from `Doctrine\ORM\Mapping\Table`
+
+The properties `$indexes` and `$uniqueConstraints` have been removed since they had no effect at all.
+The preferred way of defining indices and unique constraints is by
+using the `\Doctrine\ORM\Mapping\UniqueConstraint` and `\Doctrine\ORM\Mapping\Index` attributes.
+
 # Upgrade to 3.x General Notes
 
 We recommend you upgrade to DBAL 3 first before upgrading to ORM 3. See
@@ -104,7 +448,7 @@ Any key of the `options` of a field, join column or discriminator column mapping
 that is not one of `comment`, `unsigned`, `fixed`, `default` or `values` is passed
 to DBAL as a column platform option. DBAL 5 removes column platform options and
 `ColumnEditor` has no setter for custom ones, so relying on this is deprecated.
-With DBAL 5, it throws a `Doctrine\ORM\Exception\NotSupported` exception.
+With DBAL 5, it throws a `Doctrine\ORM\Tools\Exception\NotSupported` exception.
 
 ## No update query when the database value of a date or object does not change
 

@@ -6,6 +6,7 @@ namespace Doctrine\ORM\Query\AST;
 
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\SqlWalker;
+use Override;
 
 use function is_numeric;
 use function strlen;
@@ -28,6 +29,7 @@ class InputParameter extends Node
         $this->name    = $param;
     }
 
+    #[Override]
     public function dispatch(SqlWalker $walker): string
     {
         return $walker->walkInputParameter($this);
