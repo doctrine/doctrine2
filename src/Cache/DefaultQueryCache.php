@@ -74,6 +74,18 @@ class DefaultQueryCache implements QueryCache
             return null;
         }
 
+        $this->uow->enterHydration();
+
+        try {
+            return $this->hydrateCacheEntry($cacheEntry, $rsm);
+        } finally {
+            $this->uow->leaveHydration();
+        }
+    }
+
+    /** @return mixed[]|null */
+    private function hydrateCacheEntry(QueryCacheEntry $cacheEntry, ResultSetMapping $rsm): array|null
+    {
         $result      = [];
         $entityName  = reset($rsm->aliasMap);
         $hasRelation = ! empty($rsm->relationMap);
@@ -124,8 +136,6 @@ class DefaultQueryCache implements QueryCache
                     if ($assocEntry === null) {
                         $this->cacheLogger?->entityCacheMiss($assocRegion->getName(), $assocKey);
 
-                        $this->uow->hydrationComplete();
-
                         return null;
                     }
 
@@ -151,8 +161,6 @@ class DefaultQueryCache implements QueryCache
 
                     if ($assocEntry === null) {
                         $this->cacheLogger?->entityCacheMiss($assocRegion->getName(), $assocKeys->identifiers[$assocIndex]);
-
-                        $this->uow->hydrationComplete();
 
                         return null;
                     }
@@ -190,8 +198,6 @@ class DefaultQueryCache implements QueryCache
 
             $result[$index] = $this->uow->createEntity($entityEntry->class, $data, self::$hints);
         }
-
-        $this->uow->hydrationComplete();
 
         return $result;
     }

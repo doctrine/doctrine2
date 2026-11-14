@@ -33,6 +33,7 @@ use function end;
 use function explode;
 use function in_array;
 use function is_a;
+use function is_int;
 use function is_subclass_of;
 use function str_contains;
 use function strlen;
@@ -170,7 +171,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
 
         if (! $class->isMappedSuperclass) {
-            if ($rootEntityFound && $class->isInheritanceTypeNone()) {
+            if ($rootEntityFound && $class->isInheritanceTypeNone() && ! $class->isEmbeddedClass) {
                 throw MappingException::missingInheritanceTypeDeclaration(end($nonSuperclassParents), $class->name);
             }
 
@@ -514,6 +515,17 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         foreach (['uniqueConstraints', 'indexes'] as $indexType) {
             if (isset($parentClass->table[$indexType])) {
                 foreach ($parentClass->table[$indexType] as $indexName => $index) {
+                    if (is_int($indexName)) {
+                        // Unnamed indices only have a positional key, so identify them by
+                        // their columns: the inheriting table overrides such an index by
+                        // declaring one on the same columns
+                        if (! self::hasIndexOnSameColumns($subClass->table[$indexType] ?? [], $index)) {
+                            $subClass->table[$indexType][] = $index;
+                        }
+
+                        continue;
+                    }
+
                     if (isset($subClass->table[$indexType][$indexName])) {
                         continue; // Let the inheriting table override indices
                     }
@@ -522,6 +534,24 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
                 }
             }
         }
+    }
+
+    /**
+     * @param array<int|string, array<string, mixed>> $indexes
+     * @param array<string, mixed>                    $index
+     */
+    private static function hasIndexOnSameColumns(array $indexes, array $index): bool
+    {
+        foreach ($indexes as $existingIndex) {
+            if (
+                ($existingIndex['columns'] ?? null) === ($index['columns'] ?? null)
+                && ($existingIndex['fields'] ?? null) === ($index['fields'] ?? null)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

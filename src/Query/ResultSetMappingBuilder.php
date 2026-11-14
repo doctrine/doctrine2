@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Query;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Internal\SQLResultCasing;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Utility\PersisterHelper;
 use InvalidArgumentException;
@@ -239,7 +239,8 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
      */
     public function generateSelectClause(array $tableAliases = []): string
     {
-        $sql = '';
+        $sql          = '';
+        $typeProvider = TypeProviderLocator::fromConnection($this->em->getConnection());
 
         foreach ($this->columnOwnerMap as $columnName => $dqlAlias) {
             $tableAlias = $tableAliases[$dqlAlias] ?? $dqlAlias;
@@ -254,7 +255,7 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
                 $classFieldMapping = $class->fieldMappings[$fieldName];
                 $columnSql         = $tableAlias . '.' . $classFieldMapping->columnName;
 
-                $type      = Type::getType($classFieldMapping->type);
+                $type      = $typeProvider->get($classFieldMapping->type);
                 $columnSql = $type->convertToPHPValueSQL($columnSql, $this->em->getConnection()->getDatabasePlatform());
 
                 $sql .= $columnSql;

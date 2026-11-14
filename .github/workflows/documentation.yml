@@ -14,7 +14,11 @@ on:
       - ".github/workflows/documentation.yml"
       - "docs/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   documentation:
     name: "Documentation"
-    uses: "doctrine/.github/.github/workflows/documentation.yml@15.1.0"
+    uses: "doctrine/.github/.github/workflows/documentation.yml@16.0.0"

@@ -30,6 +30,26 @@ class WindowPageTest extends TestCase
         self::assertSame(42, $page->getTotalCount());
     }
 
+    public function testLazyTotalCountIsOnlyComputedOnDemandAndMemoized(): void
+    {
+        $calls = 0;
+        $page  = new WindowPage([], static function () use (&$calls): int {
+            ++$calls;
+
+            return 42;
+        }, new Window(0, 20));
+
+        self::assertSame(0, $calls);
+
+        self::assertSame(42, $page->getTotalCount());
+        self::assertSame(42, $page->getTotalCount());
+        self::assertSame(3, $page->getPageCount());
+        self::assertTrue($page->hasNextPage());
+        self::assertTrue($page->hasToPaginate());
+
+        self::assertSame(1, $calls);
+    }
+
     public function testFirstPageHasNextButNoPreviousPage(): void
     {
         $page = new WindowPage([(object) ['id' => 1], (object) ['id' => 2]], 10, new Window(0, 2));

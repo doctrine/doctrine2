@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
@@ -55,9 +54,7 @@ class GH7820Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! Type::hasType(GH7820LineTextType::class)) {
-            Type::addType(GH7820LineTextType::class, GH7820LineTextType::class);
-        }
+        self::registerDbalType(GH7820LineTextType::class, GH7820LineTextType::class);
 
         $this->setUpEntitySchema([GH7820Line::class]);
 

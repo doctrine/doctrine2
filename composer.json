@@ -48,9 +48,10 @@
     },
     "require-dev": {
         "doctrine/coding-standard": "^14.0",
+        "doctrine/orm-plugin-second-level-cache": "^1.0",
         "phpbench/phpbench": "^1.0",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "2.1.23",
+        "phpstan/phpstan": "2.3.5",
         "phpstan/phpstan-deprecation-rules": "^2",
         "phpunit/phpunit": "^11.5.42",
         "psr/log": "^1 || ^2 || ^3",
@@ -59,6 +60,7 @@
     },
     "suggest": {
         "ext-dom": "Provides support for XSD validation for XML mapping files",
+        "doctrine/orm-plugin-second-level-cache": "Second level cache functionality needs extra package.",
         "symfony/cache": "Provides cache support for Setup Tool with doctrine/cache 2.0"
     },
     "autoload": {

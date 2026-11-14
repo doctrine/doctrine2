@@ -35,7 +35,7 @@ final class GH7829Test extends OrmFunctionalTestCase
 
         $query = $this->_em->createQuery('SELECT a FROM Doctrine\Tests\Models\CMS\CmsArticle a');
 
-        (new OffsetPaginator(true, false))->paginate($query, new Window(0, 1));
+        (new OffsetPaginator(true, false))->paginate($query, new Window(0, 1))->getTotalCount();
 
         $this->assertQueryCount(3);
     }
@@ -46,7 +46,7 @@ final class GH7829Test extends OrmFunctionalTestCase
 
         $query = $this->_em->createQuery('SELECT a FROM Doctrine\Tests\Models\CMS\CmsArticle a');
 
-        (new OffsetPaginator(false, false))->paginate($query, new Window(0, 1));
+        (new OffsetPaginator(false, false))->paginate($query, new Window(0, 1))->getTotalCount();
 
         $this->assertQueryCount(2);
     }

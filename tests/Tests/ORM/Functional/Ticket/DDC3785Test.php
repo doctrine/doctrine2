@@ -9,7 +9,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\Embeddable;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
@@ -28,11 +27,10 @@ class DDC3785Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType('ddc3785_asset_id', DDC3785AssetIdType::class);
+        self::registerDbalType('ddc3785_asset_id', DDC3785AssetIdType::class);
 
         $this->createSchemaForModels(
             DDC3785Asset::class,
-            DDC3785AssetId::class,
             DDC3785Attribute::class,
         );
     }
@@ -120,11 +118,9 @@ class DDC3785Attribute
     }
 }
 
-#[Embeddable]
 class DDC3785AssetId implements Stringable
 {
     public function __construct(
-        #[Column(type: 'guid')]
         private string $id,
     ) {
     }

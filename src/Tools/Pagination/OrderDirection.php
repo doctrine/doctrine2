@@ -19,11 +19,19 @@ enum OrderDirection: string
         return $reverse ? $direction->reversed() : $direction;
     }
 
-    public function operator(): string
+    public function exclusiveOperator(): string
     {
         return match ($this) {
             self::Ascending  => '>',
             self::Descending => '<',
+        };
+    }
+
+    public function inclusiveOperator(): string
+    {
+        return match ($this) {
+            self::Ascending  => '>=',
+            self::Descending => '<=',
         };
     }
 

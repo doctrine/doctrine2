@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
@@ -28,7 +27,7 @@ class GH6141Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType(GH6141PeopleType::NAME, GH6141PeopleType::class);
+        self::registerDbalType(GH6141PeopleType::NAME, GH6141PeopleType::class);
 
         $this->createSchemaForModels(
             GH6141Person::class,

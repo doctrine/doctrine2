@@ -7,8 +7,8 @@ namespace Doctrine\ORM\Persisters\Collection;
 use BadMethodCallException;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityNotFoundException;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\OneToManyAssociationMapping;
 use Doctrine\ORM\PersistentCollection;
@@ -223,12 +223,19 @@ class OneToManyPersister extends AbstractCollectionPersister
         $idColumnNames     = $rootClass->getIdentifierColumnNames();
         $idColumnList      = implode(', ', $idColumnNames);
         $columnDefinitions = [];
+        $typeProvider      = TypeProviderLocator::fromConnection($this->em->getConnection());
 
         foreach ($idColumnNames as $idColumnName) {
+            $typeName = PersisterHelper::getTypeOfColumn($idColumnName, $rootClass, $this->em);
+
+            // DBAL >= 4.5 reads the type name from "typeName" and ignores "type", so the
+            // deprecation of "type" is not triggered. Older versions ignore "typeName" and
+            // require the Type instance under "type".
             $columnDefinitions[$idColumnName] = [
-                'name'    => $idColumnName,
-                'notnull' => true,
-                'type'    => Type::getType(PersisterHelper::getTypeOfColumn($idColumnName, $rootClass, $this->em)),
+                'name'     => $idColumnName,
+                'notnull'  => true,
+                'type'     => $typeProvider->get($typeName),
+                'typeName' => $typeName,
             ];
         }
 

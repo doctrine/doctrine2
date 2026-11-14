@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
@@ -29,11 +28,7 @@ class GH10288Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (Type::hasType(GH10288PeopleType::NAME)) {
-            Type::overrideType(GH10288PeopleType::NAME, GH10288PeopleType::class);
-        } else {
-            Type::addType(GH10288PeopleType::NAME, GH10288PeopleType::class);
-        }
+        self::registerDbalType(GH10288PeopleType::NAME, GH10288PeopleType::class);
 
         $this->createSchemaForModels(
             GH10288PersonWithEnumType::class,

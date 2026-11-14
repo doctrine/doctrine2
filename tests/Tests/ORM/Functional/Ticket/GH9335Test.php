@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
@@ -23,9 +22,7 @@ final class GH9335Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! DBALType::hasType(GH9335IntObjectType::class)) {
-            DBALType::addType(GH9335IntObjectType::class, GH9335IntObjectType::class);
-        }
+        self::registerDbalType(GH9335IntObjectType::class, GH9335IntObjectType::class);
 
         $this->setUpEntitySchema([GH9335Book::class, GH9335Author::class]);
     }

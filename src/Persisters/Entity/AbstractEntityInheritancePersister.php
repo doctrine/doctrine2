@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Persisters\Entity;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Override;
 
@@ -49,18 +48,16 @@ abstract class AbstractEntityInheritancePersister extends BasicEntityPersister
             $this->quoteStrategy->getColumnName($field, $class, $this->platform),
         );
 
-        $columnAlias = null;
-        if ($this->currentPersisterContext->rsm->hasColumnAliasByField($alias, $field)) {
-            $columnAlias = $this->currentPersisterContext->rsm->getColumnAliasByField($alias, $field);
-        }
-
-        if ($columnAlias === null) {
-            $columnAlias = $this->getSQLColumnAlias($fieldMapping->columnName);
-        }
+        // Reuse the alias if the field was already selected before; the SQL is regenerated
+        // when the filters change, and a second alias for the same field breaks indexBy().
+        // getColumnAliasByField() is of no use here, as it misses fields inherited from a
+        // parent class - the map is keyed by the declaring class.
+        $columnAlias = $this->currentPersisterContext->rsm->columnAliasMappings[$class->name][$alias][$field]
+            ?? $this->getSQLColumnAlias($fieldMapping->columnName);
 
         $this->currentPersisterContext->rsm->addFieldResult($alias, $columnAlias, $field, $class->name);
 
-        $type = Type::getType($fieldMapping->type);
+        $type = $this->getType($fieldMapping->type);
         $sql  = $type->convertToPHPValueSQL($sql, $this->platform);
 
         return $sql . ' AS ' . $columnAlias;

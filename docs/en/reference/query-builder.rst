@@ -214,8 +214,10 @@ Here is a complete list of helper methods available in ``QueryBuilder``:
         // Example - $qb->orderBy('u.surname', \SortDirection::Descending)
         public function orderBy($sort, $order = null);
 
-        // Example - $qb->addOrderBy('u.firstName')
-        public function addOrderBy($sort, $order = null); // Default $order = 'ASC'
+        // Example - $qb->addOrderBy('u.firstName', \SortDirection::Ascending)
+        // NOTE: the default is \SortDirection::Ascending when $order is omitted;
+        // passing strings or null as $order is deprecated
+        public function addOrderBy($sort, $order = null);
     }
 
 Binding parameters to your query
@@ -488,8 +490,9 @@ complete list of supported helper methods available:
         public function not($restriction); // Returns Expr\Func instance
 
         // Example - $qb->expr()->in('u.id', array(1, 2, 3))
-        // Make sure that you do NOT use something similar to $qb->expr()->in('value', array('stringvalue')) as this will cause Doctrine to throw an Exception.
-        // Instead, use $qb->expr()->in('value', array('?1')) and bind your parameter to ?1 (see section above)
+        // Values in an array are quoted as literals, so $qb->expr()->in('u.name', array('foo', 'bar')) works as expected.
+        // Because of that, placeholders must NOT be put inside the array. To bind the list as a parameter,
+        // pass the placeholder as a string: $qb->expr()->in('u.id', ':ids') and call $qb->setParameter('ids', array(1, 2, 3))
         public function in($x, $y); // Returns Expr\Func instance
 
         // Example - $qb->expr()->notIn('u.id', '2')

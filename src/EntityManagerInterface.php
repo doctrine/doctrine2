@@ -18,6 +18,9 @@ use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Persistence\ObjectManager;
 use Override;
 
+/**
+ * Finds, queries and persists entities, and flushes their changes to the database.
+ */
 interface EntityManagerInterface extends ObjectManager
 {
     /**

@@ -31,7 +31,7 @@ class DDC2012Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType(DDC2012TsVectorType::MYTYPE, DDC2012TsVectorType::class);
+        self::registerDbalType(DDC2012TsVectorType::MYTYPE, DDC2012TsVectorType::class);
 
         DDC2012TsVectorType::$calls = [];
 

@@ -36,7 +36,7 @@ class GenerateSchemaEventArgs extends EventArgs
 
     public function setSchema(Schema $schema): void
     {
-        // @phpstan-ignore function.impossibleType (Checking for unreleased Schema::edit() API)
+        // @phpstan-ignore function.alreadyNarrowedType (This API is only available in DBAL 4.5+)
         if (! method_exists(Schema::class, 'edit')) {
             throw new BadMethodCallException(
                 'The setSchema() method requires the DBAL Schema::edit() API which is not available in the current DBAL version. '

@@ -5,6 +5,10 @@ includes:
 parameters:
     checkMissingOverrideMethodAttribute: true
 
+    # Some baseline entries and ignore rules only apply to a specific installed
+    # DBAL version.
+    reportUnmatchedIgnoredErrors: false
+
     ignoreErrors:
         # Symfony cache supports passing a key prefix to the clear method.
         - '/^Method Psr\\Cache\\CacheItemPoolInterface\:\:clear\(\) invoked with 1 parameter, 0 required\.$/'
@@ -13,3 +17,9 @@ parameters:
         -
             message: '~^Match expression does not handle remaining values:~'
             path: src/Utility/PersisterHelper.php
+
+        # The type provider API used by the ORM is only available in DBAL >= 4.6.
+        # When analyzing against the latest stable DBAL, it is reported as an unknown class.
+        -
+            message: '~Doctrine\\DBAL\\Types\\TypeProvider~'
+            identifier: class.notFound

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
 use Doctrine\Tests\DbalTypes\UpperCaseStringType;
 use Doctrine\Tests\Models\CustomType\CustomTypeChild;
@@ -17,17 +16,9 @@ class TypeValueSqlTest extends OrmFunctionalTestCase
 {
     protected function setUp(): void
     {
-        if (DBALType::hasType(UpperCaseStringType::NAME)) {
-            DBALType::overrideType(UpperCaseStringType::NAME, UpperCaseStringType::class);
-        } else {
-            DBALType::addType(UpperCaseStringType::NAME, UpperCaseStringType::class);
-        }
+        self::registerDbalType(UpperCaseStringType::NAME, UpperCaseStringType::class);
 
-        if (DBALType::hasType(NegativeToPositiveType::NAME)) {
-            DBALType::overrideType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
-        } else {
-            DBALType::addType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
-        }
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         $this->useModelSet('customtype');
 

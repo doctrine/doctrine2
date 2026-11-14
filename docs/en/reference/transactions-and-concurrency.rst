@@ -234,6 +234,14 @@ timestamp or datetime):
           </entity>
         </doctrine-mapping>
 
+The version column is never part of the ``INSERT`` statement. Its initial
+value is set by the database through the column default, and Doctrine reads
+it back after the insert. When the schema is generated with the
+:doc:`SchemaTool <tools>`, Doctrine adds the default automatically: ``1`` for
+integer types and ``CURRENT_TIMESTAMP`` for the ``datetime`` type. If you manage
+your schema in a different way, make sure the version column has such a
+default, otherwise inserting new entities fails with a ``NOT NULL`` violation.
+
 Version numbers (not timestamps) should however be preferred as
 they can not potentially conflict in a highly concurrent
 environment, unlike timestamps where this is a possibility,

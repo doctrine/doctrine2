@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Performance\Hydration;
 
-use Doctrine\DBAL\Result;
 use Doctrine\ORM\Internal\Hydration\ArrayHydrator;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Doctrine\Performance\EntityManagerFactory;
@@ -20,7 +19,8 @@ final class MixedQueryFetchJoinArrayHydrationPerformanceBench
 
     private ResultSetMapping|null $rsm = null;
 
-    private Result|null $result = null;
+    /** @var list<array<string, mixed>> */
+    private array $resultSet = [];
 
     public function init(): void
     {
@@ -62,9 +62,9 @@ final class MixedQueryFetchJoinArrayHydrationPerformanceBench
             ];
         }
 
-        $this->result   = ArrayResultFactory::createWrapperResultFromArray($resultSet);
-        $this->hydrator = new ArrayHydrator(EntityManagerFactory::getEntityManager([]));
-        $this->rsm      = new ResultSetMapping();
+        $this->resultSet = $resultSet;
+        $this->hydrator  = new ArrayHydrator(EntityManagerFactory::getEntityManager([]));
+        $this->rsm       = new ResultSetMapping();
 
         $this->rsm->addEntityResult(CmsUser::class, 'u');
         $this->rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
@@ -78,6 +78,6 @@ final class MixedQueryFetchJoinArrayHydrationPerformanceBench
 
     public function benchHydration(): void
     {
-        $this->hydrator->hydrateAll($this->result, $this->rsm);
+        $this->hydrator->hydrateAll(ArrayResultFactory::createWrapperResultFromArray($this->resultSet), $this->rsm);
     }
 }

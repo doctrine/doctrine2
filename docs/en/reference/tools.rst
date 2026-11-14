@@ -164,7 +164,7 @@ tables of the current model to clean up with orphaned tables.
 .. code-block:: php
 
     <?php
-    $tool->dropSchema($classes, \Doctrine\ORM\Tools\SchemaTool::DROP_DATABASE);
+    $tool->dropDatabase();
 
 You can also use database introspection to update your schema
 easily with the ``updateSchema()`` method. It will compare your

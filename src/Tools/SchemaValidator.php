@@ -19,6 +19,7 @@ use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\TextType;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\FieldMapping;
 use ReflectionEnum;
@@ -59,6 +60,7 @@ class SchemaValidator
         GuidType::class => ['string'],
         IntegerType::class => ['int'],
         JsonType::class => ['array'],
+        /** @phpstan-ignore classConstant.deprecatedClass (to be removed) */
         SimpleArrayType::class => ['array'],
         SmallIntType::class => ['int'],
         StringType::class => ['string'],
@@ -107,11 +109,12 @@ class SchemaValidator
      */
     public function validateClass(ClassMetadata $class): array
     {
-        $ce  = [];
-        $cmf = $this->em->getMetadataFactory();
+        $ce           = [];
+        $cmf          = $this->em->getMetadataFactory();
+        $typeProvider = TypeProviderLocator::fromConnection($this->em->getConnection());
 
         foreach ($class->fieldMappings as $fieldName => $mapping) {
-            if (! Type::hasType($mapping->type)) {
+            if (! $typeProvider->has($mapping->type)) {
                 $ce[] = "The field '" . $class->name . '#' . $fieldName . "' uses a non-existent type '" . $mapping->type . "'.";
             }
         }
@@ -335,15 +338,17 @@ class SchemaValidator
     /** @return list<string> containing the found issues */
     private function validatePropertiesTypes(ClassMetadata $class): array
     {
+        $typeProvider = TypeProviderLocator::fromConnection($this->em->getConnection());
+
         return array_values(
             array_filter(
                 array_map(
-                    function (FieldMapping $fieldMapping) use ($class): string|null {
+                    function (FieldMapping $fieldMapping) use ($class, $typeProvider): string|null {
                         $fieldName    = $fieldMapping->fieldName;
                         $propertyType = $class->propertyAccessors[$fieldName]->getUnderlyingReflector()->getType();
 
                         // If the field type is not a built-in type, we cannot check it
-                        if (! Type::hasType($fieldMapping->type)) {
+                        if (! $typeProvider->has($fieldMapping->type)) {
                             return null;
                         }
 
@@ -352,7 +357,7 @@ class SchemaValidator
                             return null;
                         }
 
-                        $metadataFieldType = $this->findBuiltInType(Type::getType($fieldMapping->type));
+                        $metadataFieldType = $this->findBuiltInType($typeProvider->get($fieldMapping->type));
 
                         //If the metadata field type is not a mapped built-in type, we cannot check it
                         if ($metadataFieldType === null) {

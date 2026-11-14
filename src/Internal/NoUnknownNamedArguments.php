@@ -25,12 +25,7 @@ use const DEBUG_BACKTRACE_IGNORE_ARGS;
  */
 trait NoUnknownNamedArguments
 {
-    /**
-     * @param TItem[] $parameter
-     *
-     * @template TItem
-     * @phpstan-assert list<TItem> $parameter
-     */
+    /** @param list<mixed> $parameter */
     private static function validateVariadicParameter(array $parameter): void
     {
         if (array_is_list($parameter)) {

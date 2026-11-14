@@ -12,6 +12,9 @@ use Doctrine\Common\EventDispatcher;
 use Doctrine\DBAL;
 use Doctrine\DBAL\Connections\PrimaryReadReplicaConnection;
 use Doctrine\DBAL\LockMode;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Types\TypeProvider;
+use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\Persister\CachedPersister;
 use Doctrine\ORM\Event\ListenersInvoker;
 use Doctrine\ORM\Event\OnClearEventArgs;
@@ -31,6 +34,7 @@ use Doctrine\ORM\Id\AssignedGenerator;
 use Doctrine\ORM\Internal\HydrationCompleteHandler;
 use Doctrine\ORM\Internal\StronglyConnectedComponents;
 use Doctrine\ORM\Internal\TopologicalSort;
+use Doctrine\ORM\Internal\TypeProviderLocator;
 use Doctrine\ORM\Internal\UnitOfWork\InsertBatch;
 use Doctrine\ORM\Mapping\AssociationMapping;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -329,6 +333,16 @@ class UnitOfWork implements PropertyChangedListener
      * Helper for handling completion of hydration
      */
     private readonly HydrationCompleteHandler $hydrationCompleteHandler;
+
+    /**
+     * Resolved on the first comparison of object values.
+     */
+    private AbstractPlatform|null $platform = null;
+
+    /**
+     * Resolved on the first comparison of object values.
+     */
+    private TypeProvider|TypeRegistry|null $typeProvider = null;
 
     /**
      * Initializes a new UnitOfWork instance, bound to the given EntityManager.
@@ -677,6 +691,11 @@ class UnitOfWork implements PropertyChangedListener
             $partialFields = $this->partialObjectLoadedFields[$oid] ?? null;
             $changeSet     = [];
 
+            if (PHP_VERSION_ID >= 80400 && $partialFields !== null && ! $this->isUninitializedObject($entity)) {
+                $this->reconcileStalePartialLoadTracking($oid, $class, $actualData, $originalData, $changeSet);
+                $partialFields = null;
+            }
+
             foreach ($actualData as $propName => $actualValue) {
                 if ($partialFields !== null) {
                     if (! in_array($propName, $partialFields, true)) {
@@ -710,6 +729,10 @@ class UnitOfWork implements PropertyChangedListener
 
                 // if regular field
                 if (! isset($class->associationMappings[$propName])) {
+                    if ($this->isSameConvertedDatabaseValue($class, $propName, $orgValue, $actualValue)) {
+                        continue;
+                    }
+
                     $changeSet[$propName] = [$orgValue, $actualValue];
 
                     continue;
@@ -789,6 +812,51 @@ class UnitOfWork implements PropertyChangedListener
                 $this->entityUpdates[$oid]      = $entity;
             }
         }
+    }
+
+    /**
+     * A native lazy association proxy is registered with an empty data
+     * snapshot (see registerManaged() callers below) until it is fully
+     * hydrated through UnitOfWork::createEntity(). But PHP can complete
+     * such an object's initialization without ever going through that
+     * method — e.g. hydrating the owning side of a to-one association
+     * assigns the inverse-side property directly onto the still-lazy
+     * proxy, and if that happens to be the proxy's only remaining
+     * property, PHP marks it fully initialized right there. When that
+     * happens this entity is no longer "uninitialized" per
+     * isUninitializedObject(), yet originalEntityData was never
+     * populated, so every field would be silently and permanently
+     * treated as "a partially omitted one" and skipped forever. We have
+     * no reliable prior value for any of these fields, so force them
+     * into this change set (mirroring how brand-new entities are
+     * treated in computeChangeSet()) to make sure the entity's current
+     * value reaches the database, then adopt it as the baseline for
+     * future comparisons.
+     *
+     * @param ClassMetadata<object> $class
+     * @param array<string, mixed>  $actualData
+     * @param array<string, mixed>  $originalData
+     * @param array<string, mixed>  $changeSet
+     */
+    private function reconcileStalePartialLoadTracking(
+        int $oid,
+        ClassMetadata $class,
+        array $actualData,
+        array &$originalData,
+        array &$changeSet,
+    ): void {
+        foreach ($actualData as $propName => $actualValue) {
+            if (
+                ! isset($class->associationMappings[$propName])
+                || $class->associationMappings[$propName]->isToOneOwningSide()
+            ) {
+                $changeSet[$propName] = [null, $actualValue];
+            }
+
+            $originalData[$propName] = $actualValue;
+        }
+
+        $this->originalEntityData[$oid] = $originalData;
     }
 
     /**
@@ -1043,9 +1111,15 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
-            if ($orgValue !== $actualValue) {
-                $changeSet[$propName] = [$orgValue, $actualValue];
+            if ($orgValue === $actualValue) {
+                continue;
             }
+
+            if ($this->isSameConvertedDatabaseValue($class, $propName, $orgValue, $actualValue)) {
+                continue;
+            }
+
+            $changeSet[$propName] = [$orgValue, $actualValue];
         }
 
         if ($changeSet) {
@@ -1058,6 +1132,42 @@ class UnitOfWork implements PropertyChangedListener
 
             $this->originalEntityData[$oid] = $actualData;
         }
+    }
+
+    /**
+     * Tells whether two object values share the same database representation.
+     *
+     * Object values are not comparable by identity when they represent the same
+     * database value, for instance when the time of a date mapped as "date"
+     * changes, or when a value object is replaced by an equal one. Comparing
+     * the database representation avoids a useless update.
+     *
+     * Only object values are compared, scalars are already compared by value.
+     * Associations and embedded objects have no field mapping of their own.
+     *
+     * @param ClassMetadata<object> $class
+     */
+    private function isSameConvertedDatabaseValue(
+        ClassMetadata $class,
+        string $propName,
+        mixed $orgValue,
+        mixed $actualValue,
+    ): bool {
+        if (
+            ! is_object($orgValue)
+            || ! is_object($actualValue)
+            || ! isset($class->fieldMappings[$propName])
+        ) {
+            return false;
+        }
+
+        $this->platform     ??= $this->em->getConnection()->getDatabasePlatform();
+        $this->typeProvider ??= TypeProviderLocator::fromConnection($this->em->getConnection());
+
+        $fieldType = $this->typeProvider->get($class->fieldMappings[$propName]->type);
+
+        return $fieldType->convertToDatabaseValue($orgValue, $this->platform)
+            === $fieldType->convertToDatabaseValue($actualValue, $this->platform);
     }
 
     /**
@@ -3200,6 +3310,10 @@ class UnitOfWork implements PropertyChangedListener
             return;
         }
 
+        if (! $this->isMappedClass($obj::class)) {
+            return;
+        }
+
         $reflection = $this->em->getClassMetadata($obj::class)->getReflectionClass();
         $reflection->initializeLazyObject($obj);
     }
@@ -3208,6 +3322,10 @@ class UnitOfWork implements PropertyChangedListener
     public function isUninitializedObject(mixed $obj): bool
     {
         if (($obj instanceof Collection) || ! is_object($obj)) {
+            return false;
+        }
+
+        if (! $this->isMappedClass($obj::class)) {
             return false;
         }
 
@@ -3301,6 +3419,22 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /**
+     * Whether this entity manager has, or can load, metadata for the class.
+     *
+     * isTransient() alone is not enough: by contract it is only false for entities and mapped
+     * superclasses, while embeddables also have metadata and can be lazy ghosts. Checking the
+     * already loaded metadata first covers those and keeps the common case an array lookup.
+     *
+     * @phpstan-param class-string $className
+     */
+    private function isMappedClass(string $className): bool
+    {
+        $metadataFactory = $this->em->getMetadataFactory();
+
+        return $metadataFactory->hasMetadataFor($className) || ! $metadataFactory->isTransient($className);
+    }
+
+    /**
      * Verifies if two given entities actually are the same based on identifier comparison
      */
     private function isIdentifierEquals(object $entity1, object $entity2): bool
@@ -3347,6 +3481,28 @@ class UnitOfWork implements PropertyChangedListener
     public function hydrationComplete(): void
     {
         $this->hydrationCompleteHandler->hydrationComplete();
+    }
+
+    /**
+     * Marks the start of a section in which entities are being hydrated. Until the outermost
+     * section has been left, {@see hydrationComplete()} does not fire deferred events.
+     *
+     * @internal should be called internally from object hydrators
+     */
+    public function enterHydration(): void
+    {
+        $this->hydrationCompleteHandler->enterHydration();
+    }
+
+    /**
+     * Marks the end of a section started with {@see enterHydration()}.
+     * Leaving the outermost section fires deferred events.
+     *
+     * @internal should be called internally from object hydrators
+     */
+    public function leaveHydration(): void
+    {
+        $this->hydrationCompleteHandler->leaveHydration();
     }
 
     /** @throws MappingException if the entity has more than a single identifier. */

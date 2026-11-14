@@ -5,21 +5,32 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Tools;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\SQLServerPlatform;
+use Doctrine\DBAL\Schema\ForeignKeyConstraint\ReferentialAction;
 use Doctrine\DBAL\Schema\ForeignKeyConstraintEditor;
 use Doctrine\DBAL\Schema\Index as DbalIndex;
 use Doctrine\DBAL\Schema\Index\IndexedColumn;
 use Doctrine\DBAL\Schema\Index\IndexType;
+use Doctrine\DBAL\Schema\Name\Identifier;
 use Doctrine\DBAL\Schema\Name\UnqualifiedName;
+use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraintEditor;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table as DbalTable;
 use Doctrine\DBAL\Types\EnumType;
 use Doctrine\DBAL\Types\Types;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\DiscriminatorColumn;
+use Doctrine\ORM\Mapping\DiscriminatorMap;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\Index;
+use Doctrine\ORM\Mapping\InheritanceType;
 use Doctrine\ORM\Mapping\JoinColumn;
 use Doctrine\ORM\Mapping\ManyToOne;
 use Doctrine\ORM\Mapping\MappingException;
@@ -52,7 +63,10 @@ use Doctrine\Tests\Models\Forum\ForumUser;
 use Doctrine\Tests\Models\GH10288\GH10288People;
 use Doctrine\Tests\Models\NullDefault\NullDefaultColumn;
 use Doctrine\Tests\OrmTestCase;
+use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RequiresMethod;
 
 use function array_map;
@@ -60,10 +74,14 @@ use function class_exists;
 use function count;
 use function current;
 use function enum_exists;
+use function in_array;
 use function method_exists;
+use function strtolower;
 
 class SchemaToolTest extends OrmTestCase
 {
+    use VerifyDeprecations;
+
     public function testAddUniqueIndexForUniqueFieldAttribute(): void
     {
         $em         = $this->getTestEntityManager();
@@ -85,9 +103,21 @@ class SchemaToolTest extends OrmTestCase
         self::assertTrue(self::columnIsIndexed($schema->getTable('cms_users'), 'username'), 'username column should be indexed.');
     }
 
+    /** Only the schema generation based on the schema editor API deprecates custom platform options. */
+    private function expectSchemaEditorApiDeprecation(EntityManagerInterface $em): void
+    {
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
+            return;
+        }
+
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12733');
+    }
+
+    #[IgnoreDeprecations]
     public function testAttributeOptionsArgument(): void
     {
-        $em         = $this->getTestEntityManager();
+        $em = $this->getTestEntityManager();
+        $this->expectSchemaEditorApiDeprecation($em);
         $schemaTool = new SchemaTool($em);
 
         $schema = $schemaTool->getSchemaFromMetadata(
@@ -126,9 +156,11 @@ class SchemaToolTest extends OrmTestCase
     }
 
     #[Group('6830')]
+    #[IgnoreDeprecations]
     public function testPassColumnOptionsToJoinColumn(): void
     {
-        $em       = $this->getTestEntityManager();
+        $em = $this->getTestEntityManager();
+        $this->expectSchemaEditorApiDeprecation($em);
         $category = $em->getClassMetadata(GH6830Category::class);
         $board    = $em->getClassMetadata(GH6830Board::class);
 
@@ -186,7 +218,7 @@ class SchemaToolTest extends OrmTestCase
         $schema = $schemaTool->getSchemaFromMetadata($classes);
 
         self::assertEquals(count($classes), $listener->tableCalls);
-        self::assertTrue($listener->schemaCalled);
+        self::assertSame(1, $listener->schemaCalls);
     }
 
     public function testNullDefaultNotAddedToPlatformOptions(): void
@@ -255,6 +287,19 @@ class SchemaToolTest extends OrmTestCase
 
         self::assertCount(1, $indexes, 'there should be only one index');
         self::assertSame($primaryKey, current($indexes), 'index should be primary');
+    }
+
+    public function testScalarUniqueIdentifierProducesOnlyPrimaryKey(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(UniqueScalarIdEntity::class)]);
+
+        $indexes = $schema->getTable('unique_scalar_id')->getIndexes();
+
+        self::assertCount(1, $indexes, 'there should be only one index');
+        self::assertTrue($schema->getTable('unique_scalar_id')->hasIndex('primary'));
     }
 
     public function testSetDiscriminatorColumnWithoutLength(): void
@@ -367,6 +412,66 @@ class SchemaToolTest extends OrmTestCase
         $metadata->setDiscriminatorMap(['user' => CmsUser::class, 'employee' => CmsEmployee::class]);
     }
 
+    #[Group('GH-12606')]
+    public function testConflictingSingleTableInheritanceAssociationIndexesAreAddedOnce(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([
+            $em->getClassMetadata(GH12606Media::class),
+            $em->getClassMetadata(GH12606Housing::class),
+            $em->getClassMetadata(GH12606Location::class),
+            $em->getClassMetadata(GH12606Person::class),
+        ]);
+
+        $table = $schema->getTable('gh12606_media');
+
+        self::assertTrue(self::columnIsIndexed($table, 'reference_id'));
+    }
+
+    #[Group('GH-12609')]
+    public function testConflictingSingleTableInheritanceAssociationsTargetingSameEntityStillGenerateForeignKey(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([
+            $em->getClassMetadata(GH12609Base::class),
+            $em->getClassMetadata(GH12609Ref::class),
+        ]);
+
+        // GH12609ChildOne and GH12609ChildThree both map a "ref_id" column to
+        // GH12609Ref, but declare conflicting JoinColumn configuration (nullable:
+        // false vs. nullable: true). There is no single foreign key definition that
+        // could honor both associations at once, so - exactly as before the two-pass
+        // rewrite introduced in GH-12528 - the association registered first
+        // (GH12609ChildOne, which declares the column as NOT NULL) wins. What matters
+        // for this regression test is that a foreign key is generated at all, instead
+        // of being silently dropped as it was on 3.7.0.
+        $table = $schema->getTable('gh12609_base');
+        self::assertTrue($table->hasColumn('ref_id'));
+        self::assertTrue($table->getColumn('ref_id')->getNotnull());
+        self::assertCount(1, $table->getForeignKeys());
+    }
+
+    #[Group('GH-12609')]
+    public function testIdenticalSingleTableInheritanceAssociationsShareOneForeignKey(): void
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([
+            $em->getClassMetadata(GH12609IdenticalBase::class),
+            $em->getClassMetadata(GH12609IdenticalRef::class),
+        ]);
+
+        $table = $schema->getTable('gh12609_identical_base');
+
+        self::assertTrue($table->hasColumn('ref_id'));
+        self::assertCount(1, $table->getForeignKeys());
+    }
+
     public function testDerivedCompositeKey(): void
     {
         $em         = $this->getTestEntityManager();
@@ -428,6 +533,89 @@ class SchemaToolTest extends OrmTestCase
                 self::assertSame($foreignColumns, $foreignKey->getForeignColumns());
             }
         }
+    }
+
+    /**
+     * @param list<class-string> $classNames
+     * @param list<string>       $childTableNames
+     */
+    #[DataProvider('provideJoinedHierarchiesWithAssociationAsIdentifier')]
+    #[Group('GH-12651')]
+    public function testJoinedChildTableForeignKeyReferencesRootTableWhenIdentifierIsAnAssociation(
+        array $classNames,
+        string $rootTableName,
+        string|null $rootTableOnDelete,
+        array $childTableNames,
+    ): void {
+        // The inherited identifier association and the FK to the root table share the same
+        // local columns, and thus the same generated name. Only one of them must be added.
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/dbal/pull/7125');
+
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata(array_map(
+            static fn (string $className): ClassMetadata => $em->getClassMetadata($className),
+            $classNames,
+        ));
+
+        self::assertTableHasSingleForeignKey(
+            $schema->getTable($rootTableName),
+            ['target_id'],
+            'gh12651_target',
+            ['id'],
+            $rootTableOnDelete,
+        );
+
+        foreach ($childTableNames as $childTableName) {
+            // JoinedSubclassPersister::delete() only deletes the root row and relies on this
+            // ON DELETE CASCADE constraint to delete the rows of the child tables.
+            self::assertTableHasSingleForeignKey(
+                $schema->getTable($childTableName),
+                ['target_id'],
+                $rootTableName,
+                ['target_id'],
+                'CASCADE',
+            );
+        }
+    }
+
+    /** @return iterable<string, array{list<class-string>, string, string|null, list<string>}> */
+    public static function provideJoinedHierarchiesWithAssociationAsIdentifier(): iterable
+    {
+        yield 'one-to-one identifier' => [
+            [GH12651Target::class, GH12651Root::class, GH12651Child::class],
+            'gh12651_root',
+            'CASCADE',
+            ['gh12651_child'],
+        ];
+
+        yield 'many-to-one identifier' => [
+            [GH12651Target::class, GH12651ManyToOneRoot::class, GH12651ManyToOneChild::class],
+            'gh12651_many_to_one_root',
+            'CASCADE',
+            ['gh12651_many_to_one_child'],
+        ];
+
+        yield 'identifier without onDelete' => [
+            [GH12651Target::class, GH12651NoOnDeleteRoot::class, GH12651NoOnDeleteChild::class],
+            'gh12651_no_on_delete_root',
+            null,
+            ['gh12651_no_on_delete_child'],
+        ];
+
+        // Like any other JOINED child table, the leaf table references the root table, not its parent table.
+        yield 'three-level hierarchy' => [
+            [
+                GH12651Target::class,
+                GH12651ThreeLevelRoot::class,
+                GH12651ThreeLevelMiddle::class,
+                GH12651ThreeLevelLeaf::class,
+            ],
+            'gh12651_three_level_root',
+            'CASCADE',
+            ['gh12651_three_level_middle', 'gh12651_three_level_leaf'],
+        ];
     }
 
     public function testIndexesBasedOnFields(): void
@@ -528,6 +716,40 @@ class SchemaToolTest extends OrmTestCase
         self::assertSame(['field', 'anotherField'], self::getIndexedColumns($tableIndex));
     }
 
+    #[DataProvider('platformsProvider')]
+    public function testQuotedIdentifiersOnPlatform(AbstractPlatform $platform): void
+    {
+        $em = $this->createTestEntityManagerWithPlatform($platform);
+
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
+        }
+
+        $schemaTool = new SchemaTool($em);
+
+        $schema = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(QuotedEntity::class)]);
+
+        $table = $schema->getTable('quoted-table');
+
+        $objectName = $table->getObjectName();
+        self::assertTrue($objectName->getUnqualifiedName()->isQuoted());
+        self::assertSame('quoted-table', $objectName->getUnqualifiedName()->getValue());
+
+        $primaryKey = $table->getPrimaryKeyConstraint();
+        self::assertNotNull($primaryKey);
+
+        [$pkColumn] = $primaryKey->getColumnNames();
+        self::assertTrue($pkColumn->getIdentifier()->isQuoted());
+        self::assertSame('quoted-id', $pkColumn->getIdentifier()->getValue());
+    }
+
+    /** @return iterable<string, array{AbstractPlatform}> */
+    public static function platformsProvider(): iterable
+    {
+        yield 'MySQL (backticks)' => [new MySQLPlatform()];
+        yield 'SQL Server (square brackets)' => [new SQLServerPlatform()];
+    }
+
     public function testQuotedIdentifiers(): void
     {
         $em         = $this->getTestEntityManager();
@@ -540,7 +762,22 @@ class SchemaToolTest extends OrmTestCase
 
         $table = $schema->getTable('quoted-table');
 
-        self::assertTrue($table->hasIndex('IDX_AA2790FB50D14D90'));
+        $foundIndex = false;
+        foreach ($table->getIndexes() as $index) {
+            foreach ($index->getIndexedColumns() as $column) {
+                if (
+                    $column->getColumnName()->getIdentifier()->equals(
+                        Identifier::quoted('quoted-name'),
+                        UnquotedIdentifierFolding::NONE,
+                    )
+                ) {
+                    $foundIndex = true;
+                    break 2;
+                }
+            }
+        }
+
+        self::assertTrue($foundIndex, 'Index on quoted-name should exist.');
 
         $objectName = $table->getObjectName();
         self::assertTrue($objectName->getUnqualifiedName()->isQuoted());
@@ -607,6 +844,153 @@ class SchemaToolTest extends OrmTestCase
         );
     }
 
+    #[Group('GH-5593')]
+    public function testFulltextIndexIsPreservedAlongsideUniqueConstraint(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593FulltextWithUniqueConstraint::class);
+
+        self::assertTrue($table->hasIndex('search_idx'));
+        self::assertTrue($table->hasIndex('uniq_title'));
+
+        $fulltextIndex = $table->getIndex('search_idx');
+        $uniqueIndex   = $table->getIndex('uniq_title');
+
+        self::assertSame(['title'], self::getIndexedColumns($fulltextIndex));
+        self::assertSame(['title'], self::getIndexedColumns($uniqueIndex));
+        self::assertIndexIsFulltext($fulltextIndex);
+        self::assertIndexIsUnique($uniqueIndex);
+        self::assertFalse(self::indexIsUnique($fulltextIndex));
+    }
+
+    #[Group('GH-5593')]
+    public function testFulltextIndexIsPreservedAlongsideColumnLevelUnique(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593FulltextWithColumnUnique::class);
+
+        self::assertTrue($table->hasIndex('search_idx'));
+        self::assertIndexIsFulltext($table->getIndex('search_idx'));
+        self::assertSame(['title'], self::getIndexedColumns($table->getIndex('search_idx')));
+
+        $uniqueIndex = self::findUniqueNonPrimaryIndex($table);
+        self::assertNotNull($uniqueIndex, 'Column-level unique mapping should produce a unique index.');
+        self::assertIndexIsUnique($uniqueIndex);
+        self::assertSame(['title'], self::getIndexedColumns($uniqueIndex));
+        self::assertFalse(self::indexIsUnique($table->getIndex('search_idx')));
+    }
+
+    #[Group('GH-5593')]
+    public function testCompositeFulltextAndUniqueIndexesOnSameColumnsArePreserved(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593CompositeFulltextAndUnique::class);
+
+        self::assertTrue($table->hasIndex('fulltext_ab'));
+        self::assertTrue($table->hasIndex('fulltext_c'));
+        self::assertTrue($table->hasIndex('uniq_ab'));
+        self::assertTrue($table->hasIndex('uniq_ac'));
+
+        self::assertSame(['a', 'b'], self::getIndexedColumns($table->getIndex('fulltext_ab')));
+        self::assertSame(['c'], self::getIndexedColumns($table->getIndex('fulltext_c')));
+        self::assertSame(['a', 'b'], self::getIndexedColumns($table->getIndex('uniq_ab')));
+        self::assertSame(['a', 'c'], self::getIndexedColumns($table->getIndex('uniq_ac')));
+
+        self::assertIndexIsFulltext($table->getIndex('fulltext_ab'));
+        self::assertIndexIsFulltext($table->getIndex('fulltext_c'));
+        self::assertIndexIsUnique($table->getIndex('uniq_ab'));
+        self::assertIndexIsUnique($table->getIndex('uniq_ac'));
+    }
+
+    #[Group('GH-5593')]
+    public function testUnflaggedIndexCoveredByUniqueConstraintIsDeduplicated(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593UnflaggedIndexWithUniqueConstraint::class);
+
+        self::assertFalse($table->hasIndex('idx_name'));
+        self::assertTrue($table->hasIndex('uniq_name'));
+        self::assertTrue($table->hasIndex('idx_other'));
+
+        self::assertIndexIsUnique($table->getIndex('uniq_name'));
+        self::assertSame(['name'], self::getIndexedColumns($table->getIndex('uniq_name')));
+        self::assertSame(['other'], self::getIndexedColumns($table->getIndex('idx_other')));
+        self::assertFalse(self::indexIsUnique($table->getIndex('idx_other')));
+        self::assertFalse(self::indexIsFulltext($table->getIndex('idx_other')));
+    }
+
+    public function testIndexFlagsAreApplied(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593FlaggedIndexes::class);
+
+        self::assertTrue($table->hasIndex('fulltext_title'));
+        self::assertTrue($table->hasIndex('spatial_title'));
+        self::assertTrue($table->hasIndex('clustered_title'));
+
+        self::assertIndexIsFulltext($table->getIndex('fulltext_title'));
+        self::assertIndexIsSpatial($table->getIndex('spatial_title'));
+        self::assertTrue(self::indexIsClustered($table->getIndex('clustered_title')), 'Index should be clustered.');
+        self::assertFalse(self::indexIsClustered($table->getIndex('fulltext_title')), 'Index should not be clustered.');
+    }
+
+    #[Group('GH-5593')]
+    public function testPartialIndexOptionsStillPreventDeduplication(): void
+    {
+        $table = $this->getSchemaTableForEntity(GH5593PartialIndexWithUniqueConstraint::class);
+
+        self::assertTrue($table->hasIndex('idx_partial'));
+        self::assertFalse($table->hasIndex('idx_covered_partial'));
+        self::assertTrue($table->hasIndex('uniq_name'));
+        self::assertTrue($table->hasIndex('uniq_code'));
+
+        self::assertSame(['name'], self::getIndexedColumns($table->getIndex('idx_partial')));
+        self::assertSame(['name'], self::getIndexedColumns($table->getIndex('uniq_name')));
+        self::assertSame(['code'], self::getIndexedColumns($table->getIndex('uniq_code')));
+        self::assertSame('name IS NOT NULL', self::getIndexPredicate($table->getIndex('idx_partial')));
+        self::assertSame('code IS NOT NULL', self::getIndexPredicate($table->getIndex('uniq_code')));
+        self::assertNull(self::getIndexPredicate($table->getIndex('uniq_name')));
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    public function testConflictingIndexTypeFlagsThrow(): void
+    {
+        if (! $this->getTestEntityManager()->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
+        }
+
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('An index cannot be both fulltext and spatial.');
+
+        $schemaTool->getSchemaFromMetadata([$em->getClassMetadata(FulltextSpatialFlagIndex::class)]);
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[DataProvider('provideNonUniqueIndexFlags')]
+    public function testUniqueConstraintWithIncompatibleFlagThrows(string $flag): void
+    {
+        $em = $this->getTestEntityManager();
+
+        if (! $em->getConfiguration()->getUseSchemaEditorApi()) {
+            self::markTestSkipped('Requires the schema editor API.');
+        }
+
+        $metadata = $em->getClassMetadata(FulltextSpatialFlagIndex::class);
+
+        $metadata->table['indexes']           = [];
+        $metadata->table['uniqueConstraints'] = ['uniq_title' => ['columns' => ['title'], 'flags' => [$flag]]];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('A unique index cannot be fulltext or spatial.');
+
+        (new SchemaTool($em))->getSchemaFromMetadata([$metadata]);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function provideNonUniqueIndexFlags(): iterable
+    {
+        yield 'fulltext' => ['fulltext'];
+        yield 'spatial' => ['spatial'];
+    }
+
     #[RequiresMethod(Schema::class, 'edit')]
     public function testOverwritingTableInListener(): void
     {
@@ -634,6 +1018,75 @@ class SchemaToolTest extends OrmTestCase
         );
     }
 
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[IgnoreDeprecations]
+    public function testNotUsingSchemaEditorApiIsDeprecated(): void
+    {
+        $em = $this->getTestEntityManager();
+        $em->getConfiguration()->setUseSchemaEditorApi(false);
+
+        // Take the expectation after disabling the API, so that this only verifies
+        // the deprecation triggered when the SchemaTool is instantiated.
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        new SchemaTool($em);
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    public function testUsingSchemaEditorApiIsNotDeprecated(): void
+    {
+        $em = $this->getTestEntityManager();
+        $em->getConfiguration()->setUseSchemaEditorApi(true);
+
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        new SchemaTool($em);
+    }
+
+    private function getSchemaTableForEntity(string $className): DbalTable
+    {
+        $em         = $this->getTestEntityManager();
+        $schemaTool = new SchemaTool($em);
+        $schema     = $schemaTool->getSchemaFromMetadata([$em->getClassMetadata($className)]);
+        $tables     = $schema->getTables();
+
+        self::assertCount(1, $tables);
+
+        return current($tables);
+    }
+
+    /**
+     * @param list<string> $localColumns
+     * @param list<string> $foreignColumns
+     */
+    private static function assertTableHasSingleForeignKey(
+        DbalTable $table,
+        array $localColumns,
+        string $foreignTableName,
+        array $foreignColumns,
+        string|null $onDelete,
+    ): void {
+        $foreignKeys = $table->getForeignKeys();
+
+        self::assertCount(1, $foreignKeys);
+
+        $foreignKey = current($foreignKeys);
+
+        if (class_exists(ForeignKeyConstraintEditor::class)) {
+            self::assertSame($foreignTableName, $foreignKey->getReferencedTableName()->toString());
+            self::assertSame($localColumns, array_map(static fn (UnqualifiedName $name) => $name->toString(), $foreignKey->getReferencingColumnNames()));
+            self::assertSame($foreignColumns, array_map(static fn (UnqualifiedName $name) => $name->toString(), $foreignKey->getReferencedColumnNames()));
+
+            $onDeleteAction = $foreignKey->getOnDeleteAction();
+            self::assertSame($onDelete, $onDeleteAction === ReferentialAction::NO_ACTION ? null : $onDeleteAction->value);
+        } else {
+            self::assertSame($foreignTableName, $foreignKey->getForeignTableName());
+            self::assertSame($localColumns, $foreignKey->getLocalColumns());
+            self::assertSame($foreignColumns, $foreignKey->getForeignColumns());
+            self::assertSame($onDelete, $foreignKey->onDelete());
+        }
+    }
+
     /** @return string[] */
     private static function getIndexedColumns(DbalIndex $index): array
     {
@@ -654,6 +1107,81 @@ class SchemaToolTest extends OrmTestCase
 
         return false;
     }
+
+    private static function assertIndexIsUnique(DbalIndex $index): void
+    {
+        self::assertTrue(self::indexIsUnique($index), 'Index should be unique.');
+    }
+
+    private static function assertIndexIsFulltext(DbalIndex $index): void
+    {
+        self::assertTrue(self::indexIsFulltext($index), 'Index should be fulltext.');
+    }
+
+    private static function assertIndexIsSpatial(DbalIndex $index): void
+    {
+        self::assertTrue(self::indexIsSpatial($index), 'Index should be spatial.');
+    }
+
+    private static function indexIsUnique(DbalIndex $index): bool
+    {
+        if (enum_exists(IndexType::class)) {
+            return $index->getType() === IndexType::UNIQUE;
+        }
+
+        return $index->isUnique();
+    }
+
+    private static function indexIsFulltext(DbalIndex $index): bool
+    {
+        if (enum_exists(IndexType::class)) {
+            return $index->getType() === IndexType::FULLTEXT;
+        }
+
+        return in_array('fulltext', $index->getFlags(), true);
+    }
+
+    private static function indexIsSpatial(DbalIndex $index): bool
+    {
+        if (enum_exists(IndexType::class)) {
+            return $index->getType() === IndexType::SPATIAL;
+        }
+
+        return in_array('spatial', $index->getFlags(), true);
+    }
+
+    private static function indexIsClustered(DbalIndex $index): bool
+    {
+        if (method_exists(DbalIndex::class, 'isClustered')) {
+            return $index->isClustered();
+        }
+
+        return in_array('clustered', $index->getFlags(), true);
+    }
+
+    private static function findUniqueNonPrimaryIndex(DbalTable $table): DbalIndex|null
+    {
+        foreach ($table->getIndexes() as $indexName => $index) {
+            if (strtolower((string) $indexName) === 'primary') {
+                continue;
+            }
+
+            if (self::indexIsUnique($index)) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    private static function getIndexPredicate(DbalIndex $index): string|null
+    {
+        if (method_exists($index, 'getPredicate')) {
+            return $index->getPredicate();
+        }
+
+        return $index->hasOption('where') ? $index->getOption('where') : null;
+    }
 }
 
 #[Table(options: ['foo' => 'bar', 'baz' => ['key' => 'val']])]
@@ -668,13 +1196,254 @@ class TestEntityWithAttributeOptionsArgument
     private string $test;
 }
 
+#[Entity]
+class GH12606Housing
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+class GH12606Location
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+class GH12606Person
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+#[Table(name: 'gh12606_media')]
+#[InheritanceType('SINGLE_TABLE')]
+#[DiscriminatorMap([
+    'housing' => GH12606HousingImage::class,
+    'location' => GH12606LocationImage::class,
+    'person' => GH12606PersonImage::class,
+])]
+class GH12606Media
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+class GH12606HousingImage extends GH12606Media
+{
+    #[ManyToOne(targetEntity: GH12606Housing::class)]
+    #[JoinColumn(name: 'reference_id')]
+    private GH12606Housing $housing;
+}
+
+#[Entity]
+class GH12606LocationImage extends GH12606Media
+{
+    #[ManyToOne(targetEntity: GH12606Location::class)]
+    #[JoinColumn(name: 'reference_id')]
+    private GH12606Location $location;
+}
+
+#[Entity]
+class GH12606PersonImage extends GH12606Media
+{
+    #[ManyToOne(targetEntity: GH12606Person::class)]
+    #[JoinColumn(name: 'reference_id')]
+    private GH12606Person $person;
+}
+
+#[Entity]
+#[Table(name: 'gh12609_base')]
+#[InheritanceType('SINGLE_TABLE')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap([
+    'one' => GH12609ChildOne::class,
+    'two' => GH12609ChildTwo::class,
+    'three' => GH12609ChildThree::class,
+])]
+class GH12609Base
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+class GH12609ChildOne extends GH12609Base
+{
+    #[ManyToOne(targetEntity: GH12609Ref::class)]
+    #[JoinColumn(name: 'ref_id', nullable: false)]
+    private GH12609Ref $ref;
+}
+
+#[Entity]
+class GH12609ChildTwo extends GH12609Base
+{
+}
+
+#[Entity]
+class GH12609ChildThree extends GH12609Base
+{
+    #[ManyToOne(targetEntity: GH12609Ref::class)]
+    #[JoinColumn(name: 'ref_id', nullable: true)]
+    private GH12609Ref|null $ref = null;
+}
+
+#[Entity]
+class GH12609Ref
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+#[Table(name: 'gh12609_identical_base')]
+#[InheritanceType('SINGLE_TABLE')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap([
+    'one' => GH12609IdenticalChildOne::class,
+    'two' => GH12609IdenticalChildTwo::class,
+])]
+class GH12609IdenticalBase
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+class GH12609IdenticalChildOne extends GH12609IdenticalBase
+{
+    #[ManyToOne(targetEntity: GH12609IdenticalRef::class)]
+    #[JoinColumn(name: 'ref_id', nullable: false)]
+    private GH12609IdenticalRef $ref;
+}
+
+#[Entity]
+class GH12609IdenticalChildTwo extends GH12609IdenticalBase
+{
+    #[ManyToOne(targetEntity: GH12609IdenticalRef::class)]
+    #[JoinColumn(name: 'ref_id', nullable: false)]
+    private GH12609IdenticalRef $ref;
+}
+
+#[Entity]
+class GH12609IdenticalRef
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_target')]
+class GH12651Target
+{
+    #[Id]
+    #[Column]
+    private int $id;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_root')]
+#[InheritanceType('JOINED')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap(['child' => GH12651Child::class])]
+abstract class GH12651Root
+{
+    #[Id]
+    #[OneToOne(targetEntity: GH12651Target::class)]
+    #[JoinColumn(name: 'target_id', onDelete: 'CASCADE')]
+    private GH12651Target $target;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_child')]
+class GH12651Child extends GH12651Root
+{
+}
+
+#[Entity]
+#[Table(name: 'gh12651_many_to_one_root')]
+#[InheritanceType('JOINED')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap(['child' => GH12651ManyToOneChild::class])]
+abstract class GH12651ManyToOneRoot
+{
+    #[Id]
+    #[ManyToOne(targetEntity: GH12651Target::class)]
+    #[JoinColumn(name: 'target_id', onDelete: 'CASCADE')]
+    private GH12651Target $target;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_many_to_one_child')]
+class GH12651ManyToOneChild extends GH12651ManyToOneRoot
+{
+}
+
+#[Entity]
+#[Table(name: 'gh12651_no_on_delete_root')]
+#[InheritanceType('JOINED')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap(['child' => GH12651NoOnDeleteChild::class])]
+abstract class GH12651NoOnDeleteRoot
+{
+    #[Id]
+    #[OneToOne(targetEntity: GH12651Target::class)]
+    #[JoinColumn(name: 'target_id')]
+    private GH12651Target $target;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_no_on_delete_child')]
+class GH12651NoOnDeleteChild extends GH12651NoOnDeleteRoot
+{
+}
+
+#[Entity]
+#[Table(name: 'gh12651_three_level_root')]
+#[InheritanceType('JOINED')]
+#[DiscriminatorColumn(name: 'dtype', type: 'string')]
+#[DiscriminatorMap([
+    'middle' => GH12651ThreeLevelMiddle::class,
+    'leaf' => GH12651ThreeLevelLeaf::class,
+])]
+abstract class GH12651ThreeLevelRoot
+{
+    #[Id]
+    #[OneToOne(targetEntity: GH12651Target::class)]
+    #[JoinColumn(name: 'target_id', onDelete: 'CASCADE')]
+    private GH12651Target $target;
+}
+
+#[Entity]
+#[Table(name: 'gh12651_three_level_middle')]
+class GH12651ThreeLevelMiddle extends GH12651ThreeLevelRoot
+{
+}
+
+#[Entity]
+#[Table(name: 'gh12651_three_level_leaf')]
+class GH12651ThreeLevelLeaf extends GH12651ThreeLevelMiddle
+{
+}
+
 class GenerateSchemaEventListener
 {
     /** @var int */
     public $tableCalls = 0;
 
-    /** @var bool */
-    public $schemaCalled = false;
+    /** @var int */
+    public $schemaCalls = 0;
 
     public function postGenerateSchemaTable(GenerateSchemaTableEventArgs $eventArgs): void
     {
@@ -683,7 +1452,7 @@ class GenerateSchemaEventListener
 
     public function postGenerateSchema(GenerateSchemaEventArgs $eventArgs): void
     {
-        $this->schemaCalled = true;
+        $this->schemaCalls++;
     }
 }
 
@@ -878,6 +1647,113 @@ class IncorrectUniqueConstraintByFieldEntity
 }
 
 #[Entity]
+#[Table(name: 'gh5593_fulltext_unique')]
+#[Index(name: 'search_idx', columns: ['title'], flags: ['fulltext'])]
+#[UniqueConstraint(name: 'uniq_title', columns: ['title'])]
+class GH5593FulltextWithUniqueConstraint
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $title = '';
+}
+
+#[Entity]
+#[Table(name: 'gh5593_fulltext_column_unique')]
+#[Index(name: 'search_idx', columns: ['title'], flags: ['fulltext'])]
+class GH5593FulltextWithColumnUnique
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255, unique: true)]
+    public string $title = '';
+}
+
+#[Entity]
+#[Table(name: 'gh5593_composite_fulltext_unique')]
+#[Index(name: 'fulltext_ab', columns: ['a', 'b'], flags: ['fulltext'])]
+#[Index(name: 'fulltext_c', columns: ['c'], flags: ['fulltext'])]
+#[UniqueConstraint(name: 'uniq_ab', columns: ['a', 'b'])]
+#[UniqueConstraint(name: 'uniq_ac', columns: ['a', 'c'])]
+class GH5593CompositeFulltextAndUnique
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $a = '';
+
+    #[Column(length: 255)]
+    public string $b = '';
+
+    #[Column(length: 255)]
+    public string $c = '';
+}
+
+#[Entity]
+#[Table(name: 'gh5593_unflagged_unique')]
+#[Index(name: 'idx_name', columns: ['name'])]
+#[Index(name: 'idx_other', columns: ['other'])]
+#[UniqueConstraint(name: 'uniq_name', columns: ['name'])]
+class GH5593UnflaggedIndexWithUniqueConstraint
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $name = '';
+
+    #[Column(length: 255)]
+    public string $other = '';
+}
+
+#[Entity]
+#[Table(name: 'gh5593_flagged_indexes')]
+#[Index(name: 'fulltext_title', columns: ['title'], flags: ['fulltext'])]
+#[Index(name: 'spatial_title', columns: ['position'], flags: ['spatial'])]
+#[Index(name: 'clustered_title', columns: ['subtitle'], flags: ['clustered'])]
+class GH5593FlaggedIndexes
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $title = '';
+
+    #[Column(length: 255)]
+    public string $position = '';
+
+    #[Column(length: 255)]
+    public string $subtitle = '';
+}
+
+#[Entity]
+#[Table(name: 'gh5593_partial_unique')]
+#[Index(name: 'idx_partial', columns: ['name'], options: ['where' => 'name IS NOT NULL'])]
+#[Index(name: 'idx_covered_partial', columns: ['code'], options: ['where' => 'code IS NOT NULL'])]
+#[UniqueConstraint(name: 'uniq_name', columns: ['name'])]
+#[UniqueConstraint(name: 'uniq_code', columns: ['code'], options: ['where' => 'code IS NOT NULL'])]
+class GH5593PartialIndexWithUniqueConstraint
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $name = '';
+
+    #[Column(length: 255)]
+    public string $code = '';
+}
+
+#[Entity]
 #[Table(name: '`quoted-table`')]
 #[Index(columns: ['`quoted-name`'])]
 class QuotedEntity
@@ -888,4 +1764,26 @@ class QuotedEntity
 
     #[Column(name: '`quoted-name`')]
     public string $name = '';
+}
+
+#[Entity]
+#[Table(name: 'fulltext_spatial_flag_index')]
+#[Index(name: 'bad_idx', columns: ['title'], flags: ['fulltext', 'spatial'])]
+class FulltextSpatialFlagIndex
+{
+    #[Id]
+    #[Column]
+    public int $id = 0;
+
+    #[Column(length: 255)]
+    public string $title = '';
+}
+
+#[Entity]
+#[Table(name: 'unique_scalar_id')]
+class UniqueScalarIdEntity
+{
+    #[Id]
+    #[Column(unique: true)]
+    public int $id = 0;
 }

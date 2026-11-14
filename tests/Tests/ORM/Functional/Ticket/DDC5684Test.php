@@ -30,11 +30,7 @@ class DDC5684Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (DBALTypes\Type::hasType(DDC5684ObjectIdType::class)) {
-            DBALTypes\Type::overrideType(DDC5684ObjectIdType::class, DDC5684ObjectIdType::class);
-        } else {
-            DBALTypes\Type::addType(DDC5684ObjectIdType::class, DDC5684ObjectIdType::class);
-        }
+        self::registerDbalType(DDC5684ObjectIdType::class, DDC5684ObjectIdType::class);
 
         $this->createSchemaForModels(DDC5684Object::class);
     }

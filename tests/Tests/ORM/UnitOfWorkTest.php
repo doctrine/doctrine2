@@ -19,7 +19,6 @@ use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\ManyToOne;
-use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\Mapping\Version;
 use Doctrine\ORM\OptimisticLockException;
 use Doctrine\ORM\ORMInvalidArgumentException;
@@ -40,8 +39,6 @@ use PHPUnit\Framework\Attributes\Group;
 use stdClass;
 
 use function enum_exists;
-use function is_object;
-use function random_int;
 use function uniqid;
 
 /**
@@ -295,18 +292,7 @@ class UnitOfWorkTest extends OrmTestCase
         $user->username = 'John';
         $user->avatar   = $invalidValue;
 
-        if (
-            is_object($invalidValue) &&
-            ! $invalidValue instanceof ArrayCollection
-        ) {
-            // in the case of stdClass, the changeset is rejected because
-            // stdClass is not a valid entity
-            // this happens because UnitOfWork::isUninitializedObject()
-            // needs to load the class metadata to do its job
-            $this->expectException(MappingException::class);
-        } else {
-            $this->expectException(ORMInvalidArgumentException::class);
-        }
+        $this->expectException(ORMInvalidArgumentException::class);
 
         $this->_unitOfWork->computeChangeSet($metadata, $user);
     }
@@ -762,23 +748,6 @@ class EntityWithCompositeStringIdentifier
     #[Id]
     #[Column(type: 'string', length: 255)]
     public string|null $id2 = null;
-}
-
-#[Entity]
-class EntityWithRandomlyGeneratedField
-{
-    #[Id]
-    #[Column(type: 'string', length: 255)]
-    public string $id;
-
-    #[Column(type: 'integer')]
-    public int $generatedField;
-
-    public function __construct()
-    {
-        $this->id             = uniqid('id', true);
-        $this->generatedField = random_int(0, 100000);
-    }
 }
 
 #[Entity]

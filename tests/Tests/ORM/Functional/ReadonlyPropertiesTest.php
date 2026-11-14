@@ -17,7 +17,7 @@ class ReadonlyPropertiesTest extends OrmFunctionalTestCase
     protected function setUp(): void
     {
         if (! isset(static::$sharedConn)) {
-            static::$sharedConn = TestUtil::getConnection();
+            static::$sharedConn = TestUtil::getConnection(self::createDbalConfiguration());
         }
 
         $attributeDriver = AttributeDriverFactory::createAttributeDriver([__DIR__ . '/../../Models/ReadonlyProperties']);

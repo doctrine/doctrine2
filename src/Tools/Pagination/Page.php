@@ -21,14 +21,17 @@ use Override;
  * returns a {@see Window}, {@see CursorPage::getNextCursor()} a {@see Cursor}).
  *
  * @template-covariant T
- * @extends IteratorAggregate<int, T>
+ * @extends IteratorAggregate<array-key, T>
  */
 interface Page extends Countable, IteratorAggregate
 {
     /**
      * Returns the raw entities on this page.
      *
-     * @return list<T>
+     * The keys are implementation specific: {@see CursorPage} returns a list,
+     * while {@see WindowPage} preserves the result keys (e.g. DQL ``INDEX BY``).
+     *
+     * @return array<array-key, T>
      */
     public function getItems(): array;
 

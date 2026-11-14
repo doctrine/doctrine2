@@ -22,8 +22,12 @@ use Doctrine\Tests\OrmTestCase;
 use LogicException;
 use PHPUnit\Framework\MockObject\MockObject;
 use SortDirection;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 use function enum_exists;
+use function method_exists;
+
+require_once __DIR__ . '/PaginationTestCase.php';
 
 class CursorPaginatorTest extends OrmTestCase
 {
@@ -36,6 +40,10 @@ class CursorPaginatorTest extends OrmTestCase
         $platform = $this->getMockBuilder(AbstractPlatform::class)
             ->setConstructorArgs(enum_exists(UnquotedIdentifierFolding::class) ? [UnquotedIdentifierFolding::UPPER] : [])
             ->getMock();
+        if (method_exists($platform, 'getUnquotedIdentifierFolding')) {
+            $platform->method('getUnquotedIdentifierFolding')->willReturn(UnquotedIdentifierFolding::NONE);
+        }
+
         $platform->method('supportsIdentityColumns')
             ->willReturn(true);
 
@@ -513,5 +521,35 @@ class CursorPaginatorTest extends OrmTestCase
 
         $cursor = $page->getNextCursor();
         self::assertSame(42, $cursor->getParameters()['b.author']);
+    }
+
+    public function testPaginateDoesNotWriteQueryCacheEntryPerCursor(): void
+    {
+        $items = [(object) ['id' => 1]];
+        $this->hydrator->method('hydrateAll')->willReturn($items);
+        $result = $this->createMock(Result::class);
+        $this->connection->method('executeQuery')->willReturn($result);
+
+        $queryCache = new ArrayAdapter();
+        $this->em->getConfiguration()->setQueryCache($queryCache);
+
+        $query = new Query($this->em);
+        $query->setDQL('SELECT p FROM Doctrine\Tests\ORM\Tools\Pagination\BlogPost p ORDER BY p.id ASC');
+
+        $paginator = new CursorPaginator(10, queryProducesDuplicates: false);
+
+        $page = $paginator->paginate($query, null);
+        $paginator->paginate($query, new Cursor(['p.id' => 10]));
+        $paginator->paginate($query, new Cursor(['p.id' => 50]));
+
+        self::assertSame($items, $page->getItems());
+        self::assertCount(0, $queryCache->getValues());
+
+        $paginator->paginate($query, new Cursor(['p.id' => 50], false));
+
+        self::assertCount(0, $queryCache->getValues());
+
+        $query->getSQL();
+        self::assertCount(1, $queryCache->getValues());
     }
 }

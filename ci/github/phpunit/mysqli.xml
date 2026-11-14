@@ -22,8 +22,6 @@
         <var name="db_default_table_option_collation" value="utf8mb4_unicode_ci" />
         <var name="db_default_table_option_engine" value="InnoDB" />
 
-        <!-- necessary change for some CLI/console output test assertions -->
-        <env name="COLUMNS" value="120"/>
         <env name="DOCTRINE_DEPRECATIONS" value="trigger"/>
     </php>
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Persisters;
 
 use Doctrine\DBAL\DriverManager;
-use Doctrine\DBAL\Types\Type as DbalType;
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\ORMSetup;
@@ -18,6 +18,8 @@ use Doctrine\Tests\Mocks\EntityManagerMock;
 use Doctrine\Tests\Models\BinaryPrimaryKey\BinaryIdType;
 use Doctrine\Tests\Models\BinaryPrimaryKey\Category;
 use Doctrine\Tests\OrmTestCase;
+
+use function method_exists;
 
 final class BinaryIdPersisterTest extends OrmTestCase
 {
@@ -71,9 +73,15 @@ final class BinaryIdPersisterTest extends OrmTestCase
             isDevMode: true,
         );
 
-        if (! DbalType::hasType(BinaryIdType::NAME)) {
-            DbalType::addType(BinaryIdType::NAME, BinaryIdType::class);
+        if (method_exists(Schema::class, 'edit')) {
+            $config->setUseSchemaEditorApi(true);
         }
+
+        if (method_exists($config, 'setTypeProvider')) {
+            $config->setTypeProvider(self::getTypeRegistry());
+        }
+
+        self::registerDbalType(BinaryIdType::NAME, BinaryIdType::class);
 
         $connection    = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
         $entityManager = new EntityManagerMock($connection, $config);

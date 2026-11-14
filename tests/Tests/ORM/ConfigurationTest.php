@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM;
 
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityRepository;
@@ -16,6 +18,8 @@ use Doctrine\ORM\Mapping\QuoteStrategy;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Tests\Models\DDC753\DDC753CustomRepository;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
+use PHPUnit\Framework\Attributes\RequiresMethod;
 use PHPUnit\Framework\TestCase;
 use Psr\Cache\CacheItemPoolInterface;
 
@@ -24,6 +28,8 @@ use Psr\Cache\CacheItemPoolInterface;
  */
 class ConfigurationTest extends TestCase
 {
+    use VerifyDeprecations;
+
     private Configuration $configuration;
 
     protected function setUp(): void
@@ -180,5 +186,14 @@ class ConfigurationTest extends TestCase
         $defaultTypedFieldMapper = new DefaultTypedFieldMapper();
         $this->configuration->setTypedFieldMapper($defaultTypedFieldMapper);
         self::assertSame($defaultTypedFieldMapper, $this->configuration->getTypedFieldMapper());
+    }
+
+    #[RequiresMethod(Schema::class, 'edit')]
+    #[IgnoreDeprecations]
+    public function testDisablingSchemaEditorApiIsDeprecated(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12780');
+
+        $this->configuration->setUseSchemaEditorApi(false);
     }
 }

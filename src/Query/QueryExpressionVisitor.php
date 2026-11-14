@@ -70,7 +70,7 @@ class QueryExpressionVisitor extends ExpressionVisitor
         $expressionList = [];
 
         foreach ($expr->getExpressionList() as $child) {
-            $expressionList[] = $this->dispatch($child);
+            $expressionList[] = $child->visit($this);
         }
 
         return match ($expr->getType()) {

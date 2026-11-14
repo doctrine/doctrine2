@@ -225,7 +225,7 @@ DQL;
 
     #[Group('DDC-54')]
     #[Group('DDC-3005')]
-    public function testCascadedEntitiesNotLoadedInPostLoadDuringIteration(): void
+    public function testFetchJoinedToOneIsLoadedInPostLoadDuringIteration(): void
     {
         $e1 = new LifecycleCallbackTestEntity();
         $e2 = new LifecycleCallbackTestEntity();
@@ -260,7 +260,7 @@ DQL;
 
         foreach ($iterableResult as $entity) {
             self::assertTrue($entity::$postLoadCallbackInvoked);
-            self::assertFalse($entity->postLoadCascaderNotNull);
+            self::assertTrue($entity->postLoadCascaderNotNull);
 
             break;
         }

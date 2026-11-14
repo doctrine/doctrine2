@@ -127,26 +127,14 @@ parameters:
 			path: src/Cache/DefaultCollectionHydrator.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumnFieldNames\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Cache/DefaultEntityHydrator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Cache/DefaultEntityHydrator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Cache/DefaultEntityHydrator.php
-
-		-
 			message: '#^Call to an undefined method Doctrine\\ORM\\Persisters\\Entity\\EntityPersister\:\:getCacheRegion\(\)\.$#'
 			identifier: method.notFound
+			count: 1
+			path: src/Cache/DefaultEntityHydrator.php
+
+		-
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/Cache/DefaultEntityHydrator.php
 
@@ -201,7 +189,7 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Cache\\DefaultQueryCache\:\:storeAssociationCache\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 2
+			count: 1
 			path: src/Cache/DefaultQueryCache.php
 
 		-
@@ -679,15 +667,39 @@ parameters:
 			path: src/Id/AssignedGenerator.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:doGatherRow\(\) should return array\{data\: array\<array\>, newObjects\?\: array\<array\{class\: ReflectionClass, args\: array, obj\: object\}\>, scalars\?\: array\} but returns array\{data\: array\<string, mixed\>, newObjects\: array\<array\{class\?\: ReflectionClass\<object\>, args\: array, obj\: object\}\>, scalars\?\: non\-empty\-array\}\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRow\(\) return type with generic class ReflectionClass does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 3
+			count: 1
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
@@ -715,15 +727,9 @@ parameters:
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
-			message: '#^Parameter &\$id by\-ref type of method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) expects array\<string, string\>, array\<string\> given\.$#'
-			identifier: parameterByRef.type
-			count: 1
-			path: src/Internal/Hydration/AbstractHydrator.php
-
-		-
-			message: '#^Parameter &\$nonemptyComponents by\-ref type of method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) expects array\<string, bool\>, array\<bool\> given\.$#'
-			identifier: parameterByRef.type
-			count: 1
+			message: '#^Offset ''class'' might not exist on array\{class\?\: ReflectionClass\<object\>, args\: array\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 2
 			path: src/Internal/Hydration/AbstractHydrator.php
 
 		-
@@ -737,24 +743,6 @@ parameters:
 			identifier: parameterByRef.type
 			count: 1
 			path: src/Internal/Hydration/ArrayHydrator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$inversedBy\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Internal/Hydration/ObjectHydrator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Internal/Hydration/ObjectHydrator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Internal/Hydration/ObjectHydrator.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\ObjectHydrator\:\:hydrateAllData\(\) return type has no value type specified in iterable type array\.$#'
@@ -775,8 +763,8 @@ parameters:
 			path: src/Internal/Hydration/ObjectHydrator.php
 
 		-
-			message: '#^Parameter \#2 \$assoc of method Doctrine\\ORM\\PersistentCollection\<\(int\|string\),mixed\>\:\:setOwner\(\) expects Doctrine\\ORM\\Mapping\\AssociationMapping&Doctrine\\ORM\\Mapping\\ToManyAssociationMapping, Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
+			message: '#^Method Doctrine\\ORM\\Internal\\Hydration\\ObjectHydrator\:\:onClear\(\) overrides method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:onClear\(\) but is missing the \#\[\\Override\] attribute\.$#'
+			identifier: method.missingOverride
 			count: 1
 			path: src/Internal/Hydration/ObjectHydrator.php
 
@@ -815,6 +803,18 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Internal/HydrationCompleteHandler.php
+
+		-
+			message: '#^Offset ''backtick'' on array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: '''', 2\: '''', bracket\: '''', 3\: '''', unquoted\: non\-empty\-string, \.\.\.\}\|array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: '''', 2\: '''', bracket\: non\-empty\-string, 3\: non\-empty\-string\}\|array\{0\: non\-empty\-string, ansi\: '''', 1\: '''', backtick\: non\-empty\-string, 2\: non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: src/Internal/Name/NameParser.php
+
+		-
+			message: '#^Call to function array_is_list\(\) with list\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Internal/NoUnknownNamedArguments.php
 
 		-
 			message: '#^Offset int\|null might not exist on array\<int, object\>\.$#'
@@ -937,10 +937,10 @@ parameters:
 			path: src/Mapping/Builder/EntityListenerBuilder.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Mapping/ClassMetadata.php
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: src/Mapping/ChainTypedFieldMapper.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadata\:\:inlineEmbeddable\(\) has parameter \$embeddable with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
@@ -951,7 +951,7 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ClassMetadata\:\:setAssociationOverride\(\) has parameter \$overrideMapping with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 2
+			count: 1
 			path: src/Mapping/ClassMetadata.php
 
 		-
@@ -973,7 +973,7 @@ parameters:
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:fromMappingArray\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array given\.$#'
+			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:fromMappingArray\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array\<mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Mapping/ClassMetadata.php
@@ -985,25 +985,25 @@ parameters:
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\:\:fromMappingArrayAndNamingStrategy\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array given\.$#'
+			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\:\:fromMappingArrayAndNamingStrategy\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array\<mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array given\.$#'
+			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array\<mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ToOneInverseSideMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array given\.$#'
+			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ToOneInverseSideMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array\<mixed\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ToOneOwningSideMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array given\.$#'
+			message: '#^Parameter \#1 \$mappingArray of static method Doctrine\\ORM\\Mapping\\ToOneOwningSideMapping\:\:fromMappingArrayAndName\(\) expects array\{fieldName\: string, sourceEntity\: class\-string, targetEntity\: class\-string, cascade\?\: list\<''all''\|''detach''\|''persist''\|''refresh''\|''remove''\>, fetch\?\: 2\|3\|4\|null, inherited\?\: class\-string\|null, declared\?\: class\-string\|null, cache\?\: array\<mixed\>\|null, \.\.\.\}, non\-empty\-array\<mixed\> given\.$#'
 			identifier: argument.type
 			count: 2
 			path: src/Mapping/ClassMetadata.php
@@ -1012,12 +1012,6 @@ parameters:
 			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\:\:\$customRepositoryClassName with generic class Doctrine\\ORM\\EntityRepository does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
-			path: src/Mapping/ClassMetadata.php
-
-		-
-			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\:\:\$table type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 2
 			path: src/Mapping/ClassMetadata.php
 
 		-
@@ -1243,12 +1237,6 @@ parameters:
 			path: src/Mapping/DefaultEntityListenerResolver.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Mapping/DefaultQuoteStrategy.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\DefaultQuoteStrategy\:\:getColumnAlias\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1375,12 +1363,6 @@ parameters:
 			path: src/Mapping/Driver/XmlDriver.php
 
 		-
-			message: '#^Property Doctrine\\ORM\\Mapping\\ClassMetadata\<T of object\>\:\:\$table \(array\{name\: string, schema\?\: string, indexes\?\: array, uniqueConstraints\?\: array, options\?\: array\<string, mixed\>, quoted\?\: bool\}\) does not accept array\{name\: string, schema\?\: string, indexes\?\: array, uniqueConstraints\?\: array, options\: array\<int\|string, array\<int\|string, mixed\>\|bool\|object\|string\>, quoted\?\: bool\}\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Mapping/Driver/XmlDriver.php
-
-		-
 			message: '#^Property Doctrine\\ORM\\Mapping\\FieldMapping\:\:\$declared \(class\-string\|null\) does not accept string\|null\.$#'
 			identifier: assign.propertyType
 			count: 1
@@ -1495,6 +1477,12 @@ parameters:
 			path: src/Mapping/QuoteStrategy.php
 
 		-
+			message: '#^Asserted type string for \$this\-\>indexBy\(\) with type string does not narrow down the type\.$#'
+			identifier: assert.alreadyNarrowedType
+			count: 1
+			path: src/Mapping/ToManyAssociationMapping.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Mapping\\ToOneOwningSideMapping\:\:fromMappingArray\(\) should return static\(Doctrine\\ORM\\Mapping\\ToOneOwningSideMapping\) but returns Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\.$#'
 			identifier: return.type
 			count: 1
@@ -1521,12 +1509,6 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\NativeQuery\:\:_doExecute\(\) never returns int so it can be removed from the return type\.$#'
 			identifier: return.unusedType
-			count: 1
-			path: src/NativeQuery.php
-
-		-
-			message: '#^Result of && is always false\.$#'
-			identifier: booleanAnd.alwaysFalse
 			count: 1
 			path: src/NativeQuery.php
 
@@ -1569,12 +1551,6 @@ parameters:
 		-
 			message: '#^Method Doctrine\\ORM\\PersistentCollection\:\:matching\(\) should return Doctrine\\Common\\Collections\\Collection\<TKey of \(int\|string\), T\> but returns Doctrine\\Common\\Collections\\ReadableCollection\<TKey of \(int\|string\), T\>\.$#'
 			identifier: return.type
-			count: 1
-			path: src/PersistentCollection.php
-
-		-
-			message: '#^Parameter \#1 \$key of method Doctrine\\ORM\\PersistentCollection\<TKey of \(int\|string\),T\>\:\:set\(\) expects TKey of \(int\|string\), int\|string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/PersistentCollection.php
 
@@ -1631,30 +1607,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Persisters/Collection/CollectionPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTableColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$relationToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$relationToTargetKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
 
 		-
 			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
@@ -1807,12 +1759,6 @@ parameters:
 			path: src/Persisters/Collection/ManyToManyPersister.php
 
 		-
-			message: '#^Parameter \#1 \$association of method Doctrine\\ORM\\Mapping\\QuoteStrategy\:\:getJoinTableName\(\) expects Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping, Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Collection\\OneToManyPersister\:\:contains\(\) has parameter \$collection with generic class Doctrine\\ORM\\PersistentCollection but does not specify its types\: TKey, T$#'
 			identifier: missingType.generics
 			count: 1
@@ -1879,7 +1825,7 @@ parameters:
 			path: src/Persisters/Collection/OneToManyPersister.php
 
 		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\: Doctrine\\DBAL\\Types\\Type, default\: mixed, notnull\?\: bool, autoincrement\: bool, columnDefinition\: non\-empty\-string\|null, comment\: string, charset\?\: non\-empty\-string\|null, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
+			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type, typeName\: string\}\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Persisters/Collection/OneToManyPersister.php
@@ -1891,32 +1837,20 @@ parameters:
 			path: src/Persisters/Entity/AbstractEntityInheritancePersister.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Persisters/Entity/BasicEntityPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isIndexed\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
 			count: 1
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToMany\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
 			count: 1
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 4
-			path: src/Persisters/Entity/BasicEntityPersister.php
-
-		-
-			message: '#^Call to an undefined method Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:indexBy\(\)\.$#'
-			identifier: method.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
@@ -1993,12 +1927,6 @@ parameters:
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
-			message: '#^Parameter \#1 \$association of method Doctrine\\ORM\\Mapping\\QuoteStrategy\:\:getJoinTableName\(\) expects Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping, Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Persisters/Entity/BasicEntityPersister.php
-
-		-
 			message: '#^Parameter \#3 \$hints of method Doctrine\\ORM\\Internal\\Hydration\\AbstractHydrator\:\:hydrateAll\(\) expects array\<string, string\>, array\<string, Doctrine\\ORM\\PersistentCollection\|true\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2047,18 +1975,6 @@ parameters:
 			path: src/Persisters/Entity/EntityPersister.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Persisters/Entity/JoinedSubclassPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Entity/JoinedSubclassPersister.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Entity\\JoinedSubclassPersister\:\:fetchVersionAndNotUpsertableValues\(\) has parameter \$versionedClass with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2069,12 +1985,6 @@ parameters:
 			identifier: missingType.generics
 			count: 1
 			path: src/Persisters/Entity/JoinedSubclassPersister.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Persisters/Entity/SingleTablePersister.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Persisters\\Entity\\SingleTablePersister\:\:generateFilterConditionSQL\(\) has parameter \$targetEntity with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
@@ -2173,12 +2083,6 @@ parameters:
 			path: src/Query/AST/Functions/DateSubFunction.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Query/AST/Functions/IdentityFunction.php
-
-		-
 			message: '#^Parameter \#1 \$joinColumn of method Doctrine\\ORM\\Mapping\\QuoteStrategy\:\:getJoinColumnName\(\) expects Doctrine\\ORM\\Mapping\\JoinColumnMapping, Doctrine\\ORM\\Mapping\\JoinColumnMapping\|false given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2189,30 +2093,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Query/AST/Functions/LocateFunction.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Query/AST/Functions/SizeFunction.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Query/AST/Functions/SizeFunction.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Query/AST/Functions/SizeFunction.php
-
-		-
-			message: '#^Parameter \#1 \$association of method Doctrine\\ORM\\Mapping\\QuoteStrategy\:\:getJoinTableName\(\) expects Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping, Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Query/AST/Functions/SizeFunction.php
 
 		-
 			message: '#^Call to an undefined method Doctrine\\ORM\\Query\\SqlWalker\:\:walkJoinPathExpression\(\)\.$#'
@@ -2257,7 +2137,7 @@ parameters:
 			path: src/Query/Exec/MultiTableDeleteExecutor.php
 
 		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\: Doctrine\\DBAL\\Types\\Type, default\: mixed, notnull\?\: bool, autoincrement\: bool, columnDefinition\: non\-empty\-string\|null, comment\: string, charset\?\: non\-empty\-string\|null, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
+			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type, typeName\: string\}\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Query/Exec/MultiTableDeleteExecutor.php
@@ -2275,7 +2155,7 @@ parameters:
 			path: src/Query/Exec/MultiTableUpdateExecutor.php
 
 		-
-			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\: Doctrine\\DBAL\\Types\\Type, default\: mixed, notnull\?\: bool, autoincrement\: bool, columnDefinition\: non\-empty\-string\|null, comment\: string, charset\?\: non\-empty\-string\|null, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type\}\> given\.$#'
+			message: '#^Parameter \#1 \$columns of method Doctrine\\DBAL\\Platforms\\AbstractPlatform\:\:getColumnDeclarationListSQL\(\) expects list\<array\{name\: string, type\?\: Doctrine\\DBAL\\Types\\Type, typeName\?\: string, default\?\: mixed, notnull\?\: bool, autoincrement\?\: bool, columnDefinition\?\: non\-empty\-string\|null, comment\?\: string, \.\.\.\}\>, array\<string, array\{name\: string, notnull\: true, type\: Doctrine\\DBAL\\Types\\Type, typeName\: string\}\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Query/Exec/MultiTableUpdateExecutor.php
@@ -2291,6 +2171,18 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Query/Exec/SingleTableDeleteUpdateExecutor.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: src/Query/Expr.php
+
+		-
+			message: '#^Call to function is_object\(\) with Stringable will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Query/Expr/Base.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Query\\Expr\\Func\:\:getArguments\(\) should return list\<mixed\> but returns array\<mixed\>\.$#'
@@ -2371,12 +2263,6 @@ parameters:
 			path: src/Query/Parser.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Query/ResultSetMappingBuilder.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Query\\ResultSetMappingBuilder\:\:isInheritanceSupported\(\) has parameter \$classMetadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2389,39 +2275,15 @@ parameters:
 			path: src/Query/SqlOutputWalker.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Query/SqlWalker.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isManyToMany\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/Query/SqlWalker.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$sourceToTargetKeyColumns\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Query/SqlWalker.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/Query/SqlWalker.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
-			path: src/Query/SqlWalker.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 6
 			path: src/Query/SqlWalker.php
 
 		-
@@ -2458,12 +2320,6 @@ parameters:
 			message: '#^Method Doctrine\\ORM\\Query\\SqlWalker\:\:getMetadataForDqlAlias\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
-			path: src/Query/SqlWalker.php
-
-		-
-			message: '#^Parameter \#1 \$association of method Doctrine\\ORM\\Mapping\\QuoteStrategy\:\:getJoinTableName\(\) expects Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping, Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 2
 			path: src/Query/SqlWalker.php
 
 		-
@@ -2535,6 +2391,12 @@ parameters:
 		-
 			message: '#^Parameter \#3 \$type of method Doctrine\\ORM\\QueryBuilder\:\:setParameter\(\) expects Doctrine\\DBAL\\ArrayParameterType\|Doctrine\\DBAL\\ParameterType\|string\|null, Doctrine\\DBAL\\ArrayParameterType\|Doctrine\\DBAL\\ParameterType\|int\|string\|null given\.$#'
 			identifier: argument.type
+			count: 1
+			path: src/QueryBuilder.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
 			count: 1
 			path: src/QueryBuilder.php
 
@@ -2623,12 +2485,6 @@ parameters:
 			path: src/Tools/Console/MetadataFilter.php
 
 		-
-			message: '#^Parameter \#1 \$string of function html_entity_decode expects string, string\|false given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/Debug.php
-
-		-
 			message: '#^Parameter \#1 \$stream of function fclose expects resource, resource\|false given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2653,16 +2509,124 @@ parameters:
 			path: src/Tools/Event/GenerateSchemaTableEventArgs.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
+			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\FieldMapping\:\:\$default\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/Tools/Pagination/CountOutputWalker.php
+			path: src/Tools/ExperimentalSchemaTool.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
+			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
 			count: 1
-			path: src/Tools/Pagination/LimitSubqueryOutputWalker.php
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Call to static method createForDbal5\(\) on an unknown class Doctrine\\ORM\\Tools\\NotSupportedException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addDiscriminatorColumnDefinition\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherColumn\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherRelationJoinColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:gatherRelationsSql\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getDefiningClass\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getDefiningClass\(\) return type with generic class Doctrine\\ORM\\Mapping\\ClassMetadata does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getIndexColumns\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:getSchemaFromMetadata\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:processingNotRequired\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \$foreignColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Parameter \$localColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Tools/ExperimentalSchemaTool.php
+
+		-
+			message: '#^Property Doctrine\\ORM\\Tools\\ExperimentalSchemaTool\:\:\$schemaManager with generic class Doctrine\\DBAL\\Schema\\AbstractSchemaManager does not specify its types\: T$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Tools/ExperimentalSchemaTool.php
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\LimitSubqueryOutputWalker\:\:walkSelectStatement\(\) should return string but returns list\<string\>\|string\.$#'
@@ -2677,15 +2641,51 @@ parameters:
 			path: src/Tools/Pagination/LimitSubqueryOutputWalker.php
 
 		-
+			message: '#^Comparison operation "\<" between int\<0, max\> and 0 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 1
+			path: src/Tools/Pagination/Window.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<1, max\> and 1 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 2
+			path: src/Tools/Pagination/Window.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\Window\:\:getPageNumber\(\) should return int\<1, max\> but returns int\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Tools/Pagination/Window.php
+
+		-
+			message: '#^Method Doctrine\\ORM\\Tools\\Pagination\\WindowPage\:\:hasToPaginate\(\) overrides method Doctrine\\ORM\\Tools\\Pagination\\Page\<T\>\:\:hasToPaginate\(\) but is missing the \#\[\\Override\] attribute\.$#'
+			identifier: method.missingOverride
+			count: 1
+			path: src/Tools/Pagination/WindowPage.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\ResolveTargetEntityListener\:\:remapAssociation\(\) has parameter \$classMetadata with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/ResolveTargetEntityListener.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 5
+			message: '''
+				#^Call to deprecated method dropSequence\(\) of class Doctrine\\DBAL\\Schema\\Schema\:
+				since doctrine/dbal 4\.5\. Use \{@see edit\(\)\} and \{@see SchemaEditor\:\:dropSequence\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '''
+				#^Call to deprecated method dropTable\(\) of class Doctrine\\DBAL\\Schema\\Schema\:
+				since doctrine/dbal 4\.5\. Use \{@see edit\(\)\} and \{@see SchemaEditor\:\:dropTable\(\)\} instead\.$#
+			'''
+			identifier: method.deprecated
+			count: 1
 			path: src/Tools/SchemaTool.php
 
 		-
@@ -2734,6 +2734,24 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentDate not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentTime not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Instantiated class Doctrine\\ORM\\Tools\\CurrentTimestamp not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:addDiscriminatorColumnDefinition\(\) has parameter \$class with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -2747,12 +2765,6 @@ parameters:
 
 		-
 			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:dropSchema\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
-			identifier: missingType.generics
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Method Doctrine\\ORM\\Tools\\SchemaTool\:\:experimentalGetSchemaFromMetadata\(\) has parameter \$classes with generic class Doctrine\\ORM\\Mapping\\ClassMetadata but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Tools/SchemaTool.php
@@ -2842,18 +2854,6 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
-			message: '#^Parameter \#1 \$columnName of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects non\-empty\-string, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \#1 \$columnNames of method Doctrine\\DBAL\\Schema\\Table\:\:addIndex\(\) expects non\-empty\-list\<string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
 			message: '#^Parameter \#1 \$columnNames of method Doctrine\\DBAL\\Schema\\Table\:\:addUniqueIndex\(\) expects non\-empty\-list\<string\>, array\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
@@ -2862,7 +2862,7 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$columns of class Doctrine\\DBAL\\Schema\\Index constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
 			identifier: argument.type
-			count: 2
+			count: 1
 			path: src/Tools/SchemaTool.php
 
 		-
@@ -2872,37 +2872,19 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
-			message: '#^Parameter \#2 \$modification of method Doctrine\\DBAL\\Schema\\TableEditor\:\:modifyColumnByUnquotedName\(\) expects callable\(Doctrine\\DBAL\\Schema\\ColumnEditor\)\: void, Closure\(Doctrine\\DBAL\\Schema\\ColumnEditor\)\: Doctrine\\DBAL\\Schema\\ColumnEditor given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
 			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
 			identifier: argument.type
 			count: 2
 			path: src/Tools/SchemaTool.php
 
 		-
+			message: '#^Parameter \#2 \$primaryKeyColumns of method Doctrine\\ORM\\Tools\\SchemaTool\:\:addPrimaryKeyConstraint\(\) expects non\-empty\-array\<non\-empty\-string\>, non\-empty\-list\<string\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
 			message: '#^Parameter \#3 \$foreignColumnNames of method Doctrine\\DBAL\\Schema\\Table\:\:addForeignKeyConstraint\(\) expects non\-empty\-list\<string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \$foreignColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
-			message: '#^Parameter \$localColumnNames of class Doctrine\\DBAL\\Schema\\ForeignKeyConstraint constructor expects non\-empty\-list\<string\>, list\<string\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Tools/SchemaTool.php
@@ -2916,42 +2898,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$inversedBy\.$#'
 			identifier: property.notFound
-			count: 2
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 6
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
-			count: 9
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$relationToSourceKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$relationToTargetKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Tools/SchemaValidator.php
-
-		-
-			message: '#^Call to an undefined method Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:orderBy\(\)\.$#'
-			identifier: method.notFound
 			count: 1
 			path: src/Tools/SchemaValidator.php
 
@@ -2968,38 +2914,20 @@ parameters:
 			path: src/Tools/SchemaValidator.php
 
 		-
-			message: '#^ Parameter \#3 \$changeSet of class Doctrine\\ORM\\Event\\PreUpdateEventArgs constructor is passed by reference, so it expects variables only$#'
-			identifier: argument.byRef
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\AssociationMapping\:\:\$joinColumns\.$#'
 			identifier: property.notFound
 			count: 1
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$inversedBy\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToMany\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
-			count: 3
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$targetToSourceKeyColumns\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/UnitOfWork.php
 
@@ -3070,39 +2998,15 @@ parameters:
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Parameter \#2 \$assoc of method Doctrine\\ORM\\PersistentCollection\<\(int\|string\),mixed\>\:\:setOwner\(\) expects Doctrine\\ORM\\Mapping\\AssociationMapping&Doctrine\\ORM\\Mapping\\ToManyAssociationMapping, Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Parameter \#2 \$assoc of method Doctrine\\ORM\\PersistentCollection\<\*NEVER\*,\*NEVER\*\>\:\:setOwner\(\) expects Doctrine\\ORM\\Mapping\\AssociationMapping&Doctrine\\ORM\\Mapping\\ToManyAssociationMapping, Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Parameter \#2 \$length of function array_chunk expects int\<1, max\>, int given\.$#'
 			identifier: argument.type
 			count: 2
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Parameter \#5 \$invoke of method Doctrine\\ORM\\Event\\ListenersInvoker\:\:invoke\(\) expects int\<0, 7\>, int\<min, \-1\>\|int\<1, max\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Parameter &\$visited by\-ref type of method Doctrine\\ORM\\UnitOfWork\:\:cascadeDetach\(\) expects array\<int, object\>, array\<mixed\> given\.$#'
 			identifier: parameterByRef.type
 			count: 2
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Property Doctrine\\ORM\\UnitOfWork\:\:\$entityChangeSets \(array\<int, array\<string, array\{mixed, mixed\}\>\>\) does not accept non\-empty\-array\<int, array\<string, array\{mixed, mixed\}\|Doctrine\\ORM\\PersistentCollection\>\>\.$#'
-			identifier: assign.propertyType
-			count: 1
 			path: src/UnitOfWork.php
 
 		-
@@ -3124,12 +3028,6 @@ parameters:
 			path: src/Utility/HierarchyDiscriminatorResolver.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Utility/IdentifierFlattener.php
-
-		-
 			message: '#^Method Doctrine\\ORM\\Utility\\IdentifierFlattener\:\:__construct\(\) has parameter \$metadataFactory with generic interface Doctrine\\Persistence\\Mapping\\ClassMetadataFactory but does not specify its types\: T$#'
 			identifier: missingType.generics
 			count: 1
@@ -3142,38 +3040,8 @@ parameters:
 			path: src/Utility/IdentifierFlattener.php
 
 		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\JoinTableMapping\|Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$joinTable\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyInverseSideMapping\|Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToManyAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneInverseSideMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$mappedBy\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$relationToTargetKeyColumns\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Utility/PersisterHelper.php
-
-		-
-			message: '#^Access to an undefined property Doctrine\\ORM\\Mapping\\ManyToManyOwningSideMapping\|Doctrine\\ORM\\Mapping\\ManyToOneAssociationMapping\|Doctrine\\ORM\\Mapping\\OneToOneOwningSideMapping\:\:\$sourceToTargetKeyColumns\.$#'
-			identifier: property.notFound
+			message: '#^Call to method Doctrine\\ORM\\Mapping\\AssociationMapping\:\:isToOneOwningSide\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
 			count: 1
 			path: src/Utility/PersisterHelper.php
 

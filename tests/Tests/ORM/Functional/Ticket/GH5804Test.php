@@ -24,7 +24,7 @@ final class GH5804Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType(GH5804Type::NAME, GH5804Type::class);
+        self::registerDbalType(GH5804Type::NAME, GH5804Type::class);
 
         $this->createSchemaForModels(GH5804Article::class);
     }

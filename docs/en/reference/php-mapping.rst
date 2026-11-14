@@ -108,6 +108,8 @@ It also has several methods that create builders (which are necessary for advanc
 -   ``createManyToMany($name, $targetEntity)`` returns an ``ManyToManyAssociationBuilder`` instance
 -   ``createOneToMany($name, $targetEntity)`` returns an ``OneToManyAssociationBuilder`` instance
 
+When you call ``FieldBuilder::setCustomIdGenerator()``, the strategy defaults to ``CUSTOM``. An explicit call to ``FieldBuilder::generatedValue()`` takes precedence, including ``generatedValue('NONE')`` for identifiers you assign yourself.
+
 ClassMetadata API
 -----------------
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Hydration;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\Internal\Hydration\HydrationException;
 use Doctrine\ORM\Internal\Hydration\ObjectHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -29,13 +30,17 @@ use Doctrine\Tests\Models\Hydration\EntityWithArrayDefaultArrayValueM2M;
 use Doctrine\Tests\Models\Hydration\SimpleEntity;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
+use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\TestCase;
 
 use function count;
 use function property_exists;
+use function strtoupper;
 
 class ObjectHydratorTest extends HydrationTestCase
 {
+    use VerifyDeprecations;
+
     /** @phpstan-return list<array{mixed}> */
     public static function provideDataForUserEntityResult(): array
     {
@@ -102,6 +107,93 @@ class ObjectHydratorTest extends HydrationTestCase
 
         self::assertEquals(2, $result[1]->id);
         self::assertEquals('jwage', $result[1]->name);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     */
+    #[IgnoreDeprecations]
+    public function testLegacyHydrateRowDataOverrideGetsResultAfterEachRow(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12728');
+
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+
+        $resultSet = [
+            ['u__id' => '1', 'u__name' => 'romanb'],
+            ['u__id' => '2', 'u__name' => 'jwage'],
+        ];
+
+        $hydrator = new LegacyHydrateRowDataObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(2, $result);
+        self::assertSame(['romanb', 'jwage'], [$result[0]->name, $result[1]->name]);
+        self::assertSame([1, 2], $hydrator->resultCountAfterRow);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}, PARTIAL p.{phonenumber}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    public function testGatherRowOverrideChangesHydratedEntities(): void
+    {
+        $hydrator = new GatherRowObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll(
+            $this->createResultMock($this->createUserPhonenumberResultSet()),
+            $this->createUserPhonenumberResultSetMapping(),
+        );
+
+        self::assertCount(1, $result);
+        self::assertSame('ROMANB', $result[0]->name);
+        self::assertCount(2, $result[0]->phonenumbers);
+    }
+
+    /**
+     * SELECT PARTIAL u.{id,name}, PARTIAL p.{phonenumber}
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    #[IgnoreDeprecations]
+    public function testLegacyGatherRowDataOverrideChangesHydratedEntities(): void
+    {
+        $this->expectDeprecationWithIdentifier('https://github.com/doctrine/orm/pull/12728');
+
+        $hydrator = new LegacyGatherRowDataObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll(
+            $this->createResultMock($this->createUserPhonenumberResultSet()),
+            $this->createUserPhonenumberResultSetMapping(),
+        );
+
+        self::assertCount(1, $result);
+        self::assertSame('ROMANB', $result[0]->name);
+        self::assertCount(2, $result[0]->phonenumbers);
+    }
+
+    /** @return list<array<string, string>> */
+    private function createUserPhonenumberResultSet(): array
+    {
+        return [
+            ['u__id' => '1', 'u__name' => 'romanb', 'p__phonenumber' => '42'],
+            ['u__id' => '1', 'u__name' => 'romanb', 'p__phonenumber' => '43'],
+        ];
+    }
+
+    private function createUserPhonenumberResultSetMapping(): ResultSetMapping
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('u', 'u__name', 'name');
+        $rsm->addFieldResult('p', 'p__phonenumber', 'phonenumber');
+
+        return $rsm;
     }
 
     /**
@@ -1974,5 +2066,163 @@ class ObjectHydratorTest extends HydrationTestCase
         self::assertInstanceOf(PersistentCollection::class, $result[0]->collection);
         self::assertCount(1, $result[0]->collection);
         self::assertInstanceOf(SimpleEntity::class, $result[0]->collection[0]);
+    }
+
+    /**
+     * SELECT u, p1, p2
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p1
+     *   JOIN u.phonenumbers p2
+     */
+    public function testFetchJoinSameCollectionTwiceAddsEachElementOnce(): void
+    {
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p1', 'u', 'phonenumbers');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p2', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('p1', 'p1__phonenumber', 'phonenumber');
+        $rsm->addFieldResult('p2', 'p2__phonenumber', 'phonenumber');
+
+        $resultSet = [
+            ['u__id' => '1', 'p1__phonenumber' => '42', 'p2__phonenumber' => '42'],
+            ['u__id' => '1', 'p1__phonenumber' => '43', 'p2__phonenumber' => '42'],
+            ['u__id' => '1', 'p1__phonenumber' => '43', 'p2__phonenumber' => '44'],
+        ];
+
+        $hydrator = new ObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(1, $result);
+        self::assertSame(
+            [0 => 42, 1 => 43, 2 => 44],
+            $result[0]->phonenumbers->map(static fn (CmsPhonenumber $phonenumber) => (int) $phonenumber->phonenumber)->toArray(),
+        );
+    }
+
+    /**
+     * SELECT u, p
+     *   FROM Doctrine\Tests\Models\CMS\CmsUser u
+     *   JOIN u.phonenumbers p
+     */
+    public function testFetchJoinKeepsElementsOfManagedEntityCollection(): void
+    {
+        $phonenumber              = new CmsPhonenumber();
+        $phonenumber->phonenumber = '42';
+
+        $user     = new CmsUser();
+        $user->id = 1;
+        $user->addPhonenumber($phonenumber);
+
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+        $unitOfWork->registerManaged($user, ['id' => 1], ['id' => 1]);
+        $unitOfWork->registerManaged($phonenumber, ['phonenumber' => '42'], ['phonenumber' => '42']);
+
+        $rsm = new ResultSetMapping();
+        $rsm->addEntityResult(CmsUser::class, 'u');
+        $rsm->addJoinedEntityResult(CmsPhonenumber::class, 'p', 'u', 'phonenumbers');
+        $rsm->addFieldResult('u', 'u__id', 'id');
+        $rsm->addFieldResult('p', 'p__phonenumber', 'phonenumber');
+
+        $resultSet = [
+            ['u__id' => '1', 'p__phonenumber' => '43'],
+            ['u__id' => '1', 'p__phonenumber' => '42'],
+        ];
+
+        $hydrator = new ObjectHydrator($this->entityManager);
+        $result   = $hydrator->hydrateAll($this->createResultMock($resultSet), $rsm);
+
+        self::assertCount(1, $result);
+        self::assertSame($user, $result[0]);
+        self::assertInstanceOf(PersistentCollection::class, $user->phonenumbers);
+        self::assertCount(2, $user->phonenumbers);
+        self::assertSame($phonenumber, $user->phonenumbers[0]);
+        self::assertSame('43', $user->phonenumbers[1]->phonenumber);
+    }
+
+    public function testHydratorInstanceCanBeReusedWithDifferentResultSetMapping(): void
+    {
+        $hydrator = new ObjectHydrator($this->entityManager);
+
+        $userRsm = new ResultSetMapping();
+        $userRsm->addEntityResult(CmsUser::class, 'u');
+        $userRsm->addFieldResult('u', 'u__id', 'id');
+        $userRsm->addFieldResult('u', 'u__name', 'name');
+
+        $users = $hydrator->hydrateAll($this->createResultMock([['u__id' => '1', 'u__name' => 'romanb']]), $userRsm);
+
+        $articleRsm = new ResultSetMapping();
+        $articleRsm->addEntityResult(CmsArticle::class, 'a');
+        $articleRsm->addFieldResult('a', 'a__id', 'id');
+        $articleRsm->addFieldResult('a', 'a__topic', 'topic');
+
+        $articles = $hydrator->hydrateAll($this->createResultMock([['a__id' => '1', 'a__topic' => 'Cool things.']]), $articleRsm);
+
+        self::assertInstanceOf(CmsUser::class, $users[0]);
+        self::assertSame('romanb', $users[0]->name);
+        self::assertInstanceOf(CmsArticle::class, $articles[0]);
+        self::assertSame('Cool things.', $articles[0]->topic);
+    }
+}
+
+/**
+ * Overrides the deprecated by-reference method and inspects the result after each row.
+ */
+class LegacyHydrateRowDataObjectHydrator extends ObjectHydrator
+{
+    /** @var list<int> */
+    public array $resultCountAfterRow = [];
+
+    /**
+     * @param mixed[] $row
+     * @param mixed[] $result
+     */
+    protected function hydrateRowData(array $row, array &$result): void
+    {
+        parent::hydrateRowData($row, $result);
+
+        $this->resultCountAfterRow[] = count($result);
+    }
+}
+
+/**
+ * Overrides the method that gathers the row data to change it.
+ */
+class GatherRowObjectHydrator extends ObjectHydrator
+{
+    /**
+     * @param mixed[] $data
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function gatherRow(array $data): array
+    {
+        $rowData = parent::gatherRow($data);
+
+        $rowData['data']['u']['name'] = strtoupper($rowData['data']['u']['name']);
+
+        return $rowData;
+    }
+}
+
+/**
+ * Overrides the deprecated by-reference method to change the gathered data.
+ */
+class LegacyGatherRowDataObjectHydrator extends ObjectHydrator
+{
+    /**
+     * @param mixed[]               $data
+     * @param array<string, string> $id
+     * @param array<string, bool>   $nonemptyComponents
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    protected function gatherRowData(array $data, array &$id, array &$nonemptyComponents): array
+    {
+        $rowData = parent::gatherRowData($data, $id, $nonemptyComponents);
+
+        $rowData['data']['u']['name'] = strtoupper($rowData['data']['u']['name']);
+
+        return $rowData;
     }
 }

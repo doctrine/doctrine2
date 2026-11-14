@@ -29,9 +29,7 @@ final class GH5988Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! DBALType::hasType(GH5988CustomIdObjectHashType::class)) {
-            DBALType::addType(GH5988CustomIdObjectHashType::class, GH5988CustomIdObjectHashType::class);
-        }
+        self::registerDbalType(GH5988CustomIdObjectHashType::class, GH5988CustomIdObjectHashType::class);
 
         $this->setUpEntitySchema([GH5988CustomIdObjectTypeParent::class, GH5988CustomIdObjectTypeChild::class]);
     }

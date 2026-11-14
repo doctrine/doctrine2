@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -26,7 +25,7 @@ class GH5887Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType(GH5887CustomIdObjectType::NAME, GH5887CustomIdObjectType::class);
+        self::registerDbalType(GH5887CustomIdObjectType::NAME, GH5887CustomIdObjectType::class);
 
         $this->createSchemaForModels(GH5887Cart::class, GH5887Customer::class);
     }

@@ -330,7 +330,9 @@ Example:
 #[CustomIdGenerator]
 ~~~~~~~~~~~~~~~~~~~~
 
-This attribute allows you to specify a user-provided class to generate identifiers. This attribute only works when both :ref:`#[Id] <attrref_id>` and :ref:`#[GeneratedValue(strategy: "CUSTOM")] <attrref_generatedvalue>` are specified.
+This attribute allows you to specify a user-provided class to generate identifiers. Use it together with :ref:`#[Id] <attrref_id>`.
+
+If you omit :ref:`#[GeneratedValue] <attrref_generatedvalue>`, the strategy defaults to ``CUSTOM``. An explicit ``#[GeneratedValue]`` takes precedence, including ``strategy: 'NONE'`` for identifiers you assign yourself.
 
 Required parameters:
 
@@ -343,13 +345,11 @@ Example:
     <?php
     use Doctrine\ORM\Mapping\Id;
     use Doctrine\ORM\Mapping\Column;
-    use Doctrine\ORM\Mapping\GeneratedValue;
     use Doctrine\ORM\Mapping\CustomIdGenerator;
     use App\Doctrine\MyIdGenerator;
 
     #[Id]
     #[Column(type: "integer")]
-    #[GeneratedValue(strategy: "CUSTOM")]
     #[CustomIdGenerator(class: MyIdGenerator::class)]
     public $id;
 
@@ -490,8 +490,7 @@ instance variable which is annotated by :ref:`#[Id] <attrref_id>`. This
 attribute is optional and only has meaning when used in
 conjunction with #[Id].
 
-If this attribute is not specified with ``#[Id]`` the ``NONE`` strategy is
-used as default.
+If you omit this attribute, the strategy defaults to ``NONE``. With :ref:`#[CustomIdGenerator] <attrref_customidgenerator>`, the default is ``CUSTOM``.
 
 Optional parameters:
 
@@ -933,6 +932,13 @@ Required parameters:
 -  **targetEntity**: FQCN of the referenced target entity. Can be the
    unqualified class name if both classes are in the same namespace.
    *IMPORTANT:* No leading backslash!
+-  **mappedBy**: This option specifies the property name on the
+   targetEntity that is the owning side of this relation. A one-to-many
+   association is always the inverse side of a bidirectional association,
+   so this attribute is required. A unidirectional one-to-many association
+   is mapped with :ref:`#[ManyToMany] <attrref_manytomany>` and a unique join
+   column instead, see "One-To-Many, Unidirectional with Join Table" in
+   :doc:`association-mapping`.
 
 Optional parameters:
 
@@ -940,9 +946,6 @@ Optional parameters:
 -  **orphanRemoval**: Boolean that specifies if orphans, inverse
    OneToOne entities that are not connected to any owning instance,
    should be removed by Doctrine. Defaults to false.
--  **mappedBy**: This option specifies the property name on the
-   targetEntity that is the owning side of this relation. Its a
-   required attribute for the inverse side of a relationship.
 -  **fetch**: One of LAZY, EXTRA_LAZY or EAGER.
 -  **indexBy**: Index the collection by a field on the target entity.
 

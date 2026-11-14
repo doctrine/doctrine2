@@ -17,8 +17,6 @@
         <var name="db_driver" value="sqlite3"/>
         <var name="db_memory" value="true"/>
 
-        <!-- necessary change for some CLI/console output test assertions -->
-        <env name="COLUMNS" value="120"/>
         <env name="DOCTRINE_DEPRECATIONS" value="trigger"/>
     </php>
 

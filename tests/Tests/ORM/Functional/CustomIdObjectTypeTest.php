@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\Tests\DbalTypes\CustomIdObject;
 use Doctrine\Tests\DbalTypes\CustomIdObjectType;
 use Doctrine\Tests\Models\CustomType\CustomIdObjectTypeChild;
@@ -16,11 +15,7 @@ class CustomIdObjectTypeTest extends OrmFunctionalTestCase
 {
     protected function setUp(): void
     {
-        if (DBALType::hasType(CustomIdObjectType::NAME)) {
-            DBALType::overrideType(CustomIdObjectType::NAME, CustomIdObjectType::class);
-        } else {
-            DBALType::addType(CustomIdObjectType::NAME, CustomIdObjectType::class);
-        }
+        self::registerDbalType(CustomIdObjectType::NAME, CustomIdObjectType::class);
 
         $this->useModelSet('custom_id_object_type');
 

@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
@@ -19,7 +18,7 @@ class DDC1998Test extends OrmFunctionalTestCase
 {
     public function testSqlConversionAsIdentifier(): void
     {
-        Type::addType('ddc1998', DDC1998Type::class);
+        self::registerDbalType('ddc1998', DDC1998Type::class);
 
         $this->createSchemaForModels(DDC1998Entity::class);
 

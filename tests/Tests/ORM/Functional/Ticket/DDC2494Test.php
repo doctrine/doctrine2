@@ -28,7 +28,7 @@ class DDC2494Test extends OrmFunctionalTestCase
 
         DDC2494TinyIntType::$calls = [];
 
-        Type::addType('ddc2494_tinyint', DDC2494TinyIntType::class);
+        self::registerDbalType('ddc2494_tinyint', DDC2494TinyIntType::class);
 
         $this->createSchemaForModels(
             DDC2494Currency::class,

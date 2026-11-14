@@ -8,6 +8,7 @@ use BadMethodCallException;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Criteria;
 use Doctrine\DBAL\LockMode;
+use Doctrine\Deprecations\PHPUnit\VerifyDeprecations;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\ORM\Exception\UnrecognizedIdentifierFields;
@@ -27,12 +28,15 @@ use Doctrine\Tests\Models\DDC753\DDC753EntityWithCustomRepository;
 use Doctrine\Tests\Models\DDC753\DDC753EntityWithDefaultCustomRepository;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
+use SortDirection;
 
 use function array_values;
 use function reset;
 
 class EntityRepositoryTest extends OrmFunctionalTestCase
 {
+    use VerifyDeprecations;
+
     protected function setUp(): void
     {
         $this->useModelSet('cms');
@@ -404,11 +408,23 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
     #[Group('DDC-1241')]
     public function testFindOneByOrderBy(): void
     {
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
         $this->loadFixture();
 
         $repos    = $this->_em->getRepository(CmsUser::class);
         $userAsc  = $repos->findOneBy([], ['username' => 'ASC']);
         $userDesc = $repos->findOneBy([], ['username' => 'DESC']);
+
+        self::assertNotSame($userAsc, $userDesc);
+    }
+
+    public function testFindOneByOrderBySortDirection(): void
+    {
+        $this->loadFixture();
+
+        $repos    = $this->_em->getRepository(CmsUser::class);
+        $userAsc  = $repos->findOneBy([], ['username' => SortDirection::Ascending]);
+        $userDesc = $repos->findOneBy([], ['username' => SortDirection::Descending]);
 
         self::assertNotSame($userAsc, $userDesc);
     }
@@ -488,11 +504,26 @@ class EntityRepositoryTest extends OrmFunctionalTestCase
     #[Group('DDC-1094')]
     public function testFindByOrderBy(): void
     {
+        $this->expectNoDeprecationWithIdentifier('https://github.com/doctrine/orm/issues/11313');
         $this->loadFixture();
 
         $repos     = $this->_em->getRepository(CmsUser::class);
         $usersAsc  = $repos->findBy([], ['username' => 'ASC']);
         $usersDesc = $repos->findBy([], ['username' => 'DESC']);
+
+        self::assertCount(4, $usersAsc, 'Pre-condition: only four users in fixture');
+        self::assertCount(4, $usersDesc, 'Pre-condition: only four users in fixture');
+        self::assertSame($usersAsc[0], $usersDesc[3]);
+        self::assertSame($usersAsc[3], $usersDesc[0]);
+    }
+
+    public function testFindByOrderBySortDirection(): void
+    {
+        $this->loadFixture();
+
+        $repos     = $this->_em->getRepository(CmsUser::class);
+        $usersAsc  = $repos->findBy([], ['username' => SortDirection::Ascending]);
+        $usersDesc = $repos->findBy([], ['username' => SortDirection::Descending]);
 
         self::assertCount(4, $usersAsc, 'Pre-condition: only four users in fixture');
         self::assertCount(4, $usersDesc, 'Pre-condition: only four users in fixture');

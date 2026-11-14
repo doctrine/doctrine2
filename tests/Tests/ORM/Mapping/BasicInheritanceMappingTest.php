@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
 use Doctrine\ORM\Mapping\DiscriminatorMap;
+use Doctrine\ORM\Mapping\Embeddable;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
@@ -187,6 +188,61 @@ class BasicInheritanceMappingTest extends OrmTestCase
         self::assertArrayHasKey('IDX_MAPPED2_INDEX', $class->table['indexes']);
     }
 
+    /**
+     * Ensure unnamed indexes are inherited from the mapped superclass
+     * even when the entity declares unnamed indexes of its own.
+     */
+    #[Group('GH-12179')]
+    public function testMappedSuperclassUnnamedIndexes(): void
+    {
+        $class = $this->cmf->getMetadataFor(EntityUnnamedIndexSubClass::class);
+        assert($class instanceof ClassMetadata);
+
+        self::assertSame(
+            [
+                ['columns' => ['name']],
+                ['columns' => ['mapped1']],
+            ],
+            $class->table['uniqueConstraints'],
+        );
+
+        // The indexes on mapped3 and mapped4 are declared by both classes: they must not be duplicated
+        self::assertSame(
+            [
+                ['columns' => ['code']],
+                ['columns' => ['mapped3']],
+                ['fields' => ['mapped4']],
+                ['columns' => ['mapped2']],
+            ],
+            $class->table['indexes'],
+        );
+    }
+
+    /**
+     * Ensure a named index of the entity replaces an unnamed index of the
+     * mapped superclass on the same columns instead of duplicating it.
+     */
+    #[Group('GH-12179')]
+    public function testMappedSuperclassUnnamedIndexOverriddenByNamedIndex(): void
+    {
+        $class = $this->cmf->getMetadataFor(EntityNamedIndexSubClass::class);
+        assert($class instanceof ClassMetadata);
+
+        self::assertSame(
+            [['columns' => ['mapped1']]],
+            $class->table['uniqueConstraints'],
+        );
+
+        self::assertSame(
+            [
+                'IDX_MAPPED2' => ['columns' => ['mapped2']],
+                0 => ['columns' => ['mapped3']],
+                1 => ['fields' => ['mapped4']],
+            ],
+            $class->table['indexes'],
+        );
+    }
+
     #[DataProvider('invalidHierarchyDeclarationClasses')]
     public function testUndeclaredHierarchyRejection(string $rootEntity, string $childClass): void
     {
@@ -216,6 +272,13 @@ class BasicInheritanceMappingTest extends OrmTestCase
 
         yield 'complex example (Entity Root -> Mapped Superclass -> transient class -> Entity)'
             => [InvalidComplexRoot::class, InvalidComplexEntity::class];
+    }
+
+    public function testEmbeddableSubclassDoesNotRequireInheritanceTypeDeclaration(): void
+    {
+        $class = $this->cmf->getMetadataFor(EmbeddableSubclass::class);
+
+        self::assertTrue($class->isEmbeddedClass);
     }
 
     #[Group('DDC-964')]
@@ -318,6 +381,53 @@ class EntityIndexSubClass extends MappedSuperclassBaseIndex
     private string $name;
 }
 
+#[Table]
+#[UniqueConstraint(columns: ['mapped1'])]
+#[Index(columns: ['mapped2'])]
+#[Index(columns: ['mapped3'])]
+#[Index(fields: ['mapped4'])]
+#[MappedSuperclass]
+class MappedSuperclassBaseUnnamedIndex
+{
+    #[Column(type: 'string', length: 255)]
+    private string $mapped1;
+    #[Column(type: 'string', length: 255)]
+    private string $mapped2;
+    #[Column(type: 'string', length: 255)]
+    private string $mapped3;
+    #[Column(type: 'string', length: 255)]
+    private string $mapped4;
+}
+
+#[Table]
+#[UniqueConstraint(columns: ['name'])]
+#[Index(columns: ['code'])]
+#[Index(columns: ['mapped3'])]
+#[Index(fields: ['mapped4'])]
+#[Entity]
+class EntityUnnamedIndexSubClass extends MappedSuperclassBaseUnnamedIndex
+{
+    #[Id]
+    #[Column(type: 'integer')]
+    private int $id;
+
+    #[Column(type: 'string', length: 255)]
+    private string $name;
+
+    #[Column(type: 'string', length: 255)]
+    private string $code;
+}
+
+#[Table]
+#[Index(name: 'IDX_MAPPED2', columns: ['mapped2'])]
+#[Entity]
+class EntityNamedIndexSubClass extends MappedSuperclassBaseUnnamedIndex
+{
+    #[Id]
+    #[Column(type: 'integer')]
+    private int $id;
+}
+
 #[Entity]
 #[InheritanceType('SINGLE_TABLE')]
 #[DiscriminatorColumn(name: 'type', type: 'string', length: 20)]
@@ -388,16 +498,6 @@ abstract class SuperclassBase
     public $id;
 }
 
-#[MappedSuperclass]
-abstract class MediumSuperclassBase extends SuperclassBase
-{
-}
-
-#[Entity]
-class MediumSuperclassEntity extends MediumSuperclassBase
-{
-}
-
 #[Entity(repositoryClass: 'Doctrine\ORM\EntityRepository')]
 class SubclassWithRepository extends DDC869Payment
 {
@@ -465,4 +565,18 @@ class InvalidComplexTransientClass extends InvalidComplexMappedSuperclass
 #[Entity]
 class InvalidComplexEntity extends InvalidComplexTransientClass
 {
+}
+
+#[Embeddable]
+class EmbeddableBase
+{
+    #[Column]
+    public string|null $value = null;
+}
+
+#[Embeddable]
+class EmbeddableSubclass extends EmbeddableBase
+{
+    #[Column]
+    public string|null $extraValue = null;
 }

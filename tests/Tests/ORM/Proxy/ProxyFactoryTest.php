@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Proxy;
 
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\ORM\EntityNotFoundException;
 use Doctrine\ORM\Persisters\Entity\BasicEntityPersister;
@@ -31,9 +30,7 @@ class ProxyFactoryTest extends OrmTestCase
         $platform->method('supportsIdentityColumns')
             ->willReturn(true);
 
-        $connection = $this->createStub(Connection::class);
-        $connection->method('getDatabasePlatform')
-            ->willReturn($platform);
+        $connection = $this->createConnectionStub($platform);
 
         $this->emMock  = new EntityManagerMock($connection);
         $this->uowMock = new UnitOfWorkMock($this->emMock);

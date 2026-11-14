@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM;
 
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
+use Doctrine\DBAL\Schema\Name\UnquotedIdentifierFolding;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\UnitOfWork;
 use Doctrine\Tests\Mocks\EntityManagerMock;
@@ -20,6 +20,7 @@ use stdClass;
 
 use function array_keys;
 use function assert;
+use function method_exists;
 use function serialize;
 use function unserialize;
 
@@ -38,12 +39,14 @@ class PersistentCollectionTest extends OrmTestCase
         parent::setUp();
 
         $platform = $this->createStub(AbstractPlatform::class);
+        if (method_exists($platform, 'getUnquotedIdentifierFolding')) {
+            $platform->method('getUnquotedIdentifierFolding')->willReturn(UnquotedIdentifierFolding::NONE);
+        }
+
         $platform->method('supportsIdentityColumns')
             ->willReturn(true);
 
-        $connection = $this->createStub(Connection::class);
-        $connection->method('getDatabasePlatform')
-            ->willReturn($platform);
+        $connection = $this->createConnectionStub($platform);
 
         $connection->method('executeQuery')
             ->willReturn($this->createStub(Result::class));

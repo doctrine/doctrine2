@@ -7,6 +7,8 @@ namespace Doctrine\Tests\ORM\Mapping\PropertyAccessors;
 use Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessorFactory;
 use Doctrine\ORM\Mapping\PropertyAccessors\TypedNoDefaultPropertyAccessor;
 use Doctrine\Tests\OrmTestCase;
+use PHPUnit\Framework\Attributes\RequiresPhp;
+use ReflectionClass;
 
 class TypedNoDefaultPropertyAccessorTest extends OrmTestCase
 {
@@ -34,6 +36,36 @@ class TypedNoDefaultPropertyAccessorTest extends OrmTestCase
 
         $accessor->setValue($object, null);
         $this->assertNull($accessor->getValue($object));
+    }
+
+    #[RequiresPhp('>= 8.4.0')]
+    public function testGetValueDoesNotInitializeALazyObject(): void
+    {
+        $reflection = new ReflectionClass(TypedClass::class);
+        $object     = $reflection->newLazyGhost(static function (TypedClass $object): void {
+            $object->property = 42;
+        });
+
+        $accessor = PropertyAccessorFactory::createPropertyAccessor(TypedClass::class, 'property');
+
+        self::assertTrue($reflection->isUninitializedLazyObject($object));
+        self::assertNull($accessor->getValue($object));
+        self::assertTrue($reflection->isUninitializedLazyObject($object), 'getValue() initialized the lazy object');
+    }
+
+    #[RequiresPhp('>= 8.4.0')]
+    public function testSetNullDoesNotInitializeALazyObject(): void
+    {
+        $reflection = new ReflectionClass(TypedClass::class);
+        $object     = $reflection->newLazyGhost(static function (TypedClass $object): void {
+            $object->property = 42;
+        });
+
+        $accessor = PropertyAccessorFactory::createPropertyAccessor(TypedClass::class, 'property');
+
+        self::assertTrue($reflection->isUninitializedLazyObject($object));
+        $accessor->setValue($object, null);
+        self::assertTrue($reflection->isUninitializedLazyObject($object), 'setValue(null) initialized the lazy object');
     }
 }
 

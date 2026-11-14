@@ -186,6 +186,20 @@ will not be able to tell, since it does not have access to any metadata.
 Thus, to avoid problems in this regard, it is best to avoid having multiple ``private`` fields of the
 same name in class hierarchies containing entity and mapped superclasses.
 
+Objects as identifier values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``UnitOfWork`` builds the key of its identity map by casting the identifier
+values to strings. Identifier values that are objects therefore only work when they
+can be converted to a string, either because they implement ``Stringable`` or because
+they are backed enums. Using a ``DateTime`` or ``DateTimeImmutable`` value as the
+identifier, or as part of a composite identifier, fails with an
+``Object of class DateTime could not be converted to string`` error.
+
+Use a scalar column (for example the timestamp or a formatted date string) as the
+identifier instead, or wrap the date in a custom value object that implements
+``Stringable`` together with a custom DBAL type.
+
 Known Issues
 ------------
 

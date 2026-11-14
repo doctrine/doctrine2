@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests;
 
 use Doctrine\Common\EventManager;
+use Doctrine\DBAL\Configuration as DBALConfiguration;
 use Doctrine\DBAL\Exception\DatabaseObjectNotFoundException;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\OraclePlatform;
@@ -13,7 +14,6 @@ use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\Table;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Cache\DefaultCacheFactory;
 use Doctrine\ORM\Cache\Logging\StatisticsCacheLogger;
@@ -534,6 +534,8 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
      */
     protected function tearDown(): void
     {
+        parent::tearDown();
+
         $conn = static::$sharedConn;
 
         // In case test is skipped, tearDown is called, but no setup may have run
@@ -843,7 +845,14 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
         $this->setUpDBALTypes();
 
         if (! isset(static::$sharedConn)) {
-            static::$sharedConn = TestUtil::getConnection();
+            static::$sharedConn = TestUtil::getConnection(self::createDbalConfiguration());
+        } elseif (method_exists(DBALConfiguration::class, 'setTypeProvider')) {
+            // The registry is discarded between tests, see OrmTestCase::tearDown().
+            // The platform keeps its own reference, set when the connection created it.
+            $typeRegistry = self::getTypeRegistry();
+
+            static::$sharedConn->getConfiguration()->setTypeProvider($typeRegistry);
+            static::$sharedConn->getDatabasePlatform()->setTypeProvider($typeRegistry);
         }
 
         if (isset($GLOBALS['DOCTRINE_MARK_SQL_LOGS'])) {
@@ -890,6 +899,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
     protected function getEntityManager(
         Connection|null $connection = null,
         MappingDriver|null $mappingDriver = null,
+        string|null $metadataFactoryClassName = null,
     ): EntityManagerInterface {
         // NOTE: Functional tests use their own shared metadata cache, because
         // the actual database platform used during execution has effect on some
@@ -908,8 +918,13 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
         $config->setMetadataCache(self::$metadataCache);
         $config->setQueryCache(self::$queryCache);
 
-        $config->setUseDbalEditorApi(method_exists(Schema::class, 'edit')
-            && $this->getEnv('ENABLE_DBAL_EDITOR_API', true));
+        if ($metadataFactoryClassName !== null) {
+            $config->setClassMetadataFactoryName($metadataFactoryClassName);
+        }
+
+        if (method_exists(Schema::class, 'edit') && $this->getEnv('ENABLE_SCHEMA_EDITOR_API', true)) {
+            $config->setUseSchemaEditorApi(true);
+        }
 
         if ($this->resultCache !== null) {
             $config->setResultCache($this->resultCache);
@@ -1024,11 +1039,7 @@ abstract class OrmFunctionalTestCase extends OrmTestCase
      */
     protected function setUpDBALTypes(): void
     {
-        if (Type::hasType('rot13')) {
-            Type::overrideType('rot13', Rot13Type::class);
-        } else {
-            Type::addType('rot13', Rot13Type::class);
-        }
+        self::registerDbalType('rot13', Rot13Type::class);
     }
 
     final protected function isQueryLogAvailable(): bool

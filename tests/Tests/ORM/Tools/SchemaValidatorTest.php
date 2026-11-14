@@ -9,7 +9,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\DiscriminatorMap;
-use Doctrine\ORM\Mapping\Embeddable;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
@@ -26,7 +25,6 @@ use Doctrine\ORM\Mapping\OrderBy;
 use Doctrine\ORM\Mapping\Table;
 use Doctrine\ORM\Tools\SchemaValidator;
 use Doctrine\Tests\Models\BigIntegers\BigIntegers;
-use Doctrine\Tests\Models\ECommerce\ECommerceCart;
 use Doctrine\Tests\OrmTestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
@@ -569,13 +567,6 @@ class DDC3322Three
     #[OneToMany(targetEntity: 'DDC3322ValidEntity1', mappedBy: 'threeInvalid')]
     #[OrderBy(['oneToOneInverse' => SortDirection::Ascending])]
     private $invalidAssoc;
-}
-
-#[Embeddable]
-class EmbeddableWithAssociation
-{
-    #[OneToOne(targetEntity: 'Doctrine\Tests\Models\ECommerce\ECommerceCart')]
-    private ECommerceCart $cart;
 }
 
 #[Entity]

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
-use Doctrine\DBAL\Exception as DBALException;
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Tools\SchemaValidator;
 use Doctrine\Tests\DbalTypes\CustomIdObjectType;
 use Doctrine\Tests\DbalTypes\NegativeToPositiveType;
@@ -15,7 +13,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 use function array_keys;
-use function constant;
 use function implode;
 
 /**
@@ -26,25 +23,11 @@ class SchemaValidatorTest extends OrmFunctionalTestCase
 {
     protected function setUp(): void
     {
-        $this->registerType(CustomIdObjectType::class);
-        $this->registerType(UpperCaseStringType::class);
-        $this->registerType(NegativeToPositiveType::class);
+        self::registerDbalType(CustomIdObjectType::NAME, CustomIdObjectType::class);
+        self::registerDbalType(UpperCaseStringType::NAME, UpperCaseStringType::class);
+        self::registerDbalType(NegativeToPositiveType::NAME, NegativeToPositiveType::class);
 
         parent::setUp();
-    }
-
-    /** @throws DBALException */
-    private function registerType(string $className): void
-    {
-        $type = constant($className . '::NAME');
-
-        if (DBALType::hasType($type)) {
-            DBALType::overrideType($type, $className);
-
-            return;
-        }
-
-        DBALType::addType($type, $className);
     }
 
     public static function dataValidateModelSets(): array

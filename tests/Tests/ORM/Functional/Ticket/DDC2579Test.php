@@ -6,7 +6,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\Id;
@@ -23,7 +22,7 @@ class DDC2579Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        Type::addType(DDC2579Type::NAME, DDC2579Type::class);
+        self::registerDbalType(DDC2579Type::NAME, DDC2579Type::class);
 
         $this->createSchemaForModels(
             DDC2579Entity::class,

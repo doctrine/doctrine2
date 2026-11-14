@@ -18,9 +18,9 @@ use function sprintf;
 #[Group('GH8061')]
 final class GH8061Test extends OrmTestCase
 {
-    public static function setUpBeforeClass(): void
+    protected function setUp(): void
     {
-        Type::addType('GH8061Type', GH8061Type::class);
+        self::registerDbalType('GH8061Type', GH8061Type::class);
     }
 
     public function testConvertToPHPValueSQLForNewObjectExpression(): void

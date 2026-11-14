@@ -41,6 +41,7 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 use function array_map;
 use function enum_exists;
+use function method_exists;
 
 class QueryTest extends OrmTestCase
 {
@@ -610,6 +611,10 @@ class QueryTest extends OrmTestCase
         $platform = $this->getMockBuilder(AbstractPlatform::class)
             ->setConstructorArgs(enum_exists(UnquotedIdentifierFolding::class) ? [UnquotedIdentifierFolding::UPPER] : [])
             ->getMock();
+        if (method_exists($platform, 'getUnquotedIdentifierFolding')) {
+            $platform->method('getUnquotedIdentifierFolding')->willReturn(UnquotedIdentifierFolding::NONE);
+        }
+
         $platform->method('supportsIdentityColumns')
             ->willReturn(true);
 

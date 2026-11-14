@@ -142,19 +142,18 @@ interface EntityPersister
     /**
      * Loads an entity by a list of field criteria.
      *
-     * @param mixed[]                 $criteria The criteria by which to load the entity.
-     * @param object|null             $entity   The entity to load the data into. If not specified,
-     *                                          a new entity is created.
-     * @param AssociationMapping|null $assoc    The association that connects the entity
-     *                                          to load to another entity, if any.
-     * @param mixed[]                 $hints    Hints for entity creation.
-     * @param LockMode|null           $lockMode The lock mode or NULL if no specific lock mode
-     *                                          should be used for loading the entity.
-     * @param int|null                $limit    Limit number of results.
-     * @param string[]|null           $orderBy  Criteria to order by.
+     * @param mixed[]                                  $criteria The criteria by which to load the entity.
+     * @param object|null                              $entity   The entity to load the data into. If not specified,
+     *                                                           a new entity is created.
+     * @param AssociationMapping|null                  $assoc    The association that connects the entity
+     *                                                           to load to another entity, if any.
+     * @param mixed[]                                  $hints    Hints for entity creation.
+     * @param LockMode|null                            $lockMode The lock mode or NULL if no specific lock mode
+     *                                                           should be used for loading the entity.
+     * @param int|null                                 $limit    Limit number of results.
+     * @param array<string, SortDirection|string>|null $orderBy  Criteria to order by.
      * @phpstan-param array<string, mixed>       $criteria
      * @phpstan-param array<string, mixed>       $hints
-     * @phpstan-param array<string, string>|null $orderBy
      *
      * @return object|null The loaded and managed entity instance or NULL if the entity can not be found.
      *
@@ -219,8 +218,8 @@ interface EntityPersister
     /**
      * Loads a list of entities by a list of field criteria.
      *
-     * @phpstan-param array<string, SortDirection|string>|null $orderBy
-     * @phpstan-param array<string, mixed>                     $criteria
+     * @param array<string, SortDirection|string>|null $orderBy Criteria to order by.
+     * @phpstan-param array<string, mixed>                       $criteria
      *
      * @return mixed[]
      */

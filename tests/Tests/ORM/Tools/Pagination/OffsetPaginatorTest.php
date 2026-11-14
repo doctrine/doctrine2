@@ -23,6 +23,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 
 use function enum_exists;
+use function method_exists;
 
 class OffsetPaginatorTest extends OrmTestCase
 {
@@ -35,6 +36,10 @@ class OffsetPaginatorTest extends OrmTestCase
         $platform = $this->getMockBuilder(AbstractPlatform::class)
             ->setConstructorArgs(enum_exists(UnquotedIdentifierFolding::class) ? [UnquotedIdentifierFolding::UPPER] : [])
             ->getMock();
+        if (method_exists($platform, 'getUnquotedIdentifierFolding')) {
+            $platform->method('getUnquotedIdentifierFolding')->willReturn(UnquotedIdentifierFolding::NONE);
+        }
+
         $platform->method('supportsIdentityColumns')
             ->willReturn(true);
 
@@ -88,7 +93,7 @@ class OffsetPaginatorTest extends OrmTestCase
                 return $resultStub;
             });
 
-        (new OffsetPaginator(true, false))->paginate($query, new Window(0, 1));
+        (new OffsetPaginator(true, false))->paginate($query, new Window(0, 1))->getTotalCount();
 
         self::assertSame([
             [$paramInWhere],
@@ -105,6 +110,59 @@ class OffsetPaginatorTest extends OrmTestCase
         $page = $this->paginateWithExtraParametersWithoutOutputWalkers([]);
 
         self::assertCount(0, $page);
+        self::assertSame(0, $page->getTotalCount());
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCountQueryIsOnlyExecutedWhenTheTotalCountIsRequested(): void
+    {
+        $executedQueries = 0;
+        $resultStub      = $this->createStub(Result::class);
+        $this->connection
+            ->method('executeQuery')
+            ->willReturnCallback(static function () use (&$executedQueries, $resultStub): Result {
+                ++$executedQueries;
+
+                return $resultStub;
+            });
+
+        $this->hydrator->method('hydrateAll')->willReturn([]);
+
+        $query = new Query($this->em);
+        $query->setDQL('SELECT u FROM Doctrine\\Tests\\Models\\CMS\\CmsUser u');
+
+        $page = (new OffsetPaginator(true, false))->paginate($query, new Window(0, 1));
+
+        self::assertSame(1, $executedQueries, 'Only the identifier query has been executed.');
+
+        self::assertSame(0, $page->getTotalCount());
+        self::assertSame(2, $executedQueries, 'The COUNT query has been executed on demand.');
+
+        self::assertSame(0, $page->getTotalCount());
+        self::assertSame(2, $executedQueries, 'The COUNT query result is memoized.');
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testGetTotalCountOnlyExecutesTheCountQuery(): void
+    {
+        $executedSql = [];
+        $resultStub  = $this->createStub(Result::class);
+        $this->connection
+            ->method('executeQuery')
+            ->willReturnCallback(static function (string $sql) use (&$executedSql, $resultStub): Result {
+                $executedSql[] = $sql;
+
+                return $resultStub;
+            });
+
+        $this->hydrator->method('hydrateAll')->willReturn([[3]]);
+
+        $query = new Query($this->em);
+        $query->setDQL('SELECT u FROM Doctrine\\Tests\\Models\\CMS\\CmsUser u');
+
+        self::assertSame(3, (new OffsetPaginator(true, false))->getTotalCount($query));
+        self::assertCount(1, $executedSql, 'Only the COUNT query has been executed.');
+        self::assertStringStartsWith('SELECT count(DISTINCT', $executedSql[0]);
     }
 
     public function testPaginatingDoesCareAboutExtraParametersWithoutOutputWalkersWhenResultIsNotEmpty(): void

@@ -70,7 +70,6 @@ abstract class Base implements Stringable
     {
         if ($arg !== null && (! $arg instanceof self || $arg->count() > 0)) {
             // If we decide to keep Expr\Base instances, we can use this check
-            // @phpstan-ignore function.alreadyNarrowedType (input validation)
             if (! is_string($arg) && ! (is_object($arg) && in_array($arg::class, $this->allowedClasses, true))) {
                 throw new InvalidArgumentException(sprintf(
                     "Expression of type '%s' not allowed in this context.",

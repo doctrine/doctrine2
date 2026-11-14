@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Functional\SchemaTool;
 
 use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Schema\Index as DbalIndex;
+use Doctrine\DBAL\Schema\Index\IndexType;
+use Doctrine\DBAL\Schema\Table as DbalTable;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
+use Doctrine\ORM\Mapping\Index;
 use Doctrine\ORM\Mapping\Table;
+use Doctrine\ORM\Mapping\UniqueConstraint;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\CMS\CmsEmail;
@@ -20,6 +25,13 @@ use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\Generic\BooleanModel;
 use Doctrine\Tests\Models\Generic\DecimalModel;
 use Doctrine\Tests\OrmFunctionalTestCase;
+use PHPUnit\Framework\Attributes\Group;
+
+use function array_filter;
+use function array_values;
+use function implode;
+use function str_contains;
+use function strtolower;
 
 class MySqlSchemaToolTest extends OrmFunctionalTestCase
 {
@@ -150,6 +162,107 @@ class MySqlSchemaToolTest extends OrmFunctionalTestCase
             'CREATE TABLE boolean_model (id INT AUTO_INCREMENT NOT NULL, booleanField TINYINT NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB',
         );
     }
+
+    #[Group('GH-5593')]
+    public function testFulltextIndexSurvivesCreateIntrospectAndUpdateWithUniqueConstraint(): void
+    {
+        $this->assertFulltextAndUniqueSurviveRoundTrip(
+            GH5593MySqlFulltextUnique::class,
+            'gh5593_mysql_fulltext_unique',
+            'search_idx',
+            'uniq_title',
+        );
+    }
+
+    #[Group('GH-5593')]
+    public function testFulltextIndexSurvivesCreateIntrospectAndUpdateWithColumnUnique(): void
+    {
+        $className = GH5593MySqlFulltextColumnUnique::class;
+        $tableName = 'gh5593_mysql_fulltext_column_unique';
+
+        $this->createSchemaForModels($className);
+
+        $createSql = implode("\n", $this->_schemaTool->getCreateSchemaSql([
+            $this->_em->getClassMetadata($className),
+        ]));
+        self::assertStringContainsString('FULLTEXT INDEX search_idx', $createSql);
+        self::assertDoesNotContainAlwaysTruePredicate($createSql);
+
+        $table = $this->createSchemaManager()->introspectTable($tableName);
+        self::assertTrue($table->hasIndex('search_idx'));
+        self::assertTrue(self::indexIsFulltext($table->getIndex('search_idx')));
+        self::assertNotNull(self::findUniqueNonPrimaryIndex($table), 'Uniqueness should survive alongside the fulltext index.');
+
+        $this->assertEmptySchemaUpdate($className, $tableName);
+    }
+
+    /** @param class-string $className */
+    private function assertFulltextAndUniqueSurviveRoundTrip(
+        string $className,
+        string $tableName,
+        string $fulltextIndexName,
+        string $uniqueIndexName,
+    ): void {
+        $this->createSchemaForModels($className);
+
+        $createSql = implode("\n", $this->_schemaTool->getCreateSchemaSql([
+            $this->_em->getClassMetadata($className),
+        ]));
+        self::assertStringContainsString('FULLTEXT INDEX ' . $fulltextIndexName, $createSql);
+        self::assertStringContainsString('UNIQUE INDEX ' . $uniqueIndexName, $createSql);
+        self::assertDoesNotContainAlwaysTruePredicate($createSql);
+
+        $table = $this->createSchemaManager()->introspectTable($tableName);
+        self::assertTrue($table->hasIndex($fulltextIndexName));
+        self::assertTrue($table->hasIndex($uniqueIndexName));
+        self::assertTrue(self::indexIsFulltext($table->getIndex($fulltextIndexName)));
+        self::assertTrue(self::indexIsUnique($table->getIndex($uniqueIndexName)));
+
+        $this->assertEmptySchemaUpdate($className, $tableName);
+    }
+
+    /** @param class-string $className */
+    private function assertEmptySchemaUpdate(string $className, string $tableName): void
+    {
+        $updateSql = array_filter(
+            $this->getUpdateSchemaSqlForModels($className),
+            static fn (string $sql): bool => str_contains($sql, $tableName),
+        );
+
+        self::assertSame([], array_values($updateSql), implode("\n", $updateSql));
+        self::assertDoesNotContainAlwaysTruePredicate(implode("\n", $updateSql));
+    }
+
+    private static function assertDoesNotContainAlwaysTruePredicate(string $sql): void
+    {
+        self::assertStringNotContainsString('1 = 1', $sql);
+        self::assertStringNotContainsString('1=1', $sql);
+    }
+
+    private static function indexIsUnique(DbalIndex $index): bool
+    {
+        return $index->getType() === IndexType::UNIQUE;
+    }
+
+    private static function indexIsFulltext(DbalIndex $index): bool
+    {
+        return $index->getType() === IndexType::FULLTEXT;
+    }
+
+    private static function findUniqueNonPrimaryIndex(DbalTable $table): DbalIndex|null
+    {
+        foreach ($table->getIndexes() as $indexName => $index) {
+            if (strtolower((string) $indexName) === 'primary') {
+                continue;
+            }
+
+            if (self::indexIsUnique($index)) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
 }
 
 #[Table('namespace.entity')]
@@ -161,4 +274,33 @@ class MysqlSchemaNamespacedEntity
     #[Id]
     #[GeneratedValue]
     public $id;
+}
+
+#[Table(name: 'gh5593_mysql_fulltext_unique')]
+#[Index(name: 'search_idx', columns: ['title'], flags: ['fulltext'])]
+#[UniqueConstraint(name: 'uniq_title', columns: ['title'])]
+#[Entity]
+class GH5593MySqlFulltextUnique
+{
+    #[Id]
+    #[Column]
+    #[GeneratedValue]
+    public int $id;
+
+    #[Column(length: 255)]
+    public string $title = '';
+}
+
+#[Table(name: 'gh5593_mysql_fulltext_column_unique')]
+#[Index(name: 'search_idx', columns: ['title'], flags: ['fulltext'])]
+#[Entity]
+class GH5593MySqlFulltextColumnUnique
+{
+    #[Id]
+    #[Column]
+    #[GeneratedValue]
+    public int $id;
+
+    #[Column(length: 255, unique: true)]
+    public string $title = '';
 }

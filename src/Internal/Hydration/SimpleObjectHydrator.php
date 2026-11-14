@@ -17,7 +17,6 @@ use function array_keys;
 use function array_search;
 use function assert;
 use function count;
-use function in_array;
 use function is_array;
 use function key;
 use function reset;
@@ -60,22 +59,18 @@ class SimpleObjectHydrator extends AbstractHydrator
     #[Override]
     protected function hydrateAllData(): array
     {
-        $result = [];
-
-        while ($row = $this->statement()->fetchAssociative()) {
-            $this->hydrateRowData($row, $result);
-        }
+        $this->hydrateAllRows();
 
         $this->em->getUnitOfWork()->triggerEagerLoads();
 
-        return $result;
+        return $this->takeResult();
     }
 
     /**
      * {@inheritDoc}
      */
     #[Override]
-    protected function hydrateRowData(array $row, array &$result): void
+    protected function hydrateRow(array $row): void
     {
         assert($this->class !== null);
         $entityName       = $this->class->name;
@@ -132,7 +127,7 @@ class SimpleObjectHydrator extends AbstractHydrator
             }
 
             // If we have inheritance in resultset, make sure the field belongs to the correct class
-            if (isset($cacheKeyInfo['discriminatorValues']) && ! in_array((string) $discrColumnValue, $cacheKeyInfo['discriminatorValues'], true)) {
+            if (isset($cacheKeyInfo['discriminatorValueMap']) && ! isset($cacheKeyInfo['discriminatorValueMap'][(string) $discrColumnValue])) {
                 continue;
             }
 
@@ -182,10 +177,6 @@ class SimpleObjectHydrator extends AbstractHydrator
         $uow    = $this->em->getUnitOfWork();
         $entity = $uow->createEntity($entityName, $data, $this->hints);
 
-        $result[] = $entity;
-
-        if (isset($this->hints[Query::HINT_INTERNAL_ITERATION]) && $this->hints[Query::HINT_INTERNAL_ITERATION]) {
-            $this->uow->hydrationComplete();
-        }
+        $this->hydrationResult[] = $entity;
     }
 }

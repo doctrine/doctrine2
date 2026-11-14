@@ -686,7 +686,7 @@ class DefaultQueryCacheTest extends OrmTestCase
             $this->em->getUnitOfWork()->registerManaged($entity, ['id' => $i], ['booleanField' => $boolean]);
         }
 
-        self::assertFalse($this->queryCache->put($key, $rsm, $result));
+        $this->queryCache->put($key, $rsm, $result);
     }
 }
 

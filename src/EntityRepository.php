@@ -17,6 +17,7 @@ use Doctrine\ORM\Query\ResultSetMappingBuilder;
 use Doctrine\ORM\Repository\Exception\InvalidMagicMethodCall;
 use Doctrine\Persistence\ObjectRepository;
 use Override;
+use SortDirection;
 
 use function array_slice;
 use function lcfirst;
@@ -102,6 +103,8 @@ class EntityRepository implements ObjectRepository, Selectable
      *
      * {@inheritDoc}
      *
+     * @param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
+     *
      * @phpstan-return list<T>
      */
     #[Override]
@@ -115,8 +118,8 @@ class EntityRepository implements ObjectRepository, Selectable
     /**
      * Finds a single entity by a set of criteria.
      *
+     * @param array<string, SortDirection|'asc'|'desc'|'ASC'|'DESC'>|null $orderBy
      * @phpstan-param array<string, mixed> $criteria
-     * @phpstan-param array<string, string>|null $orderBy
      *
      * @phpstan-return T|null
      */
@@ -189,7 +192,7 @@ class EntityRepository implements ObjectRepository, Selectable
         return $this->em;
     }
 
-    final protected function expr(): Expr
+    protected function expr(): Expr
     {
         return $this->em->getExpressionBuilder();
     }

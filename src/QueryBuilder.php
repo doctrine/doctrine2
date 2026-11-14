@@ -693,6 +693,8 @@ class QueryBuilder implements Stringable
      * </code>
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function select(mixed ...$select): static
     {
@@ -741,6 +743,8 @@ class QueryBuilder implements Stringable
      * </code>
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function addSelect(mixed ...$select): static
     {
@@ -1037,6 +1041,8 @@ class QueryBuilder implements Stringable
      * </code>
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function where(mixed ...$predicates): static
     {
@@ -1064,6 +1070,8 @@ class QueryBuilder implements Stringable
      * @see where()
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function andWhere(mixed ...$where): static
     {
@@ -1096,6 +1104,8 @@ class QueryBuilder implements Stringable
      * @see where()
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function orWhere(mixed ...$where): static
     {
@@ -1125,6 +1135,8 @@ class QueryBuilder implements Stringable
      * </code>
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function groupBy(string ...$groupBy): static
     {
@@ -1145,6 +1157,8 @@ class QueryBuilder implements Stringable
      * </code>
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function addGroupBy(string ...$groupBy): static
     {
@@ -1158,6 +1172,8 @@ class QueryBuilder implements Stringable
      * Replaces any previous having restrictions, if any.
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function having(mixed ...$having): static
     {
@@ -1175,6 +1191,8 @@ class QueryBuilder implements Stringable
      * conjunction with any existing having restrictions.
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function andHaving(mixed ...$having): static
     {
@@ -1197,6 +1215,8 @@ class QueryBuilder implements Stringable
      * disjunction with any existing having restrictions.
      *
      * @return $this
+     *
+     * @no-named-arguments
      */
     public function orHaving(mixed ...$having): static
     {
@@ -1264,7 +1284,7 @@ class QueryBuilder implements Stringable
 
         $whereExpression = $criteria->getWhereExpression();
         if ($whereExpression) {
-            $this->andWhere($visitor->dispatch($whereExpression));
+            $this->andWhere($whereExpression->visit($visitor));
             foreach ($visitor->getParameters() as $parameter) {
                 $this->parameters->add($parameter);
             }

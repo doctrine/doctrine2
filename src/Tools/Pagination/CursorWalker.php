@@ -19,8 +19,9 @@ use Doctrine\ORM\Query\TreeWalkerAdapter;
 use LogicException;
 use Override;
 
+use function array_unshift;
 use function count;
-use function str_replace;
+use function reset;
 
 /**
  * @internal
@@ -39,6 +40,13 @@ class CursorWalker extends TreeWalkerAdapter
     public const string HINT_CURSOR_ORDER_BY_ITEMS     = 'doctrine.cursor.order_by_items';
     public const string HINT_QUERY_PRODUCES_DUPLICATES = 'doctrine.cursor.query_produces_duplicates';
 
+    /**
+     * Prefix of the parameters bound for the cursor predicate. Names are
+     * namespaced so that they cannot collide with the parameters of the
+     * paginated query, whose values would then be silently overwritten.
+     */
+    private const string CURSOR_PARAMETER_PREFIX = 'dctrn_cursor_';
+
     #[Override]
     public function walkSelectStatement(SelectStatement $selectStatement): void
     {
@@ -50,18 +58,25 @@ class CursorWalker extends TreeWalkerAdapter
             throw new LogicException('No ORDER BY clause found. Cursor pagination requires a deterministic sort order.');
         }
 
+        $from      = $selectStatement->fromClause->identificationVariableDeclarations;
+        $rootAlias = reset($from)->rangeVariableDeclaration->aliasIdentificationVariable;
+
         $orderByItems    = [];
         $newOrderByItems = [];
 
         foreach ($selectStatement->orderByClause->orderByItems as $orderByItem) {
             $direction = OrderDirection::fromOrderByItem($orderByItem, $shouldReverse);
 
-            $paramKey = $this->getParameterKey($orderByItem->expression);
-            $metadata = $orderByItem->expression instanceof PathExpression
-                ? $this->getMetadataForDqlAlias($orderByItem->expression->identificationVariable)
-                : null;
+            $paramKey        = $this->getParameterKey($orderByItem->expression);
+            $metadata        = null;
+            $associationPath = [];
 
-            $orderByItems[] = new CursorOrderByItem($orderByItem->expression, $direction, $paramKey, $metadata);
+            if ($orderByItem->expression instanceof PathExpression) {
+                $metadata        = $this->getMetadataForDqlAlias($orderByItem->expression->identificationVariable);
+                $associationPath = $this->getAssociationPath($orderByItem->expression->identificationVariable, $rootAlias);
+            }
+
+            $orderByItems[] = new CursorOrderByItem($orderByItem->expression, $direction, $paramKey, $metadata, $associationPath);
 
             $newItem           = new OrderByItem($orderByItem->expression);
             $newItem->type     = $direction->value;
@@ -80,6 +95,10 @@ class CursorWalker extends TreeWalkerAdapter
 
         if ($condition === null) {
             return;
+        }
+
+        if (count($orderByItems) > 1) {
+            $condition = $this->prependLeadingBound($orderByItems[0], $condition);
         }
 
         $conditionalPrimary                        = new ConditionalPrimary();
@@ -138,9 +157,9 @@ class CursorWalker extends TreeWalkerAdapter
         $direction   = $orderByItem->direction;
         $paramKey    = $orderByItem->paramKey;
 
-        $operator = $direction->operator();
+        $operator = $direction->exclusiveOperator();
 
-        $paramName  = str_replace('.', '_', $paramKey) . '_' . $index;
+        $paramName  = $this->parameterName($index);
         $paramValue = $cursorParameters[$paramKey] ?? null;
 
         // Security note: $paramKey is derived from the DQL ORDER BY AST, not from the
@@ -187,6 +206,66 @@ class CursorWalker extends TreeWalkerAdapter
             new ConditionalTerm([$comparisonPrimary]),
             new ConditionalTerm([$andPrimary]),
         ]);
+    }
+
+    private function parameterName(int $index): string
+    {
+        return self::CURSOR_PARAMETER_PREFIX . $index;
+    }
+
+    /**
+     * ANDs a redundant bound on the first ORDER BY column in front of the cursor condition:
+     * col1 >= :val1 AND ((col1 > :val1) OR (col1 = :val1 AND col2 > :val2) OR ...)
+     *
+     * It does not change which rows match, since every row matching the OR chain already
+     * satisfies it. Some platforms (PostgreSQL among them) cannot derive an index range from
+     * the OR chain and filter rows one by one instead, so a page's cost grows with its
+     * depth; the bound gives them a range to seek to.
+     *
+     * @see https://use-the-index-luke.com/sql/partial-results/fetch-next-page#sb-equivalent-logic
+     *
+     * @throws QueryException
+     */
+    private function prependLeadingBound(CursorOrderByItem $orderByItem, ConditionalExpression $condition): ConditionalExpression
+    {
+        $boundPrimary                              = new ConditionalPrimary();
+        $boundPrimary->simpleConditionalExpression = new ComparisonExpression(
+            $orderByItem->expression,
+            $orderByItem->direction->inclusiveOperator(),
+            new InputParameter(':' . $this->parameterName(0)),
+        );
+
+        $conditionPrimary                        = new ConditionalPrimary();
+        $conditionPrimary->conditionalExpression = $condition;
+
+        return new ConditionalExpression([
+            new ConditionalTerm([$boundPrimary, $conditionPrimary]),
+        ]);
+    }
+
+    /**
+     * Returns the single-valued associations to follow from the root alias to
+     * the given alias, or null if the given alias cannot be reached that way
+     * (e.g. it is joined through a collection, or not joined from the root alias).
+     *
+     * @return list<string>|null
+     */
+    private function getAssociationPath(string $dqlAlias, string $rootAlias): array|null
+    {
+        $associationPath = [];
+
+        while ($dqlAlias !== $rootAlias) {
+            $queryComponent = $this->getQueryComponents()[$dqlAlias];
+
+            if (! isset($queryComponent['parent'], $queryComponent['relation']) || ! $queryComponent['relation']->isToOne()) {
+                return null;
+            }
+
+            array_unshift($associationPath, $queryComponent['relation']->fieldName);
+            $dqlAlias = $queryComponent['parent'];
+        }
+
+        return $associationPath;
     }
 
     /**

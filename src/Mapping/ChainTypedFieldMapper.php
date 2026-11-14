@@ -15,6 +15,7 @@ final class ChainTypedFieldMapper implements TypedFieldMapper
     /** @var list<TypedFieldMapper> $typedFieldMappers */
     private readonly array $typedFieldMappers;
 
+    /** @no-named-arguments */
     public function __construct(TypedFieldMapper ...$typedFieldMappers)
     {
         self::validateVariadicParameter($typedFieldMappers);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\ORM\Tools\Pagination;
 
 use ArrayIterator;
+use Closure;
 use LogicException;
 use Override;
 use Traversable;
@@ -23,20 +24,34 @@ use function max;
  * On top of {@see Page}, a window page exposes what only offset pagination can
  * know: the total number of pages and the position of the last one.
  *
+ * The result keys are preserved, so a query using DQL ``INDEX BY`` keeps its
+ * keys: {@see getItems()} and the iteration both carry them.
+ *
  * @template-covariant T
  * @implements Page<T>
  */
 final class WindowPage implements Page
 {
-    /** @param list<T> $items */
+    /** Memoizes the total count when it is provided lazily. */
+    private int|null $resolvedTotalCount = null;
+
+    /**
+     * @param array<array-key, T> $items
+     * @param int|Closure(): int  $totalCount The total number of matching root entities, or a closure
+     *                                        running the COUNT query on demand.
+     */
     public function __construct(
         private readonly array $items,
-        private readonly int $totalCount,
+        private readonly int|Closure $totalCount,
         private readonly Window $window,
     ) {
     }
 
-    /** @return list<T> */
+    /**
+     * {@inheritDoc}
+     *
+     * @return array<array-key, T>
+     */
     #[Override]
     public function getItems(): array
     {
@@ -46,7 +61,7 @@ final class WindowPage implements Page
     /**
      * {@inheritDoc}
      *
-     * @return Traversable<int, T>
+     * @return Traversable<array-key, T>
      */
     #[Override]
     public function getIterator(): Traversable
@@ -65,11 +80,16 @@ final class WindowPage implements Page
 
     /**
      * Returns the total number of matching root entities, ignoring the window.
+     *
+     * When the page was built with a lazy total count, as {@see OffsetPaginator}
+     * does, this runs the COUNT query on the first call and memoizes its result.
      */
     #[Override]
     public function getTotalCount(): int
     {
-        return $this->totalCount;
+        return $this->resolvedTotalCount ??= $this->totalCount instanceof Closure
+            ? ($this->totalCount)()
+            : $this->totalCount;
     }
 
     /**
@@ -82,6 +102,8 @@ final class WindowPage implements Page
 
     /**
      * Returns the 1-based number of this page.
+     *
+     * @return int<1, max>
      */
     public function getPageNumber(): int
     {
@@ -90,13 +112,15 @@ final class WindowPage implements Page
 
     /**
      * Returns the total number of pages, at least 1 even for an empty result
-     * set.
+     * set. Relies on {@see getTotalCount()}.
+     *
+     * @return int<1, max>
      */
     public function getPageCount(): int
     {
         $maxResults = $this->window->getMaxResults();
 
-        return max(1, intdiv($this->totalCount + $maxResults - 1, $maxResults));
+        return max(1, intdiv($this->getTotalCount() + $maxResults - 1, $maxResults));
     }
 
     #[Override]
@@ -105,19 +129,21 @@ final class WindowPage implements Page
         return $this->window->getFirstResult() > 0;
     }
 
+    /** Relies on {@see getTotalCount()}. */
     #[Override]
     public function hasNextPage(): bool
     {
-        return $this->window->getFirstResult() + count($this->items) < $this->totalCount;
+        return $this->window->getFirstResult() + count($this->items) < $this->getTotalCount();
     }
 
     /**
-     * Returns whether the result set spans more than one page.
+     * Returns whether the result set spans more than one page. Relies on
+     * {@see getTotalCount()}.
      */
     #[Override]
     public function hasToPaginate(): bool
     {
-        return $this->totalCount > count($this->items);
+        return $this->getTotalCount() > count($this->items);
     }
 
     /** @throws LogicException If there is no next page. Check {@see hasNextPage()} first. */

@@ -29,9 +29,7 @@ final class GH10747Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! DBALType::hasType(GH10747CustomIdObjectHashType::class)) {
-            DBALType::addType(GH10747CustomIdObjectHashType::class, GH10747CustomIdObjectHashType::class);
-        }
+        self::registerDbalType(GH10747CustomIdObjectHashType::class, GH10747CustomIdObjectHashType::class);
 
         $this->setUpEntitySchema([GH10747Article::class, GH10747Credit::class]);
     }

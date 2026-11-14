@@ -21,9 +21,11 @@ use function sprintf;
 #[Group('DDC-2224')]
 class DDC2224Test extends OrmFunctionalTestCase
 {
-    public static function setUpBeforeClass(): void
+    protected function setUp(): void
     {
-        Type::addType('DDC2224Type', DDC2224Type::class);
+        parent::setUp();
+
+        self::registerDbalType('DDC2224Type', DDC2224Type::class);
     }
 
     public function testIssue(): Query

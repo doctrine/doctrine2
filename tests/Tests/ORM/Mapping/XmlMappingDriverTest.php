@@ -28,6 +28,7 @@ use Doctrine\Tests\Models\Project\Project;
 use Doctrine\Tests\Models\Project\ProjectId;
 use Doctrine\Tests\Models\Project\ProjectInvalidMapping;
 use Doctrine\Tests\Models\Project\ProjectName;
+use Doctrine\Tests\Models\ValueObjects\EmbeddableSubclass;
 use Doctrine\Tests\Models\ValueObjects\Name;
 use Doctrine\Tests\Models\ValueObjects\Person;
 use Doctrine\Tests\ORM\Mapping\Fixtures\CompositeIdWithPosition;
@@ -108,6 +109,21 @@ class XmlMappingDriverTest extends MappingDriverTestCase
         $class = $this->createClassMetadata(Name::class);
 
         self::assertTrue($class->isEmbeddedClass);
+    }
+
+    public function testEmbeddableSubclassDoesNotRequireInheritanceTypeDeclaration(): void
+    {
+        $factory = new ClassMetadataFactory();
+        $em      = $this->getTestEntityManager();
+
+        $em->getConfiguration()->setMetadataDriverImpl($this->loadDriver());
+        $factory->setEntityManager($em);
+
+        $class = $factory->getMetadataFor(EmbeddableSubclass::class);
+
+        self::assertTrue($class->isEmbeddedClass);
+        self::assertTrue($class->hasField('value'));
+        self::assertTrue($class->hasField('extraValue'));
     }
 
     #[Group('DDC-3293')]

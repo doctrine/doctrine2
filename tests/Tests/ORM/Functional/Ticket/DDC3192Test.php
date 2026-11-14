@@ -28,14 +28,14 @@ class DDC3192Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (Type::hasType('ddc3192_currency_code')) {
+        if (self::hasDbalType('ddc3192_currency_code')) {
             self::fail(
                 'Type ddc3192_currency_code exists for testing DDC-3192 only, ' .
                 'but it has already been registered for some reason',
             );
         }
 
-        Type::addType('ddc3192_currency_code', DDC3192CurrencyCode::class);
+        self::registerDbalType('ddc3192_currency_code', DDC3192CurrencyCode::class);
 
         $this->createSchemaForModels(
             DDC3192Currency::class,

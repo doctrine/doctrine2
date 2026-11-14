@@ -13,7 +13,6 @@ use Override;
 
 use function array_map;
 use function array_sum;
-use function array_values;
 use function get_debug_type;
 use function sprintf;
 
@@ -24,7 +23,10 @@ use function sprintf;
  * which returns an immutable, iterable {@see WindowPage} rather than the
  * paginator itself. The paginator therefore holds no state beyond its
  * configuration: a single instance can be shared as a service and reused for
- * any query and any page.
+ * any query and any page. This avoids the implicit offset handling and the
+ * stateful API of the legacy {@see Paginator}, which this class is intended to
+ * replace. When only the total is needed, {@see getTotalCount()} runs the COUNT
+ * query without fetching any row.
  *
  * @template-covariant T
  * @implements PaginatorInterface<T, Window>
@@ -57,6 +59,10 @@ final class OffsetPaginator implements PaginatorInterface
     /**
      * Executes the query for the given window and returns an immutable page.
      *
+     * As in {@see CursorPaginator}, the COUNT query is deferred: it only runs
+     * when {@see WindowPage::getTotalCount()}, or one of the methods relying on
+     * it, is called.
+     *
      * @param Window $position The window to fetch. Use {@see Window::fromPageNumberAndSize()}
      *                         to build it from a 1-based page number and a page size.
      *
@@ -77,20 +83,36 @@ final class OffsetPaginator implements PaginatorInterface
 
         $query = $this->resolveQuery($query);
 
-        /** @var list<T> $items */
-        $items = array_values($this->getResultForOffset(
+        /** @var array<array-key, T> $items */
+        $items = $this->getResultForOffset(
             $query,
             $position->getFirstResult(),
             $position->getMaxResults(),
             $this->fetchJoinCollection,
-        ));
+        );
 
+        return new WindowPage($items, fn (): int => $this->countResolvedQuery($query), $position);
+    }
+
+    /**
+     * Executes the COUNT query only and returns the total number of matching
+     * root entities, without fetching any row.
+     *
+     * This is the same COUNT query as the one {@see WindowPage::getTotalCount()}
+     * runs, for when the total is needed on its own: before choosing the window
+     * to fetch, or without any listing at all.
+     */
+    public function getTotalCount(Query|QueryBuilder $query): int
+    {
+        return $this->countResolvedQuery($this->resolveQuery($query));
+    }
+
+    private function countResolvedQuery(Query $query): int
+    {
         try {
-            $totalCount = (int) array_sum(array_map('current', $this->getCountQuery($query)->getScalarResult()));
+            return (int) array_sum(array_map('current', $this->getCountQuery($query)->getScalarResult()));
         } catch (NoResultException) {
-            $totalCount = 0;
+            return 0;
         }
-
-        return new WindowPage($items, $totalCount, $position);
     }
 }

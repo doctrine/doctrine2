@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Type as DBALType;
 use Doctrine\ORM\Internal\Hydration\HydrationException;
 use Doctrine\ORM\Internal\SQLResultCasing;
 use Doctrine\ORM\PersistentCollection;
@@ -539,11 +538,7 @@ SQL
 
     public function testGenerateSelectClauseWithCustomTypeUsingEntityFromClassMetadata(): void
     {
-        if (DBALType::hasType('upper_case_string')) {
-            DBALType::overrideType('upper_case_string', UpperCaseStringType::class);
-        } else {
-            DBALType::addType('upper_case_string', UpperCaseStringType::class);
-        }
+        self::registerDbalType('upper_case_string', UpperCaseStringType::class);
 
         $rsm = new ResultSetMappingBuilder($this->_em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
 
@@ -556,11 +551,7 @@ SQL
 
     public function testGenerateSelectClauseWithCustomTypeUsingAddFieldResult(): void
     {
-        if (DBALType::hasType('upper_case_string')) {
-            DBALType::overrideType('upper_case_string', UpperCaseStringType::class);
-        } else {
-            DBALType::addType('upper_case_string', UpperCaseStringType::class);
-        }
+        self::registerDbalType('upper_case_string', UpperCaseStringType::class);
 
         $rsm = new ResultSetMappingBuilder($this->_em, ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT);
         $rsm->addEntityResult(CustomTypeUpperCase::class, 'ct');

@@ -6,7 +6,9 @@ namespace Doctrine\ORM;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Deprecations\Deprecation;
 use Doctrine\ORM\Cache\CacheConfiguration;
+use Doctrine\ORM\Cache\SecondLevelCachePlugin;
 use Doctrine\ORM\Exception\InvalidEntityRepository;
 use Doctrine\ORM\Internal\Hydration\AbstractHydrator;
 use Doctrine\ORM\Mapping\ClassMetadata;
@@ -57,24 +59,29 @@ class Configuration extends \Doctrine\DBAL\Configuration
         return $this->identityGenerationPreferences;
     }
 
-    public function getUseDbalEditorApi(): bool
+    public function getUseSchemaEditorApi(): bool
     {
-        return $this->attributes['use_dbal_editor_api'] ?? false;
+        return $this->attributes['use_schema_editor_api'] ?? false;
     }
 
-    /**
-     * @internal
-     *
-     * When releasing this, add an UPGRADE note about MySQL's foreign key name length issue
-     */
-    public function setUseDbalEditorApi(bool $useDbalEditorApi): void
+    public function setUseSchemaEditorApi(bool $useSchemaEditorApi): void
     {
-        /** @phpstan-ignore function.impossibleType (This API is not released yet) */
-        if ($useDbalEditorApi && ! method_exists(Schema::class, 'edit')) {
-            throw new LogicException('Using the DBAL editor API requires doctrine/dbal 4.5 or higher.');
+        /** @phpstan-ignore function.alreadyNarrowedType (This API is not always available) */
+        $schemaEditorApiIsAvailable = method_exists(Schema::class, 'edit');
+
+        if ($useSchemaEditorApi && ! $schemaEditorApiIsAvailable) {
+            throw new LogicException('Using the schema editor API requires doctrine/dbal 4.5 or higher.');
         }
 
-        $this->attributes['use_dbal_editor_api'] = $useDbalEditorApi;
+        if (! $useSchemaEditorApi && $schemaEditorApiIsAvailable) {
+            Deprecation::trigger(
+                'doctrine/orm',
+                'https://github.com/doctrine/orm/pull/12780',
+                'Disabling the schema editor API is deprecated and will be impossible in Doctrine ORM 4.0.',
+            );
+        }
+
+        $this->attributes['use_schema_editor_api'] = $useSchemaEditorApi;
     }
 
     /**
@@ -487,6 +494,10 @@ class Configuration extends \Doctrine\DBAL\Configuration
 
     public function setSecondLevelCacheEnabled(bool $flag = true): void
     {
+        if ($flag && ! class_exists(SecondLevelCachePlugin::class)) {
+            throw new LogicException('Using the second level cache requires installing an additional package. Install with composer require doctrine/orm-plugin-second-level-cache');
+        }
+
         $this->attributes['isSecondLevelCacheEnabled'] = $flag;
     }
 

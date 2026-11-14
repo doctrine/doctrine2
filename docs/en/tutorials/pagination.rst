@@ -81,6 +81,21 @@ Because the returned ``WindowPage`` is immutable and carries no temporal
 coupling, its accessors can be called in any order, and building another page
 never affects a page you already hold.
 
+When only the total is needed — to clamp a requested page number before
+fetching it, to display an "N results" badge, or to cache the total separately
+from the pages — ``getTotalCount()`` runs the ``COUNT`` query alone, without
+fetching any row:
+
+.. code-block:: php
+
+    <?php
+    $paginator = new OffsetPaginator();
+
+    $total    = $paginator->getTotalCount($query);
+    $lastPage = max(1, (int) ceil($total / 25));
+
+    $page = $paginator->paginate($query, Window::fromPageNumberAndSize(min($requestedPage, $lastPage), 25));
+
 How Offset Pagination Works
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -131,24 +146,36 @@ API Reference
     ``WindowPage``. All page accessors below live on the returned page. Throws an
     ``InvalidArgumentException`` if ``$position`` is not a ``Window``.
 
+``OffsetPaginator::getTotalCount(Query|QueryBuilder $query): int``
+    Executes the ``COUNT`` query only and returns the total number of matching
+    root entities, without fetching any row. It is the same query as the one
+    ``WindowPage::getTotalCount()`` runs.
+
 ``WindowPage::getItems(): array``
-    Returns the raw entity array for the current page.
+    Returns the raw entity array for the current page. The result keys are
+    preserved, so a query using DQL ``INDEX BY`` keeps its keys.
 
 ``WindowPage::count(): int``
     Returns the number of items on the current page (SPL ``Countable``).
 
 ``WindowPage::getTotalCount(): int``
-    Returns the total number of matching root entities, ignoring the window.
+    Executes an extra ``COUNT`` query and returns the total number of matching
+    root entities, ignoring the window. The query only runs when this method is
+    called, and its result is memoized: paginating without ever asking for the
+    total, as "load more" navigation does, costs no ``COUNT`` query at all.
 
 ``WindowPage::getPageNumber(): int`` / ``WindowPage::getPageCount(): int``
     Return the 1-based number of the current page and the total number of pages.
-    ``getPageCount()`` is at least ``1``, even for an empty result set.
+    ``getPageCount()`` is at least ``1``, even for an empty result set, and
+    relies on ``getTotalCount()``.
 
 ``WindowPage::hasNextPage(): bool`` / ``WindowPage::hasPreviousPage(): bool``
-    Return whether a next / previous page is available.
+    Return whether a next / previous page is available. ``hasNextPage()`` relies
+    on ``getTotalCount()``.
 
 ``WindowPage::hasToPaginate(): bool``
-    Returns whether the result set spans more than one page.
+    Returns whether the result set spans more than one page. Relies on
+    ``getTotalCount()``.
 
 ``WindowPage::getNextWindow(): Window`` / ``WindowPage::getPreviousWindow(): Window``
     Return the ``Window`` for the next / previous page. Throw a ``LogicException``
@@ -299,7 +326,7 @@ API Reference
     set spans more than one page).
 
 ``CursorPage::getItems(): array``
-    Returns the raw entity array for the current page.
+    Returns the raw entity array for the current page, as a list.
 
 ``CursorPage::getItemsWithCursors(): array``
     Returns an array of ``CursorItem`` objects, each wrapping an entity and its
@@ -323,8 +350,9 @@ API Reference
 
     SELECT ...
     FROM   post p
-    WHERE  (p.created_at < :cursor_val_0)
-       OR  (p.created_at = :cursor_val_0 AND p.id < :cursor_id_1)
+    WHERE  p.created_at <= :dctrn_cursor_0
+      AND  (   (p.created_at < :dctrn_cursor_0)
+            OR (p.created_at = :dctrn_cursor_0 AND p.id < :dctrn_cursor_1))
     ORDER  BY p.created_at DESC, p.id DESC
     LIMIT  16   -- limit + 1
 
@@ -334,10 +362,21 @@ API Reference
 
     SELECT ...
     FROM   post p
-    WHERE  (p.created_at > :cursor_val_0)
-       OR  (p.created_at = :cursor_val_0 AND p.id > :cursor_id_1)
+    WHERE  p.created_at >= :dctrn_cursor_0
+      AND  (   (p.created_at > :dctrn_cursor_0)
+            OR (p.created_at = :dctrn_cursor_0 AND p.id > :dctrn_cursor_1))
     ORDER  BY p.created_at ASC, p.id ASC   -- reversed
     LIMIT  16
+
+When the query is ordered by more than one column, the paginator puts an
+inclusive bound on the first ``ORDER BY`` column in front of the cursor
+condition (``p.created_at <= :dctrn_cursor_0`` above). The bound is redundant;
+every row that matches the ``OR`` condition already satisfies it, so it does not
+change which rows are returned. It is there for performance. Some platforms,
+PostgreSQL among them, cannot derive an index range from the ``OR`` condition
+alone and filter rows one by one, so a page gets slower the deeper it is in the
+result set. The leading bound gives them a range to seek to on an index that
+covers the ``ORDER BY`` columns.
 
 HTML Template Example
 ~~~~~~~~~~~~~~~~~~~~~

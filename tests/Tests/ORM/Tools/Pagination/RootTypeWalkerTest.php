@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Tools\Pagination;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Tools\Pagination\RootTypeWalker;
 use Doctrine\Tests\DbalTypes\Rot13Type;
@@ -19,9 +18,7 @@ class RootTypeWalkerTest extends PaginationTestCase
     {
         parent::setUp();
 
-        if (! Type::hasType('rot13')) {
-            Type::addType('rot13', Rot13Type::class);
-        }
+        self::registerDbalType('rot13', Rot13Type::class);
     }
 
     #[DataProvider('exampleQueries')]

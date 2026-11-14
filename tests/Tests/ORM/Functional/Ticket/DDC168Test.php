@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
-use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Tests\Mocks\OverridableMetadataFactory;
 use Doctrine\Tests\Models\Company\CompanyEmployee;
 use Doctrine\Tests\OrmFunctionalTestCase;
 use PHPUnit\Framework\Attributes\Group;
@@ -13,27 +13,19 @@ use function ksort;
 
 class DDC168Test extends OrmFunctionalTestCase
 {
-    /** @var ClassMetadata */
-    protected $oldMetadata;
-
     protected function setUp(): void
     {
         $this->useModelSet('company');
 
         parent::setUp();
 
-        $this->oldMetadata = $this->_em->getClassMetadata(CompanyEmployee::class);
-
-        $metadata = clone $this->oldMetadata;
+        $metadata = clone $this->_em->getClassMetadata(CompanyEmployee::class);
         ksort($metadata->propertyAccessors);
-        $this->_em->getMetadataFactory()->setMetadataFor(CompanyEmployee::class, $metadata);
-    }
 
-    public function tearDown(): void
-    {
-        $this->_em->getMetadataFactory()->setMetadataFor(CompanyEmployee::class, $this->oldMetadata);
+        $this->_em = $this->getEntityManager(metadataFactoryClassName: OverridableMetadataFactory::class);
 
-        parent::tearDown();
+        $metadataFactory = $this->_em->getMetadataFactory();
+        $metadataFactory->setMetadataFor(CompanyEmployee::class, $metadata);
     }
 
     #[Group('DDC-168')]

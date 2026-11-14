@@ -215,6 +215,11 @@ class ValueObjectsTest extends OrmFunctionalTestCase
         self::assertTrue($uow->isUninitializedObject($person));
         self::assertTrue($uow->isUninitializedObject($person->address));
 
+        // Reading an embedded field through its property accessor does NOT trigger lazy init.
+        self::assertSame('Gosport', $this->_em->getClassMetadata(DDC93Person::class)->propertyAccessors['address.city']->getValue($person));
+        self::assertTrue($uow->isUninitializedObject($person));
+        self::assertTrue($uow->isUninitializedObject($person->address));
+
         // Accessing the pre-loaded field (city) does NOT trigger lazy init.
         self::assertEquals('Gosport', $person->address->city);
         self::assertTrue($uow->isUninitializedObject($person));
@@ -445,30 +450,6 @@ class DDC93Address
     ) {
         $this->country = $country;
     }
-}
-
-#[Entity]
-class DDC93Customer
-{
-    #[Id]
-    #[GeneratedValue]
-    #[Column(type: 'integer')]
-    private int $id;
-
-    #[Embedded(class: 'DDC93ContactInfo', columnPrefix: 'contact_info_')]
-    private DDC93ContactInfo $contactInfo;
-}
-
-#[Embeddable]
-class DDC93ContactInfo
-{
-    /** @var string */
-    #[Column(type: 'string', length: 255)]
-    public $email;
-
-    /** @var DDC93Address */
-    #[Embedded(class: 'DDC93Address')]
-    public $address;
 }
 
 #[Entity]

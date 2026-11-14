@@ -7,7 +7,6 @@ namespace Doctrine\Tests\ORM\Functional\Ticket;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\StringType;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Mapping\Column;
 use Doctrine\ORM\Mapping\Entity;
 use Doctrine\ORM\Mapping\GeneratedValue;
@@ -26,12 +25,7 @@ class DDC2984Test extends OrmFunctionalTestCase
     {
         parent::setUp();
 
-        if (! Type::hasType('ddc2984_domain_user_id')) {
-            Type::addType(
-                'ddc2984_domain_user_id',
-                DDC2984UserIdCustomDbalType::class,
-            );
-        }
+        self::registerDbalType('ddc2984_domain_user_id', DDC2984UserIdCustomDbalType::class);
 
         $this->createSchemaForModels(DDC2984User::class);
     }

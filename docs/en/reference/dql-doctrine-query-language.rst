@@ -201,6 +201,23 @@ are specified with ":name1", ":name2" and so on.
 When referencing the parameters in ``Query#setParameter($param, $value)``
 both named and positional parameters are used **without** their prefixes.
 
+String Literals
+~~~~~~~~~~~~~~~
+
+String literals in DQL are enclosed in single quotes, for example
+``'foo'``. A single quote inside a string literal is escaped by doubling
+it: ``'bar''s house'``. Unlike some SQL dialects, DQL does not support
+double quotes for string literals; ``"foo"`` results in a syntax error.
+
+Prefer passing values as parameters instead of embedding them into the
+query string, which also takes care of any quoting:
+
+.. code-block:: php
+
+    <?php
+    $query = $em->createQuery('SELECT u FROM MyProject\Model\User u WHERE u.name = :name');
+    $query->setParameter('name', "bar's house");
+
 DQL SELECT Examples
 ~~~~~~~~~~~~~~~~~~~
 
@@ -1243,9 +1260,9 @@ creating a class which extends ``AbstractHydrator``:
 
     class CustomHydrator extends AbstractHydrator
     {
-        protected function _hydrateAll()
+        protected function hydrateAllData(): array
         {
-            return $this->_stmt->fetchAllAssociative();
+            return $this->stmt->fetchAllAssociative();
         }
     }
 

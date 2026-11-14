@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Mapping\Builder;
 
+use Doctrine\ORM\Mapping\ClassMetadata;
+
 use function constant;
 
 /**
@@ -247,6 +249,10 @@ class FieldBuilder
         }
 
         if ($this->customIdGenerator) {
+            if ($this->generatedValue === null) {
+                $cm->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_CUSTOM);
+            }
+
             $cm->setCustomGeneratorDefinition(['class' => $this->customIdGenerator]);
         }
 
