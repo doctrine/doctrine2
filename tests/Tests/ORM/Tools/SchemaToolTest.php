@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Doctrine\Tests\ORM\Tools;
 
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
 use Doctrine\DBAL\Platforms\SQLServerPlatform;
@@ -43,6 +44,7 @@ use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\Mapping\UniqueConstraint;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 use Doctrine\ORM\Tools\Event\GenerateSchemaTableEventArgs;
+use Doctrine\ORM\Tools\SchemaOperation;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Tools\ToolEvents;
 use Doctrine\Persistence\Mapping\Driver\StaticPHPDriver;
@@ -70,6 +72,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\IgnoreDeprecations;
 use PHPUnit\Framework\Attributes\RequiresMethod;
+use RuntimeException;
 
 use function array_map;
 use function class_exists;
@@ -83,6 +86,180 @@ use function strtolower;
 class SchemaToolTest extends OrmTestCase
 {
     use VerifyDeprecations;
+
+    #[DataProvider('provideSchemaOperations')]
+    public function testListenersReceiveTheSchemaOperation(string $method, SchemaOperation|null $operation): void
+    {
+        $em       = $this->createTestEntityManagerWithConnection(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $listener = new class {
+            public array $operations = [];
+
+            public function postGenerateSchema(GenerateSchemaEventArgs $event): void
+            {
+                $this->operations[] = $event->getOperation();
+            }
+        };
+        $em->getEventManager()->addEventListener([ToolEvents::postGenerateSchema], $listener);
+        $tool = new class ($em) extends SchemaTool {
+            public bool $overriddenMethodCalled = false;
+
+            public function getSchemaFromMetadata(array $classes): Schema
+            {
+                $this->overriddenMethodCalled = true;
+
+                parent::getSchemaFromMetadata($classes);
+
+                return parent::getSchemaFromMetadata($classes);
+            }
+        };
+
+        $tool->$method([]);
+
+        self::assertTrue($tool->overriddenMethodCalled);
+        self::assertSame([$operation, $operation], $listener->operations);
+    }
+
+    public static function provideSchemaOperations(): iterable
+    {
+        yield ['getSchemaFromMetadata', null];
+        yield ['getCreateSchemaSql', SchemaOperation::Create];
+        yield ['getDropSchemaSQL', SchemaOperation::Drop];
+        yield ['getUpdateSchemaSql', SchemaOperation::Update];
+    }
+
+    public function testNestedSchemaGenerationDoesNotReuseTheOuterOperation(): void
+    {
+        $em       = $this->createTestEntityManagerWithConnection(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $tool     = new SchemaTool($em);
+        $listener = new class ($tool) {
+            public array $operations = [];
+            private bool $nested     = false;
+
+            public function __construct(private readonly SchemaTool $tool)
+            {
+            }
+
+            public function postGenerateSchema(GenerateSchemaEventArgs $event): void
+            {
+                $this->operations[] = $event->getOperation();
+                if (! $this->nested) {
+                    $this->nested = true;
+                    $this->tool->getCreateSchemaSql([]);
+                    $this->tool->getSchemaFromMetadata([]);
+                }
+            }
+        };
+        $em->getEventManager()->addEventListener([ToolEvents::postGenerateSchema], $listener);
+
+        $tool->getDropSchemaSQL([]);
+
+        self::assertSame([SchemaOperation::Drop, SchemaOperation::Create, null], $listener->operations);
+    }
+
+    public function testFailedSchemaGenerationDoesNotKeepTheOperation(): void
+    {
+        $em       = $this->createTestEntityManagerWithConnection(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $listener = new class {
+            public array $operations = [];
+
+            public function postGenerateSchema(GenerateSchemaEventArgs $event): void
+            {
+                $this->operations[] = $event->getOperation();
+            }
+        };
+        $em->getEventManager()->addEventListener([ToolEvents::postGenerateSchema], $listener);
+        $tool = new class ($em) extends SchemaTool {
+            public bool $fail = true;
+
+            public function getSchemaFromMetadata(array $classes): Schema
+            {
+                if ($this->fail) {
+                    throw new RuntimeException('Schema generation failed.');
+                }
+
+                return parent::getSchemaFromMetadata($classes);
+            }
+        };
+
+        try {
+            $tool->getCreateSchemaSql([]);
+            self::fail('Schema generation should fail.');
+        } catch (RuntimeException $e) {
+            self::assertSame('Schema generation failed.', $e->getMessage());
+        }
+
+        $tool->fail = false;
+        $tool->getSchemaFromMetadata([]);
+
+        self::assertSame([null], $listener->operations);
+        self::assertNull((new GenerateSchemaEventArgs($em, new Schema()))->getOperation());
+    }
+
+    public function testRetryingSchemaGenerationKeepsTheOperation(): void
+    {
+        $em       = $this->createTestEntityManagerWithConnection(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $listener = new class {
+            public array $operations = [];
+            private bool $fail       = true;
+
+            public function postGenerateSchema(GenerateSchemaEventArgs $event): void
+            {
+                $this->operations[] = $event->getOperation();
+                if ($this->fail) {
+                    $this->fail = false;
+
+                    throw new RuntimeException('Schema generation failed.');
+                }
+            }
+        };
+        $em->getEventManager()->addEventListener([ToolEvents::postGenerateSchema], $listener);
+        $tool = new class ($em) extends SchemaTool {
+            public function getSchemaFromMetadata(array $classes): Schema
+            {
+                try {
+                    return parent::getSchemaFromMetadata($classes);
+                } catch (RuntimeException) {
+                    return parent::getSchemaFromMetadata($classes);
+                }
+            }
+        };
+
+        $tool->getCreateSchemaSql([]);
+        $tool->getSchemaFromMetadata([]);
+
+        self::assertSame([SchemaOperation::Create, SchemaOperation::Create, null], $listener->operations);
+    }
+
+    public function testNestedOperationBeforeTheParentSchemaGenerationRestoresTheOuterOperation(): void
+    {
+        $em       = $this->createTestEntityManagerWithConnection(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+        $listener = new class {
+            public array $operations = [];
+
+            public function postGenerateSchema(GenerateSchemaEventArgs $event): void
+            {
+                $this->operations[] = $event->getOperation();
+            }
+        };
+        $em->getEventManager()->addEventListener([ToolEvents::postGenerateSchema], $listener);
+        $tool = new class ($em) extends SchemaTool {
+            private bool $nested = false;
+
+            public function getSchemaFromMetadata(array $classes): Schema
+            {
+                if (! $this->nested) {
+                    $this->nested = true;
+                    $this->getCreateSchemaSql([]);
+                }
+
+                return parent::getSchemaFromMetadata($classes);
+            }
+        };
+
+        $tool->getDropSchemaSQL([]);
+
+        self::assertSame([SchemaOperation::Create, SchemaOperation::Drop], $listener->operations);
+    }
 
     public function testAddUniqueIndexForUniqueFieldAttribute(): void
     {

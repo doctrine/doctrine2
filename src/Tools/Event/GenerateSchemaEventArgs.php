@@ -8,6 +8,7 @@ use BadMethodCallException;
 use Doctrine\Common\EventArgs;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\SchemaOperation;
 
 use function method_exists;
 
@@ -21,6 +22,7 @@ class GenerateSchemaEventArgs extends EventArgs
     public function __construct(
         private readonly EntityManagerInterface $em,
         private Schema $schema,
+        private readonly SchemaOperation|null $operation = null,
     ) {
     }
 
@@ -32,6 +34,14 @@ class GenerateSchemaEventArgs extends EventArgs
     public function getSchema(): Schema
     {
         return $this->schema;
+    }
+
+    /**
+     * Returns the schema operation, or null for direct schema generation.
+     */
+    public function getOperation(): SchemaOperation|null
+    {
+        return $this->operation;
     }
 
     public function setSchema(Schema $schema): void

@@ -166,7 +166,7 @@ final class ExperimentalSchemaTool
      *
      * @throws NotSupported
      */
-    public function getSchemaFromMetadata(array $classes): Schema
+    public function getSchemaFromMetadata(array $classes, SchemaOperation|null $operation): Schema
     {
         // Reminder for processed classes, used for hierarchies
         $processedClasses     = [];
@@ -491,7 +491,7 @@ final class ExperimentalSchemaTool
 
         $schema = $schemaEditor->create();
 
-        $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema);
+        $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema, $operation);
         $eventManager->dispatchEvent(
             ToolEvents::postGenerateSchema,
             $schemaEventArgs,

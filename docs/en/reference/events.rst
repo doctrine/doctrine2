@@ -1040,6 +1040,10 @@ and the EntityManager.
         }
     }
 
+Starting in ORM 3.8, ``getOperation()`` returns ``SchemaOperation::Create``, ``SchemaOperation::Drop`` or ``SchemaOperation::Update`` for the corresponding ``SchemaTool`` operation.
+When you call ``getSchemaFromMetadata()`` directly, ``getOperation()`` returns ``null``.
+A listener can use this context to skip unrelated tables during entity creation or deletion.
+
 .. note::
 
     Starting in ORM 3.6, the ``GenerateSchemaEventArgs`` class provides
