@@ -710,13 +710,19 @@ postLoad
 The postLoad event occurs after the entity has been loaded into the current
 ``EntityManager`` from the database or after ``refresh()`` has been applied to it.
 
+The event is deferred until the outermost hydration has finished. Loading an entity
+can start further hydrations, for example for eagerly fetched associations. Entities
+hydrated that way receive their ``postLoad`` event at the end of the outermost hydration
+as well, when all of their associations are populated.
+
 .. warning::
 
-    When using ``Doctrine\ORM\AbstractQuery::toIterable()``, ``postLoad``
-    events will be executed immediately after objects are being hydrated, and therefore
-    associations are not guaranteed to be initialized. It is not safe to combine
-    usage of ``Doctrine\ORM\AbstractQuery::toIterable()`` and ``postLoad`` event
-    handlers.
+    When using ``Doctrine\ORM\AbstractQuery::toIterable()``, ``postLoad`` events are
+    executed after each row has been hydrated, and therefore associations that are
+    not part of that row are not guaranteed to be initialized. For example, eagerly
+    fetched to-one associations are only loaded at the end of the iteration. It is not
+    safe to rely on such associations in ``postLoad`` event handlers when using
+    ``Doctrine\ORM\AbstractQuery::toIterable()``.
 
 .. _reference-events-on-clear:
 

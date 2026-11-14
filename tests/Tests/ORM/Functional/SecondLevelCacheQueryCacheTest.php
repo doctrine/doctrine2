@@ -11,14 +11,20 @@ use Doctrine\ORM\Cache\EntityCacheKey;
 use Doctrine\ORM\Cache\Exception\CacheException;
 use Doctrine\ORM\Cache\QueryCacheEntry;
 use Doctrine\ORM\Cache\QueryCacheKey;
+use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Query\ResultSetMapping;
+use Doctrine\Tests\DbalExtensions\QueryLog;
 use Doctrine\Tests\Models\Cache\Attraction;
 use Doctrine\Tests\Models\Cache\City;
 use Doctrine\Tests\Models\Cache\Country;
 use Doctrine\Tests\Models\Cache\State;
+use Doctrine\Tests\Models\Cache\TravelerProfileInfo;
 use PHPUnit\Framework\Attributes\Group;
 use ReflectionMethod;
+
+use function count;
 
 #[Group('DDC-2183')]
 class SecondLevelCacheQueryCacheTest extends SecondLevelCacheFunctionalTestCase
@@ -683,6 +689,47 @@ class SecondLevelCacheQueryCacheTest extends SecondLevelCacheFunctionalTestCase
         self::assertInstanceOf(City::class, $result2[1]->getCities()->get(1));
 
         $this->assertQueryCount(2);
+    }
+
+    public function testPostLoadFiresAfterAllEntitiesOfCachedResultAreHydrated(): void
+    {
+        $this->loadFixturesCountries();
+        $this->loadFixturesStates();
+        $this->loadFixturesCities();
+        $this->loadFixturesTravelersWithProfile();
+        $this->loadFixturesTravelersProfileInfo();
+
+        $dql = 'SELECT p FROM Doctrine\Tests\Models\Cache\TravelerProfile p ORDER BY p.id';
+
+        $this->_em->clear();
+        $this->_em->createQuery($dql)->setCacheable(true)->getResult();
+        $this->_em->clear();
+        $this->cache->evictEntityRegion(TravelerProfileInfo::class);
+
+        $queriesAtPostLoad = [];
+        $listener          = new class ($this->getQueryLog(), $queriesAtPostLoad) {
+            /** @param list<int> $queriesAtPostLoad */
+            public function __construct(
+                private readonly QueryLog $queryLog,
+                private array &$queriesAtPostLoad,
+            ) {
+            }
+
+            public function postLoad(PostLoadEventArgs $args): void
+            {
+                if ($args->getObject() instanceof TravelerProfileInfo) {
+                    $this->queriesAtPostLoad[] = count($this->queryLog->queries);
+                }
+            }
+        };
+
+        $this->_em->getEventManager()->addEventListener([Events::postLoad], $listener);
+        $this->getQueryLog()->reset()->enable();
+
+        $result = $this->_em->createQuery($dql)->setCacheable(true)->getResult();
+
+        self::assertCount(2, $result);
+        self::assertSame([2, 2], $queriesAtPostLoad, 'Both nested loads should be finished before the first postLoad');
     }
 
     public function testBasicNativeQueryCache(): void

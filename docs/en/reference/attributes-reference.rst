@@ -932,6 +932,13 @@ Required parameters:
 -  **targetEntity**: FQCN of the referenced target entity. Can be the
    unqualified class name if both classes are in the same namespace.
    *IMPORTANT:* No leading backslash!
+-  **mappedBy**: This option specifies the property name on the
+   targetEntity that is the owning side of this relation. A one-to-many
+   association is always the inverse side of a bidirectional association,
+   so this attribute is required. A unidirectional one-to-many association
+   is mapped with :ref:`#[ManyToMany] <attrref_manytomany>` and a unique join
+   column instead, see "One-To-Many, Unidirectional with Join Table" in
+   :doc:`association-mapping`.
 
 Optional parameters:
 
@@ -939,9 +946,6 @@ Optional parameters:
 -  **orphanRemoval**: Boolean that specifies if orphans, inverse
    OneToOne entities that are not connected to any owning instance,
    should be removed by Doctrine. Defaults to false.
--  **mappedBy**: This option specifies the property name on the
-   targetEntity that is the owning side of this relation. Its a
-   required attribute for the inverse side of a relationship.
 -  **fetch**: One of LAZY, EXTRA_LAZY or EAGER.
 -  **indexBy**: Index the collection by a field on the target entity.
 
