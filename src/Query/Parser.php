@@ -1177,7 +1177,13 @@ final class Parser
         while ($this->lexer->isNextToken(TokenType::T_COMMA)) {
             $this->match(TokenType::T_COMMA);
 
-            $selectExpressions[] = $this->SelectExpression();
+            $selectExpression = $this->SelectExpression();
+
+            if ($this->isRepeatedIdentificationVariable($selectExpression)) {
+                continue;
+            }
+
+            $selectExpressions[] = $selectExpression;
         }
 
         return new AST\SelectClause($selectExpressions, $isDistinct);
@@ -2300,10 +2306,25 @@ final class Parser
         $expr = new AST\SelectExpression($expression, $aliasResultVariable, $hiddenAliasResultVariable);
 
         if ($identVariable) {
-            $this->identVariableExpressions[$identVariable] = $expr;
+            $this->identVariableExpressions[$identVariable] ??= $expr;
         }
 
         return $expr;
+    }
+
+    /**
+     * Whether the select expression repeats an identification variable that is already selected,
+     * e.g. the second "p" in "SELECT u, p, p". Such a repetition selects nothing new and is dropped.
+     */
+    private function isRepeatedIdentificationVariable(AST\SelectExpression $selectExpression): bool
+    {
+        $expression = $selectExpression->expression;
+
+        return is_string($expression)
+            && $selectExpression->fieldIdentificationVariable === null
+            && ! $selectExpression->hiddenAliasResultVariable
+            && isset($this->identVariableExpressions[$expression])
+            && $this->identVariableExpressions[$expression] !== $selectExpression;
     }
 
     /**
