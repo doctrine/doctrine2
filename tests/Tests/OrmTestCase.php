@@ -11,6 +11,7 @@ use Doctrine\DBAL\Driver\Result;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\DBAL\Schema\Schema;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\TypeRegistry;
 use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Cache\CacheFactory;
@@ -50,6 +51,11 @@ abstract class OrmTestCase extends TestCase
      * The query cache that is shared between all ORM tests (except functional tests).
      */
     private static CacheItemPoolInterface|null $queryCache = null;
+
+    /**
+     * The DBAL types registry shared by the tests, see {@see createDbalConfiguration()}.
+     */
+    private static TypeRegistry|null $typeRegistry = null;
 
     /** @var bool */
     protected $isSecondLevelCacheEnabled = false;
@@ -169,15 +175,12 @@ abstract class OrmTestCase extends TestCase
     /**
      * Creates a fully stubbed connection with the given platform and a default DBAL
      * configuration, so that {@see \Doctrine\ORM\Internal\TypeProviderLocator} can resolve
-     * the type registry. On DBAL >= 4.6, the type registry is injected into the configuration.
+     * the type registry. On DBAL >= 4.6, the shared type registry is injected into the
+     * configuration.
      */
     final protected function createConnectionStub(AbstractPlatform $platform): Connection&Stub
     {
-        $configuration = new DBALConfiguration();
-
-        if (method_exists($configuration, 'setTypeProvider')) {
-            $configuration->setTypeProvider(new TypeRegistry());
-        }
+        $configuration = self::createDbalConfiguration();
 
         $connection = $this->createStub(Connection::class);
         $connection->method('getDatabasePlatform')
@@ -188,10 +191,78 @@ abstract class OrmTestCase extends TestCase
         return $connection;
     }
 
+    /**
+     * Registers a DBAL type used by the tests.
+     *
+     * @param class-string<Type> $type
+     */
+    final protected static function registerDbalType(string $name, string $type): void
+    {
+        if (! method_exists(DBALConfiguration::class, 'setTypeProvider')) {
+            if (Type::hasType($name)) {
+                Type::overrideType($name, $type);
+            } else {
+                Type::addType($name, $type);
+            }
+
+            return;
+        }
+
+        $typeRegistry = self::getTypeRegistry();
+
+        if ($typeRegistry->has($name)) {
+            $typeRegistry->override($name, $type);
+        } else {
+            $typeRegistry->register($name, $type);
+        }
+    }
+
+    /**
+     * Tells whether a DBAL type used by the tests is registered.
+     */
+    final protected static function hasDbalType(string $name): bool
+    {
+        if (method_exists(DBALConfiguration::class, 'setTypeProvider')) {
+            return self::getTypeRegistry()->has($name);
+        }
+
+        return Type::hasType($name);
+    }
+
+    /**
+     * Returns the DBAL types registry shared by the tests.
+     */
+    final protected static function getTypeRegistry(): TypeRegistry
+    {
+        return self::$typeRegistry ??= new TypeRegistry();
+    }
+
+    /**
+     * Discards the types registered by a test, as the registry cannot unregister them.
+     */
+    protected function tearDown(): void
+    {
+        self::$typeRegistry = null;
+    }
+
+    /**
+     * Creates a DBAL configuration whose type provider is the registry shared by the tests.
+     */
+    final protected static function createDbalConfiguration(): DBALConfiguration
+    {
+        $configuration = new DBALConfiguration();
+
+        if (method_exists($configuration, 'setTypeProvider')) {
+            $configuration->setTypeProvider(self::getTypeRegistry());
+        }
+
+        return $configuration;
+    }
+
     private function createConnectionMock(AbstractPlatform $platform): Connection
     {
         $connection = $this->getMockBuilder(Connection::class)
-            ->setConstructorArgs([[], $this->createDriverStub($platform)])
+            ->setConstructorArgs([[], $this->createDriverStub($platform), self::createDbalConfiguration()])
             ->onlyMethods(['quote'])
             ->getMock();
         $connection->method('quote')->willReturnCallback(static fn (string $input) => sprintf("'%s'", $input));
