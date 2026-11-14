@@ -294,6 +294,15 @@ class UnitOfWork implements PropertyChangedListener
     private array $orphanRemovals = [];
 
     /**
+     * Entities whose orphan removal was planned by the wholesale replacement
+     * of a one-to-many collection, keyed by object id. Their deletions have
+     * to run before the insertions of the same flush (#12642).
+     *
+     * @phpstan-var array<int, object>
+     */
+    private array $orphanRemovalsFromCollectionReplacement = [];
+
+    /**
      * Read-Only objects are never evaluated
      *
      * @var array<int, true>
@@ -417,6 +426,25 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
 
+            // Orphan deletions planned by a wholesale collection replacement
+            // must run before the insertions (#12642): a new element of the
+            // replacing value may re-acquire the unique value of a discarded
+            // element in this very flush. All remaining deletions keep their
+            // place after the insertions.
+            if ($this->orphanRemovalsFromCollectionReplacement) {
+                $earlyDeletions = [];
+
+                foreach ($this->orphanRemovalsFromCollectionReplacement as $oid => $entity) {
+                    if (isset($this->entityDeletions[$oid])) {
+                        $earlyDeletions[$oid] = $entity;
+                    }
+                }
+
+                if ($earlyDeletions) {
+                    $this->executeDeletions($earlyDeletions);
+                }
+            }
+
             if ($this->entityInsertions) {
                 // Perform entity insertions first, so that all new entities have their rows in the database
                 // and can be referred to by foreign keys. The commit order only needs to take new entities
@@ -500,18 +528,19 @@ class UnitOfWork implements PropertyChangedListener
 
     private function postCommitCleanup(): void
     {
-        $this->entityInsertions                 =
-        $this->entityUpdates                    =
-        $this->entityDeletions                  =
-        $this->extraUpdates                     =
-        $this->collectionUpdates                =
-        $this->nonCascadedNewDetectedEntities   =
-        $this->collectionDeletions              =
-        $this->pendingCollectionElementRemovals =
-        $this->visitedCollections               =
-        $this->orphanRemovals                   =
-        $this->entityChangeSets                 =
-        $this->scheduledForSynchronization      = [];
+        $this->entityInsertions                        =
+        $this->entityUpdates                           =
+        $this->entityDeletions                         =
+        $this->extraUpdates                            =
+        $this->collectionUpdates                       =
+        $this->nonCascadedNewDetectedEntities          =
+        $this->collectionDeletions                     =
+        $this->pendingCollectionElementRemovals        =
+        $this->visitedCollections                      =
+        $this->orphanRemovals                          =
+        $this->orphanRemovalsFromCollectionReplacement =
+        $this->entityChangeSets                        =
+        $this->scheduledForSynchronization             = [];
     }
 
     /**
@@ -586,7 +615,9 @@ class UnitOfWork implements PropertyChangedListener
      *
      * {@link _collectionDeletions}
      * If a PersistentCollection has been de-referenced in a fully MANAGED entity,
-     * then this collection is marked for deletion.
+     * then this collection is marked for deletion, unless the replacing value is
+     * a plain collection that carries elements of it over — those are kept, and
+     * only the left-out elements are scheduled for orphan removal (#12642).
      *
      * @param ClassMetadata $class  The class descriptor of the entity.
      * @param object        $entity The entity for which to compute the changes.
@@ -615,12 +646,15 @@ class UnitOfWork implements PropertyChangedListener
             $this->listenersInvoker->invoke($class, Events::preFlush, $entity, new PreFlushEventArgs($this->em), $invoke);
         }
 
-        $actualData = [];
+        $actualData                   = [];
+        $newlyWrappedPlainCollections = [];
 
         foreach ($class->propertyAccessors as $name => $refProp) {
             $value = $refProp->getValue($entity);
 
             if ($class->isCollectionValuedAssociation($name) && $value !== null) {
+                $isPlainValue = ! $value instanceof PersistentCollection;
+
                 if ($value instanceof PersistentCollection) {
                     if ($value->getOwner() === $entity) {
                         $actualData[$name] = $value;
@@ -646,6 +680,14 @@ class UnitOfWork implements PropertyChangedListener
                 );
                 $value->setOwner($entity, $assoc);
                 $value->setDirty(! $value->isEmpty());
+
+                if ($isPlainValue) {
+                    // The field was replaced by a plain collection: remember
+                    // the wrapper, so the de-reference check below can tell
+                    // this replacement apart from a PersistentCollection
+                    // that moved over from another entity.
+                    $newlyWrappedPlainCollections[spl_object_id($value)] = true;
+                }
 
                 $refProp->setValue($entity, $value);
 
@@ -752,15 +794,23 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 if ($orgValue instanceof PersistentCollection) {
-                    // A PersistentCollection was de-referenced, so delete it.
+                    // A PersistentCollection was de-referenced: delete it,
+                    // unless the plain replacement carries elements of it over.
                     $coid = spl_object_id($orgValue);
 
                     if (isset($this->collectionDeletions[$coid])) {
                         continue;
                     }
 
-                    $this->collectionDeletions[$coid] = $orgValue;
-                    $changeSet[$propName]             = $orgValue; // Signal changeset, to-many assocs will be ignored.
+                    $carriedOverByReplacement = $actualValue instanceof PersistentCollection
+                        && isset($newlyWrappedPlainCollections[spl_object_id($actualValue)])
+                        && $this->scheduleCollectionReplacementOrphans($assoc, $orgValue, $actualValue);
+
+                    if (! $carriedOverByReplacement) {
+                        $this->collectionDeletions[$coid] = $orgValue;
+                    }
+
+                    $changeSet[$propName] = $orgValue; // Signal changeset, to-many assocs will be ignored.
 
                     continue;
                 }
@@ -890,6 +940,86 @@ class UnitOfWork implements PropertyChangedListener
                 }
             }
         }
+    }
+
+    /**
+     * Plans the orphan removals of a one-to-many collection that a managed
+     * entity replaced wholesale with a plain collection (#12642).
+     *
+     * The replacing value takes over the membership of the association: an
+     * old element it carries over survives the flush — a pending orphan
+     * removal of such an element, planned by an earlier mutation, is
+     * cancelled — while an old element left out is scheduled for orphan
+     * removal element by element, with the lifecycle of a regular entity
+     * removal. When nothing is carried over, the baseline path stays in
+     * charge: the complete old collection is deleted by a single set-valued
+     * DELETE, so nothing is planned here and false is returned. An empty
+     * replacing value cannot carry anything over and keeps that path without
+     * initializing the de-referenced collection.
+     *
+     * The plain replacement reaches this point as the PersistentCollection
+     * injected over it by the changeset collection pass.
+     *
+     * @phpstan-param PersistentCollection<array-key, object> $orgValue
+     * @phpstan-param PersistentCollection<array-key, object> $actualValue
+     */
+    private function scheduleCollectionReplacementOrphans(
+        AssociationMapping $assoc,
+        PersistentCollection $orgValue,
+        PersistentCollection $actualValue,
+    ): bool {
+        if (! $assoc->isOneToMany() || ! $assoc->orphanRemoval) {
+            return false;
+        }
+
+        $replacingValue = $actualValue->unwrap();
+
+        if ($replacingValue->count() === 0) {
+            return false;
+        }
+
+        // The old membership is the actual content of the de-referenced
+        // collection: the snapshot of an uninitialized collection is empty
+        // and would silently turn every transfer into the baseline full
+        // deletion.
+        $orgValue->initialize();
+
+        $oldElements = [];
+        foreach ($orgValue->unwrap() as $element) {
+            $oldElements[spl_object_id($element)] = $element;
+        }
+
+        $carriedOver = [];
+        foreach ($replacingValue as $element) {
+            $oid = spl_object_id($element);
+
+            if (isset($oldElements[$oid]) || isset($this->orphanRemovals[$oid])) {
+                $carriedOver[$oid] = $element;
+            }
+        }
+
+        if (! $carriedOver) {
+            return false;
+        }
+
+        foreach ($carriedOver as $element) {
+            // Membership of the replacing value extinguishes a pending orphan
+            // removal planned by an earlier mutation.
+            $this->cancelOrphanRemoval($element);
+        }
+
+        foreach ($oldElements as $oid => $element) {
+            if (isset($carriedOver[$oid]) || isset($this->orphanRemovals[$oid])) {
+                // Carried-over elements survive; elements already scheduled
+                // by a mutation keep their regular slot in the commit order.
+                continue;
+            }
+
+            $this->scheduleOrphanRemoval($element);
+            $this->orphanRemovalsFromCollectionReplacement[$oid] = $element;
+        }
+
+        return true;
     }
 
     /**
@@ -1239,9 +1369,11 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * Executes all entity deletions
      */
-    private function executeDeletions(): void
+
+    /** @param array<int, object>|null $deletions */
+    private function executeDeletions(array|null $deletions = null): void
     {
-        $entities         = $this->computeDeleteExecutionOrder();
+        $entities         = $this->computeDeleteExecutionOrder($deletions);
         $eventsToDispatch = [];
 
         foreach ($entities as $entity) {
@@ -1372,12 +1504,20 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /** @return list<object> */
-    private function computeDeleteExecutionOrder(): array
+
+    /**
+     * @param array<int, object>|null $deletions
+     *
+     * @return array<int, object>
+     */
+    private function computeDeleteExecutionOrder(array|null $deletions = null): array
     {
         $stronglyConnectedComponents = new StronglyConnectedComponents();
         $sort                        = new TopologicalSort();
 
-        foreach ($this->entityDeletions as $entity) {
+        $deletions ??= $this->entityDeletions;
+
+        foreach ($deletions as $entity) {
             $stronglyConnectedComponents->addNode($entity);
             $sort->addNode($entity);
         }
@@ -1387,7 +1527,7 @@ class UnitOfWork implements PropertyChangedListener
         // in such a group, _all_ of the other entities will be removed as well. So,
         // we need to treat those groups like a single entity when performing delete
         // order topological sorting.
-        foreach ($this->entityDeletions as $entity) {
+        foreach ($deletions as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
 
             foreach ($class->associationMappings as $assoc) {
@@ -1424,7 +1564,7 @@ class UnitOfWork implements PropertyChangedListener
         $stronglyConnectedComponents->findStronglyConnectedComponents();
 
         // Now do the actual topological sorting to find the delete order.
-        foreach ($this->entityDeletions as $entity) {
+        foreach ($deletions as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
 
             // Get the entities representing the SCC
@@ -2394,26 +2534,27 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function clear(): void
     {
-        $this->identityMap                      =
-        $this->entityIdentifiers                =
-        $this->originalEntityData               =
-        $this->entityChangeSets                 =
-        $this->entityStates                     =
-        $this->scheduledForSynchronization      =
-        $this->entityInsertions                 =
-        $this->entityUpdates                    =
-        $this->entityDeletions                  =
-        $this->nonCascadedNewDetectedEntities   =
-        $this->collectionDeletions              =
-        $this->collectionUpdates                =
-        $this->extraUpdates                     =
-        $this->readOnlyObjects                  =
-        $this->partialObjectLoadedFields        =
-        $this->pendingCollectionElementRemovals =
-        $this->visitedCollections               =
-        $this->eagerLoadingEntities             =
-        $this->eagerLoadingCollections          =
-        $this->orphanRemovals                   = [];
+        $this->identityMap                             =
+        $this->entityIdentifiers                       =
+        $this->originalEntityData                      =
+        $this->entityChangeSets                        =
+        $this->entityStates                            =
+        $this->scheduledForSynchronization             =
+        $this->entityInsertions                        =
+        $this->entityUpdates                           =
+        $this->entityDeletions                         =
+        $this->nonCascadedNewDetectedEntities          =
+        $this->collectionDeletions                     =
+        $this->collectionUpdates                       =
+        $this->extraUpdates                            =
+        $this->readOnlyObjects                         =
+        $this->partialObjectLoadedFields               =
+        $this->pendingCollectionElementRemovals        =
+        $this->visitedCollections                      =
+        $this->eagerLoadingEntities                    =
+        $this->eagerLoadingCollections                 =
+        $this->orphanRemovals                          =
+        $this->orphanRemovalsFromCollectionReplacement = [];
 
         $this->eventDispatcher->dispatchEvent(Events::onClear, new OnClearEventArgs($this->em));
     }
