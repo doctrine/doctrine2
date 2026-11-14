@@ -728,6 +728,16 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
     protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
+        if ($class instanceof ClassMetadata && $this->em !== null) {
+            $configuration = $this->em->getConfiguration();
+            $class->setNamingStrategy($configuration->getNamingStrategy());
+
+            $typedFieldMapper = $configuration->getTypedFieldMapper();
+            if ($typedFieldMapper !== null) {
+                $class->setTypedFieldMapper($typedFieldMapper);
+            }
+        }
+
         $class->wakeupReflection($reflService);
 
         if (PHP_VERSION_ID < 80400) {

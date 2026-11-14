@@ -9,6 +9,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Driver;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnClassMetadataNotFoundEventArgs;
@@ -18,6 +19,7 @@ use Doctrine\ORM\Id\AbstractIdGenerator;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\DefaultTypedFieldMapper;
 use Doctrine\ORM\Mapping\DiscriminatorColumn;
 use Doctrine\ORM\Mapping\DiscriminatorMap;
 use Doctrine\ORM\Mapping\Entity;
@@ -25,6 +27,7 @@ use Doctrine\ORM\Mapping\GeneratedValue;
 use Doctrine\ORM\Mapping\Id;
 use Doctrine\ORM\Mapping\InheritanceType;
 use Doctrine\ORM\Mapping\MappingException;
+use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\Tests\Mocks\EntityManagerMock;
@@ -40,12 +43,14 @@ use Doctrine\Tests\Models\Quote\Address;
 use Doctrine\Tests\Models\Quote\Group;
 use Doctrine\Tests\Models\Quote\Phone;
 use Doctrine\Tests\Models\Quote\User;
+use Doctrine\Tests\Models\TypedProperties\UserTyped;
 use Doctrine\Tests\OrmTestCase;
 use Doctrine\Tests\TestUtil;
 use Exception;
 use InvalidArgumentException;
 use PHPUnit\Framework\Assert;
 use ReflectionClass;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 use function array_search;
 use function assert;
@@ -468,6 +473,40 @@ class ClassMetadataFactoryTest extends OrmTestCase
         $cmf->setEntityManager($em);
 
         $userMetadata = $cmf->getMetadataFor(Shape::class);
+    }
+
+    public function testCachedMetadataRestoresCustomNamingStrategyAndTypedFieldMapper(): void
+    {
+        $driver = $this->createStub(MappingDriver::class);
+        $driver->method('loadMetadataForClass')->willReturnCallback(
+            static function (string $className, ClassMetadata $metadata): void {
+                $metadata->mapField(['fieldName' => 'id', 'id' => true]);
+            },
+        );
+
+        $cache = new ArrayAdapter();
+        $em    = $this->createEntityManager($driver);
+        $em->getConfiguration()->setMetadataCache($cache);
+        $em->getConfiguration()->setNamingStrategy(new UnderscoreNamingStrategy());
+        $em->getConfiguration()->setTypedFieldMapper(new DefaultTypedFieldMapper(['string' => Types::TEXT]));
+
+        $cmf1 = new ClassMetadataFactory();
+        $cmf1->setEntityManager($em);
+        $cmf1->setCache($cache);
+        $cmf1->getMetadataFor(UserTyped::class);
+
+        $cmf2 = new ClassMetadataFactory();
+        $cmf2->setEntityManager($em);
+        $cmf2->setCache($cache);
+        $metadata = $cmf2->getMetadataFor(UserTyped::class);
+
+        $metadata->mapField(['fieldName' => 'dateInterval']);
+        $metadata->mapField(['fieldName' => 'username']);
+        $metadata->mapManyToOne(['fieldName' => 'mainEmail']);
+
+        self::assertSame('date_interval', $metadata->getColumnName('dateInterval'));
+        self::assertSame(Types::TEXT, $metadata->getTypeOfField('username'));
+        self::assertSame('main_email_id', $metadata->getSingleAssociationJoinColumnName('mainEmail'));
     }
 }
 

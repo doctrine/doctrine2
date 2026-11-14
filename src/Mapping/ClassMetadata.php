@@ -564,7 +564,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
     private InstantiatorInterface|null $instantiator = null;
 
-    private readonly TypedFieldMapper $typedFieldMapper;
+    private TypedFieldMapper $typedFieldMapper;
 
     /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
@@ -824,6 +824,18 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         return $serialized;
     }
 
+    /** @internal */
+    public function setNamingStrategy(NamingStrategy $namingStrategy): void
+    {
+        $this->namingStrategy = $namingStrategy;
+    }
+
+    /** @internal */
+    public function setTypedFieldMapper(TypedFieldMapper $typedFieldMapper): void
+    {
+        $this->typedFieldMapper = $typedFieldMapper;
+    }
+
     /**
      * Creates a new instance of the mapped class, without invoking the constructor.
      */
@@ -842,6 +854,14 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         /** @phpstan-ignore property.deprecated */
         $this->reflFields   = new LegacyReflectionFields($this, $reflService);
         $this->instantiator = $this->instantiator ?: new Instantiator();
+
+        if (! isset($this->namingStrategy)) {
+            $this->namingStrategy = new DefaultNamingStrategy();
+        }
+
+        if (! isset($this->typedFieldMapper)) {
+            $this->typedFieldMapper = new DefaultTypedFieldMapper();
+        }
 
         $parentAccessors = [];
 
