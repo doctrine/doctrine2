@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\ORM\Tools\Pagination;
 
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Query\AST\ComparisonExpression;
 use Doctrine\ORM\Query\AST\ConditionalExpression;
 use Doctrine\ORM\Query\AST\ConditionalPrimary;
@@ -16,6 +17,7 @@ use Doctrine\ORM\Query\AST\SelectStatement;
 use Doctrine\ORM\Query\AST\WhereClause;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\Query\TreeWalkerAdapter;
+use Doctrine\ORM\Utility\PersisterHelper;
 use LogicException;
 
 use function array_unshift;
@@ -166,7 +168,12 @@ class CursorWalker extends TreeWalkerAdapter
         // so SQL injection is not possible. The worst a user can do is navigate to an
         // arbitrary position in the result set, while remaining bound by the original
         // query's WHERE constraints.
-        $this->_getQuery()->setParameter($paramName, $paramValue);
+        //
+        // The value is the database value of the field, as CursorPaginator put it in the
+        // cursor: it is bound as such, with the binding type of the type of the field, and
+        // is never converted by that type. Bound untyped, a binary value would be sent as a
+        // string, which PostgreSQL and SQL Server reject.
+        $this->_getQuery()->setParameter($paramName, $paramValue, $this->getFieldType($orderByItem)?->getBindingType());
 
         $comparisonExpr = new ComparisonExpression(
             $expression,
@@ -209,6 +216,24 @@ class CursorWalker extends TreeWalkerAdapter
     private function parameterName(int $index): string
     {
         return self::CURSOR_PARAMETER_PREFIX . $index;
+    }
+
+    /**
+     * Returns the DBAL type of the field an ORDER BY item is on, if any.
+     */
+    private function getFieldType(CursorOrderByItem $orderByItem): Type|null
+    {
+        if (! $orderByItem->expression instanceof PathExpression || $orderByItem->metadata === null) {
+            return null;
+        }
+
+        $types = PersisterHelper::getTypeOfField(
+            $orderByItem->expression->field,
+            $orderByItem->metadata,
+            $this->_getQuery()->getEntityManager(),
+        );
+
+        return count($types) === 1 ? Type::getType($types[0]) : null;
     }
 
     /**

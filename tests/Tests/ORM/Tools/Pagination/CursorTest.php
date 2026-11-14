@@ -7,13 +7,18 @@ namespace Doctrine\Tests\ORM\Tools\Pagination;
 use Doctrine\ORM\Tools\Pagination\Cursor;
 use Doctrine\ORM\Tools\Pagination\Exception\InvalidCursor;
 use JsonException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+use function base64_decode;
 use function base64_encode;
+use function json_decode;
 use function json_encode;
 use function rtrim;
 use function strtr;
+
+use const INF;
 
 class CursorTest extends TestCase
 {
@@ -124,5 +129,46 @@ class CursorTest extends TestCase
         $payload = rtrim(strtr(base64_encode((string) json_encode('just-a-string')), '+/', '-_'), '=');
         $this->expectException(InvalidCursor::class);
         Cursor::fromEncodedString($payload);
+    }
+
+    public function testEncodeAndDecodeBinaryParameter(): void
+    {
+        // 0xff never appears in UTF-8, so JSON cannot hold this value as such
+        $cursor  = new Cursor(['p.id' => "\xff\x00\x00\x01"]);
+        $encoded = $cursor->encodeToString();
+
+        self::assertSame(
+            ['p.id' => ['base64' => '/wAAAQ=='], '_isNext' => true],
+            json_decode((string) base64_decode(strtr($encoded, '-_', '+/')), true),
+        );
+        self::assertSame($cursor->getParameters(), Cursor::fromEncodedString($encoded)->getParameters());
+    }
+
+    /** @param array<string, mixed> $value */
+    #[DataProvider('invalidBase64Parameters')]
+    public function testFromEncodedStringThrowsForInvalidBase64Parameter(array $value): void
+    {
+        $payload = rtrim(strtr(base64_encode((string) json_encode(['p.id' => $value, '_isNext' => true])), '+/', '-_'), '=');
+
+        $this->expectException(InvalidCursor::class);
+
+        Cursor::fromEncodedString($payload);
+    }
+
+    /** @return iterable<string, array{array<string, mixed>}> */
+    public static function invalidBase64Parameters(): iterable
+    {
+        yield 'not Base64' => [['base64' => 'not base64!']];
+        yield 'not a string' => [['base64' => 1]];
+        yield 'another key' => [['hex' => 'ff000001']];
+        yield 'an extra key' => [['base64' => '/wAAAQ==', 'hex' => 'ff000001']];
+    }
+
+    public function testEncodeToStringThrowsForParameterThatCannotBeEncodedAsJson(): void
+    {
+        // an empty cursor would silently lead back to the first page
+        $this->expectException(JsonException::class);
+
+        (new Cursor(['p.price' => INF]))->encodeToString();
     }
 }
